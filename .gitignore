@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+
+# .NET
+bin/
+obj/
+TestResults/
+
+# Local build outputs
+artifacts/
+
+# Docker/local runtime
+client_side_pb_private/
+
+# Bridge runtime mailboxes and generated state
+data/bridge_requests/*.json
+data/bridge_requests/processed/
+data/bridge_results/*.json
+data/command_queues/
+data/plugin_status.json
+data/worker_status.json
+data/virtual_pb_compatibility.json
+
+# Local discovery/import state
+data/workshop_catalog.json
+data/imports/*
+!data/imports/.gitkeep
+data/autocrafting_blueprints/*
+!data/autocrafting_blueprints/.gitkeep
+
+# Editor/OS noise
+.vs/
+.vscode/
+*.user
+*.suo
+Thumbs.db
+Desktop.ini

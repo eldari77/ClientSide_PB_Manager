@@ -1,0 +1,17 @@
+services:
+  client-side-pb-worker:
+    build:
+      context: .
+    image: novali-client-side-pb-worker:local
+    working_dir: /workspace/client-side-pb
+    command: "python3 -m worker.worker --root /workspace/client-side-pb"
+    environment:
+      NOVALI_CLIENT_SIDE_PB_ROOT: "/workspace/client-side-pb"
+      NOVALI_CLIENT_SIDE_PB_POLL_SECONDS: "1.0"
+    volumes:
+      - ./:/workspace/client-side-pb
+      - client_side_pb_private:/var/lib/novali-client-side-pb
+    restart: unless-stopped
+
+volumes:
+  client_side_pb_private:

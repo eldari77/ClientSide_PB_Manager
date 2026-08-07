@@ -1,0 +1,9 @@
+.pytest_cache
+**/__pycache__
+manager/bin
+manager/obj
+artifacts
+data/bridge_requests/*.json
+data/bridge_requests/processed
+data/bridge_results/*.json
+

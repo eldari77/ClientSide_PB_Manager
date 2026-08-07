@@ -1,0 +1,2 @@
+"""Shared bridge contract helpers."""
+

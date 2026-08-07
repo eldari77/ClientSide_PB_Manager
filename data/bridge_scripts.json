@@ -1,0 +1,12 @@
+{
+  "schema": "novali.client_side_pb.bridge_scripts.v1",
+  "bridges": {
+    "pb-bridge-001": {
+      "selected_script_id": "workshop_1216126863_adapter",
+      "allowed_worker_scripts": [
+        "workshop_1216126863_adapter"
+      ],
+      "updated_at": "2026-05-19T17:49:26.0786897Z"
+    }
+  }
+}

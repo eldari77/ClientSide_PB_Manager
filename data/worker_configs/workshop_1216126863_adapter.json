@@ -1,0 +1,621 @@
+{
+  "schema": "novali.client_side_pb.worker_config.v1",
+  "script_id": "workshop_1216126863_adapter",
+  "display_name": "Isy\u0027s Inventory Manager",
+  "entries": [
+    {
+      "key": "inventorySortingEnabled",
+      "value": true,
+      "value_type": "bool",
+      "description": "NOVALI adapter switch for the first IIM behavior slice. When true, the worker plans inventory sorting commands from plugin-enriched snapshots."
+    },
+    {
+      "key": "inventorySortingDryRun",
+      "value": false,
+      "value_type": "bool",
+      "description": "When true, the worker reports proposed inventory sorting commands without asking the PB shim to apply them."
+    },
+    {
+      "key": "maxApplyCommands",
+      "value": 5,
+      "value_type": "int",
+      "description": "Maximum worker commands the PB shim may apply from one result. Keep this low to protect server PB runtime."
+    },
+    {
+      "key": "dynamicCommandQueueDrain",
+      "value": true,
+      "value_type": "bool",
+      "description": "When true, the worker drains queued commands according to the PB shim's runtime-derived dynamic_apply_budget instead of a fixed commandQueueDrainPerResult value."
+    },
+    {
+      "key": "maxPlannedTransfers",
+      "value": 8,
+      "value_type": "int",
+      "description": "Maximum transfer/rename commands planned per worker tick before PB-side apply budgeting is applied."
+    },
+    {
+      "key": "maxPlannedMachineCommands",
+      "value": 8,
+      "value_type": "int",
+      "description": "Maximum LCD and machine foundation commands planned per worker tick before PB-side apply budgeting is applied."
+    },
+    {
+      "key": "allowConnectedGrids",
+      "value": false,
+      "value_type": "bool",
+      "description": "When false, sorting commands are planned only for blocks reported on the same construct as the bridge PB."
+    },
+    {
+      "key": "oreContainerKeyword",
+      "value": "Ores",
+      "value_type": "string",
+      "description": "Date: 2023-12-10 Guide: http://steamcommunity.com/sharedfiles/filedetails/?id=1226261795 Define the keyword a cargo container has to contain in order to be recognized as a container of the given type."
+    },
+    {
+      "key": "ingotContainerKeyword",
+      "value": "Ingots",
+      "value_type": "string",
+      "description": ""
+    },
+    {
+      "key": "componentContainerKeyword",
+      "value": "Components",
+      "value_type": "string",
+      "description": ""
+    },
+    {
+      "key": "toolContainerKeyword",
+      "value": "Tools",
+      "value_type": "string",
+      "description": ""
+    },
+    {
+      "key": "ammoContainerKeyword",
+      "value": "Ammo",
+      "value_type": "string",
+      "description": ""
+    },
+    {
+      "key": "bottleContainerKeyword",
+      "value": "Bottles",
+      "value_type": "string",
+      "description": ""
+    },
+    {
+      "key": "lockedContainerKeywords",
+      "value": [
+        "Locked",
+        "Control Station",
+        "Control Seat",
+        "Safe Zone"
+      ],
+      "value_type": "string_list",
+      "description": "Keyword a block name has to contain to be excluded from sorting (does mostly apply for cargo containers). This list is expandable - just separate the entries with a \u0022,\u0022. But it\u0027s also language specific, so adjust it if needed. Default: string[] lockedContainerKeywords = { \u0022Locked\u0022, \u0022Control Station\u0022, \u0022Control Seat\u0022, \u0022Safe Zone\u0022 };"
+    },
+    {
+      "key": "hiddenContainerKeywords",
+      "value": [
+        "Hidden"
+      ],
+      "value_type": "string_list",
+      "description": "Keyword a block name has to contain to be excluded from item counting (used by autocrafting and inventory panels) This list is expandable - just separate the entries with a \u0022,\u0022. But it\u0027s also language specific, so adjust it if needed. Default: string[] hiddenContainerKeywords = { \u0022Hidden\u0022 };"
+    },
+    {
+      "key": "treatNotShownAsHidden",
+      "value": false,
+      "value_type": "bool",
+      "description": "Treat inventories that are hidden via disabling the terminal option \u0022Show block in Inventory Screen\u0022 as hidden containers just like adding the \u0027Hidden\u0027 keyword (see above)? (Note: It\u0027s not recommended to hide your main type containers!)"
+    },
+    {
+      "key": "noSortingKeyword",
+      "value": "[No Sorting]",
+      "value_type": "string",
+      "description": "Keyword for connectors to disable sorting of a grid, that is docked to that connector. This will prevent IIM from pulling any items from that connected grid. Special containers, reactors and O2/H2 generators will still be filled."
+    },
+    {
+      "key": "noIIMKeyword",
+      "value": "[No IIM]",
+      "value_type": "string",
+      "description": "Keyword for connectors to disable IIM completely for another grid, that is docked to that connector."
+    },
+    {
+      "key": "balanceTypeContainers",
+      "value": true,
+      "value_type": "bool",
+      "description": "Balance items between containers of the same type? This will result in an equal amount of all items in all containers of that type."
+    },
+    {
+      "key": "showFillLevel",
+      "value": true,
+      "value_type": "bool",
+      "description": "Show a fill level in the container\u0027s name?"
+    },
+    {
+      "key": "fillBottles",
+      "value": true,
+      "value_type": "bool",
+      "description": "Fill bottles before storing them in the bottle container?"
+    },
+    {
+      "key": "autoContainerAssignment",
+      "value": true,
+      "value_type": "bool",
+      "description": "Master switch. If this is set to false, automated container un-/assignment is disabled entirely."
+    },
+    {
+      "key": "assignNewContainers",
+      "value": false,
+      "value_type": "bool",
+      "description": "Assign switch. Assign new containers if a type is full or not present?"
+    },
+    {
+      "key": "assignOres",
+      "value": true,
+      "value_type": "bool",
+      "description": "Which type should be assigned automatically? (only relevant if master and assign switch are true)"
+    },
+    {
+      "key": "assignIngots",
+      "value": true,
+      "value_type": "bool",
+      "description": ""
+    },
+    {
+      "key": "assignComponents",
+      "value": true,
+      "value_type": "bool",
+      "description": ""
+    },
+    {
+      "key": "assignTools",
+      "value": true,
+      "value_type": "bool",
+      "description": ""
+    },
+    {
+      "key": "assignAmmo",
+      "value": true,
+      "value_type": "bool",
+      "description": ""
+    },
+    {
+      "key": "assignBottles",
+      "value": true,
+      "value_type": "bool",
+      "description": ""
+    },
+    {
+      "key": "unassignEmptyContainers",
+      "value": true,
+      "value_type": "bool",
+      "description": "Unassign switch. Unassign empty type containers that aren\u0027t needed anymore (at least one of each type always remains). This doesn\u0027t touch containers with manual priority tokens, like [P1]."
+    },
+    {
+      "key": "unassignOres",
+      "value": true,
+      "value_type": "bool",
+      "description": "Which type should be unassigned automatically? (only relevant if master and unassign switch are true)"
+    },
+    {
+      "key": "unassignIngots",
+      "value": true,
+      "value_type": "bool",
+      "description": ""
+    },
+    {
+      "key": "unassignComponents",
+      "value": true,
+      "value_type": "bool",
+      "description": ""
+    },
+    {
+      "key": "unassignTools",
+      "value": true,
+      "value_type": "bool",
+      "description": ""
+    },
+    {
+      "key": "unassignAmmo",
+      "value": true,
+      "value_type": "bool",
+      "description": ""
+    },
+    {
+      "key": "unassignBottles",
+      "value": true,
+      "value_type": "bool",
+      "description": ""
+    },
+    {
+      "key": "oresIngotsInOne",
+      "value": false,
+      "value_type": "bool",
+      "description": "Assign ores and ingots containers as one? (complies with type switches)"
+    },
+    {
+      "key": "toolsAmmoBottlesInOne",
+      "value": true,
+      "value_type": "bool",
+      "description": "Assign tool, ammo and bottle containers as one? (complies with type switches)"
+    },
+    {
+      "key": "enableAutocrafting",
+      "value": true,
+      "value_type": "bool",
+      "description": "Enable autocrafting or autodisassembling (disassembling will disassemble everything above the wanted amounts) All assemblers will be used. To use one manually, add the manualMachineKeyword to it (by default: \u0022!manual\u0022)"
+    },
+    {
+      "key": "industryInputMode",
+      "value": "hybrid_conveyors",
+      "value_type": "string",
+      "description": "Controls refinery, assembler, and food processor input stocking. hybrid_conveyors leaves their conveyor pull enabled and lets the worker handle queue goals, output cleanup, and priority input nudges. plugin_only restores explicit worker-managed input stocking and conveyor-off setup for those industry blocks."
+    },
+    {
+      "key": "enableAutodisassembling",
+      "value": false,
+      "value_type": "bool",
+      "description": ""
+    },
+    {
+      "key": "autocraftingKeyword",
+      "value": "Autocrafting",
+      "value_type": "string",
+      "description": "A LCD with the keyword \u0022Autocrafting\u0022 is required where you can set the wanted amount! This has multi LCD support. Just append numbers after the keyword, like: \u0022LCD Autocrafting 1\u0022, \u0022LCD Autocrafting 2\u0022, .."
+    },
+    {
+      "key": "assembleKeyword",
+      "value": "!assemble-only",
+      "value_type": "string",
+      "description": "If you want an assembler to only assemble or only disassemble, use the following keywords in its name. A assembler without a keyword will do both tasks"
+    },
+    {
+      "key": "disassembleKeyword",
+      "value": "!disassemble-only",
+      "value_type": "string",
+      "description": ""
+    },
+    {
+      "key": "learnKeyword",
+      "value": "!learn",
+      "value_type": "string",
+      "description": "!learn will learn one item and then remove the tag so that the assembler is part of the autocrafting again. !learnMany will learn everything you queue in it and will never be part of the autorafting again until you remove the tag. To learn an item, queue it up about 100 times (Shift\u002BClick) and wait until the script removes it from the queue."
+    },
+    {
+      "key": "learnManyKeyword",
+      "value": "!learnMany",
+      "value_type": "string",
+      "description": ""
+    },
+    {
+      "key": "defaultModifier",
+      "value": "",
+      "value_type": "string",
+      "description": "Default modifier that gets applied, when a new item is found. Modifiers can be one or more of these: \u0027A\u0027 (Assemble only), \u0027D\u0027 (Disassemble only), \u0027P\u0027 (Always queue first (priority)), \u0027H\u0027 (Hide and manage in background), \u0027I\u0027 (Hide and ignore)"
+    },
+    {
+      "key": "assembleMargin",
+      "value": 0,
+      "value_type": "float",
+      "description": "Examples: assembleMargin = 5 with a wanted amount of 100 items will only produce new items, if less than 95 are available. disassembleMargin = 10 with a wanted amount of 1000 items will only disassemble items if more than 1100 are available."
+    },
+    {
+      "key": "disassembleMargin",
+      "value": 0,
+      "value_type": "float",
+      "description": ""
+    },
+    {
+      "key": "showUnlearnedItems",
+      "value": false,
+      "value_type": "bool",
+      "description": "Show unlearned (mostly modded) items on the autocrafting screen? This adds the [NoBP] tag (no blueprint) like in the old days of IIM."
+    },
+    {
+      "key": "useDockedAssemblers",
+      "value": false,
+      "value_type": "bool",
+      "description": "Use assemblers on docked grids?"
+    },
+    {
+      "key": "headerOnEveryScreen",
+      "value": false,
+      "value_type": "bool",
+      "description": "Add the header to every screen when using multiple autocrafting LCDs?"
+    },
+    {
+      "key": "showAutocraftingModifiers",
+      "value": true,
+      "value_type": "bool",
+      "description": "Show available modifiers help on the last screen?"
+    },
+    {
+      "key": "splitAssemblerTasks",
+      "value": true,
+      "value_type": "bool",
+      "description": "Split assembler tasks (this is like cooperative mode but splits the whole queue between all assemblers equally)"
+    },
+    {
+      "key": "sortAssemblerQueue",
+      "value": true,
+      "value_type": "bool",
+      "description": "Sort the assembler queue based on the most needed components?"
+    },
+    {
+      "key": "enableBasicIngotCrafting",
+      "value": true,
+      "value_type": "bool",
+      "description": "Autocraft ingots from stone in survival kits until you have proper refineries?"
+    },
+    {
+      "key": "disableBasicAutocrafting",
+      "value": true,
+      "value_type": "bool",
+      "description": "Disable autocrafting in survival kits when you have regular assemblers?"
+    },
+    {
+      "key": "specialContainerKeyword",
+      "value": "Special",
+      "value_type": "string",
+      "description": "Keyword an inventory has to contain to be filled with a special loadout (see in it\u0027s custom data after you renamed it!) Special containers will be filled with your wanted amount of items and never be drained by the auto sorting!"
+    },
+    {
+      "key": "allowSpecialSteal",
+      "value": true,
+      "value_type": "bool",
+      "description": "Are special containers allowed to \u0027steal\u0027 items from other special containers with a lower priority?"
+    },
+    {
+      "key": "enableOreBalancing",
+      "value": true,
+      "value_type": "bool",
+      "description": "By enabling ore balancing, the script will balance the ores between all refinieres so that every refinery has the same amount of ore in it. To still use a refinery manually, add the manualMachineKeyword to it (by default: \u0022!manual\u0022)"
+    },
+    {
+      "key": "enableScriptRefineryFilling",
+      "value": true,
+      "value_type": "bool",
+      "description": "Enable script assisted refinery filling? This will move in the most needed ore and will make room, if the refinery is already full Also, the script puts as many ores into the refinery as possible and will pull ores even from other refineries if needed."
+    },
+    {
+      "key": "sortRefiningQueue",
+      "value": true,
+      "value_type": "bool",
+      "description": "Sort the refinery queue based on the most needed ingots?"
+    },
+    {
+      "key": "useDockedRefineries",
+      "value": false,
+      "value_type": "bool",
+      "description": "Use refineries on docked grids?"
+    },
+    {
+      "key": "fixedRefiningList",
+      "value": [
+        "Stone"
+      ],
+      "value_type": "string_list",
+      "description": "Enabled ores are refined in order from top to bottom so if you removed several // you can change the order by copying and pasting them inside the list. Just be careful to keep the syntax correct: \u0022OreName\u0022, By default stone is enabled and will always be refined first."
+    },
+    {
+      "key": "enableIceBalancing",
+      "value": true,
+      "value_type": "bool",
+      "description": "Enable balancing of ice in O2/H2 generators? All O2/H2 generators will be used. To use one manually, add the manualMachineKeyword to it (by default: \u0022!manual\u0022)"
+    },
+    {
+      "key": "fillOfflineGenerators",
+      "value": false,
+      "value_type": "bool",
+      "description": "Put ice into O2/H2 generators that are turned off? (default: false)"
+    },
+    {
+      "key": "spaceForBottles",
+      "value": 1,
+      "value_type": "int",
+      "description": "How much space should be left to fill bottles (aka how many bottles should fit in after it\u0027s filled with ice)? WARNING! O2/H2 generators automatically pull ice and bottles if their inventory volume drops below 30%. To avoid this, turn off \u0022Use Conveyor\u0022 in the generator\u0027s terminal settings."
+    },
+    {
+      "key": "enableUraniumBalancing",
+      "value": true,
+      "value_type": "bool",
+      "description": "Enable balancing of uranium in reactors? (Note: conveyors of reactors are turned off to stop them from pulling more) All reactors will be used. To use one manually, add the manualMachineKeyword to it (by default: \u0022!manual\u0022)"
+    },
+    {
+      "key": "fillOfflineReactors",
+      "value": false,
+      "value_type": "bool",
+      "description": "Put uranium into reactors that are turned off? (default: false)"
+    },
+    {
+      "key": "uraniumAmountLargeGrid",
+      "value": 100,
+      "value_type": "float",
+      "description": "Amount of uranium in each reactor? (default: 100 for large grid reactors, 25 for small grid reactors)"
+    },
+    {
+      "key": "uraniumAmountSmallGrid",
+      "value": 25,
+      "value_type": "float",
+      "description": ""
+    },
+    {
+      "key": "enableAssemblerCleanup",
+      "value": true,
+      "value_type": "bool",
+      "description": "This cleans up assemblers, if they have no queue and puts the contents back into a cargo container."
+    },
+    {
+      "key": "enableInternalSorting",
+      "value": false,
+      "value_type": "bool",
+      "description": "Sort the items inside all containers? Note, that this could cause inventory desync issues in multiplayer, so that items are invisible or can\u0027t be taken out. Use at your own risk!"
+    },
+    {
+      "key": "sortingPattern",
+      "value": "Na",
+      "value_type": "string",
+      "description": "2. Direction: a = ascending d = descending"
+    },
+    {
+      "key": "mainLCDKeyword",
+      "value": "IIM-main",
+      "value_type": "string",
+      "description": "Note: Using this method, internal sorting will always be activated for this container, even if the main switch is turned off! To display the main script informations, add the following keyword to any LCD name (default: IIM-main). You can enable or disable specific informations on the LCD by editing its custom data."
+    },
+    {
+      "key": "inventoryLCDKeyword",
+      "value": "IIM-inventory",
+      "value_type": "string",
+      "description": "To display current item amounts of different types, add the following keyword to any LCD name and follow the on screen instructions."
+    },
+    {
+      "key": "warningsLCDKeyword",
+      "value": "IIM-warnings",
+      "value_type": "string",
+      "description": "To display all current warnings and problems, add the following keyword to any LCD name (default: IIM-warnings)."
+    },
+    {
+      "key": "showOwnerWarnings",
+      "value": true,
+      "value_type": "bool",
+      "description": ""
+    },
+    {
+      "key": "actionsLCDKeyword",
+      "value": "IIM-actions",
+      "value_type": "string",
+      "description": "To display all actions, the script did lately, add the following keyword to any LCD name (default: IIM-actions)."
+    },
+    {
+      "key": "showTimeStamp",
+      "value": true,
+      "value_type": "bool",
+      "description": ""
+    },
+    {
+      "key": "maxEntries",
+      "value": 30,
+      "value_type": "int",
+      "description": ""
+    },
+    {
+      "key": "performanceLCDKeyword",
+      "value": "IIM-performance",
+      "value_type": "string",
+      "description": "To display the script performance (PB terminal output), add the following keyword to any LCD name (default: IIM-performance)."
+    },
+    {
+      "key": "defaultFont",
+      "value": "Debug",
+      "value_type": "string",
+      "description": "Default screen font, fontsize and padding, when a screen is first initialized. Fonts: \u0022Debug\u0022 or \u0022Monospace\u0022"
+    },
+    {
+      "key": "extraScriptTicks",
+      "value": 0,
+      "value_type": "float",
+      "description": "Extra breaks between script methods in ticks (1 tick = 16.6ms)."
+    },
+    {
+      "key": "useDynamicScriptSpeed",
+      "value": true,
+      "value_type": "bool",
+      "description": "Use dynamic script speed? The script will slow down automatically if the current runtime exceeds a set value (default: 0.5ms)"
+    },
+    {
+      "key": "maxCurrentMs",
+      "value": 0.5,
+      "value_type": "float",
+      "description": ""
+    },
+    {
+      "key": "manualMachineKeywords",
+      "value": [
+        "!manual"
+      ],
+      "value_type": "string_list",
+      "description": "If you want to use a machine manually, append the keyword to it. This works for assemblers, refineries, reactors and O2/H2 generators"
+    },
+    {
+      "key": "excludedBlocks",
+      "value": [
+        "Parachute",
+        "VendingMachine"
+      ],
+      "value_type": "string_list",
+      "description": "List of always excluded block types (not NAMES!). Mostly because they don\u0027t have conveyors or IIM shouldn\u0027t tinker with them."
+    },
+    {
+      "key": "excludeWelders",
+      "value": false,
+      "value_type": "bool",
+      "description": "Exclude welders, grinders or drills from sorting? Set this to true, if you have huge welder or grinder walls!"
+    },
+    {
+      "key": "excludeGrinders",
+      "value": false,
+      "value_type": "bool",
+      "description": ""
+    },
+    {
+      "key": "excludeDrills",
+      "value": false,
+      "value_type": "bool",
+      "description": ""
+    },
+    {
+      "key": "connectionCheck",
+      "value": false,
+      "value_type": "bool",
+      "description": "Enable connection check for inventories (needed for [No Conveyor] info)?"
+    },
+    {
+      "key": "showNoConveyorTag",
+      "value": true,
+      "value_type": "bool",
+      "description": "Tag inventories, that have no access to the main type containers with [No Conveyor]? This only works if the above setting connectionCheck is set to true!"
+    },
+    {
+      "key": "useConnectedGridsTemporarily",
+      "value": true,
+      "value_type": "bool",
+      "description": "Use connected grids as temporary storage for temporary storage? This only affects balancing methods or Special container unloading if no storage is available on your main grid."
+    },
+    {
+      "key": "scriptMode",
+      "value": "",
+      "value_type": "string",
+      "description": "Script mode: \u0022ship\u0022, \u0022station\u0022 or blank for autodetect"
+    },
+    {
+      "key": "protectTypeContainers",
+      "value": true,
+      "value_type": "bool",
+      "description": "Protect type containers when docking to another grid running the script?"
+    },
+    {
+      "key": "enableNameCorrection",
+      "value": true,
+      "value_type": "bool",
+      "description": "Enable name correction? This option will automtically correct capitalization, e.g.: iim-main -\u003E IIM-main"
+    },
+    {
+      "key": "inventoryFullBuffer",
+      "value": 500,
+      "value_type": "float",
+      "description": "IIM considers an inventory with 98% fill level as full. For very large containers, this value would waste a lot of space. Large containers use the following static value as space left in liters (default: 500L). Calculation: IF maxVolume - maxVolume * 0.98 \u003E inventoryFullBuffer USE inventoryFullBuffer (by default if max volume \u003E 25000L)."
+    },
+    {
+      "key": "timeFormat",
+      "value": "HH:mm:ss",
+      "value_type": "string",
+      "description": "Format of the actionsLCD timestamp. See https://www.tutorialsteacher.com/articles/datetime-formats-in-csharp for more information."
+    },
+    {
+      "key": "S",
+      "value": 0,
+      "value_type": "int",
+      "description": "Don\u0027t change anything beyond this point!"
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "schema": "novali.client_side_pb.worker_manifest.v1",
+  "scripts": [
+    {
+      "script_id": "sample_status_adapter",
+      "source": "local_worker",
+      "display_name": "Sample Status Adapter",
+      "module": "worker.scripts.sample_status_adapter",
+      "input_schema": "status_summary.v1",
+      "output_schema": "compact_commands.v1",
+      "timeout_ms": 1000,
+      "enabled": true
+    },
+    {
+      "script_id": "workshop_1216126863_adapter",
+      "source": "workshop_import",
+      "display_name": "Isy\u0027s Inventory Manager",
+      "module": "worker.scripts.workshop_1216126863_adapter",
+      "input_schema": "adapter_tick.v1",
+      "output_schema": "compact_commands.v1",
+      "timeout_ms": 1000,
+      "enabled": true
+    },
+    {
+      "script_id": "bridge_orchestrator",
+      "source": "local_worker",
+      "display_name": "Bridge Orchestrator",
+      "module": "worker.scripts.bridge_orchestrator",
+      "input_schema": "adapter_tick.v1",
+      "output_schema": "compact_commands.v1",
+      "timeout_ms": 3000,
+      "enabled": true
+    },
+    {
+      "script_id": "virtual_whip_auto_door",
+      "source": "workshop_import",
+      "display_name": "Whip\u0027s Auto Door and Airlock Script (Virtual PB)",
+      "runtime": "virtual_pb_csharp",
+      "source_path": "data/imports/416932930/Script.cs",
+      "input_schema": "virtual_pb_tick.v1",
+      "output_schema": "compact_commands.v1",
+      "timeout_ms": 5000,
+      "enabled": false
+    }
+  ]
+}
