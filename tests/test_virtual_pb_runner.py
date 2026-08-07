@@ -23,6 +23,27 @@ public void Main(string argument) { File.WriteAllText("x", "y"); }
     assert "File." in report["unsupported_apis"]
 
 
+def test_virtual_pb_analysis_rejects_unemulated_interfaces(tmp_path: Path):
+    script = tmp_path / "Script.cs"
+    script.write_text(
+        """
+public Program() {}
+public void Main(string argument)
+{
+    var containers = new List<IMyCargoContainer>();
+    GridTerminalSystem.GetBlocksOfType(containers);
+}
+""",
+        encoding="utf-8",
+    )
+
+    report = analyze_virtual_pb_script(script)
+
+    assert report["status"] == "unsupported"
+    assert "IMyCargoContainer" in report["unsupported_interfaces"]
+    assert "unsupported_interface:IMyCargoContainer" in report["unsupported_apis"]
+
+
 def test_virtual_pb_fixture_closes_open_door_and_sets_light(tmp_path: Path):
     script = tmp_path / "Script.cs"
     script.write_text(

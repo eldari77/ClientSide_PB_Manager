@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import tempfile
 from pathlib import Path
@@ -22,27 +23,38 @@ UNSAFE_PATTERNS = {
     "Marshal.": "Marshal.",
 }
 
+SUPPORTED_INTERFACES = {
+    "IMyAirtightHangarDoor",
+    "IMyDoor",
+    "IMyLightingBlock",
+    "IMyGridTerminalSystem",
+    "IMyProgrammableBlock",
+    "IMySoundBlock",
+    "IMyTerminalBlock",
+    "IMyTextSurface",
+}
+
+IMY_IDENTIFIER = re.compile(r"\bIMy[A-Za-z0-9_]+\b")
+
 
 def analyze_virtual_pb_script(script_path: Path) -> dict[str, Any]:
     try:
         source = script_path.read_text(encoding="utf-8", errors="replace")
     except OSError as exc:
-        return {"status": "missing", "unsupported_apis": [], "error": type(exc).__name__}
-    unsupported = sorted(label for pattern, label in UNSAFE_PATTERNS.items() if pattern in source)
+        return {"status": "missing", "unsupported_apis": [], "unsupported_interfaces": [], "error": type(exc).__name__}
+    unsafe_matches = sorted(label for pattern, label in UNSAFE_PATTERNS.items() if pattern in source)
+    referenced_interfaces = set(IMY_IDENTIFIER.findall(source))
+    unsupported_interfaces = sorted(referenced_interfaces - SUPPORTED_INTERFACES)
+    unsupported = unsafe_matches + [f"unsupported_interface:{name}" for name in unsupported_interfaces]
     supported_block_types = sorted(
         block_type
-        for block_type in [
-            "IMyDoor",
-            "IMyAirtightHangarDoor",
-            "IMyLightingBlock",
-            "IMySoundBlock",
-            "IMyTextSurface",
-        ]
+        for block_type in SUPPORTED_INTERFACES
         if block_type in source
     )
     return {
         "status": "unsupported" if unsupported else "supported",
         "unsupported_apis": unsupported,
+        "unsupported_interfaces": unsupported_interfaces,
         "supported_block_types": supported_block_types,
         "uses_grid_terminal_system": "GridTerminalSystem" in source,
         "uses_runtime": "Runtime." in source,

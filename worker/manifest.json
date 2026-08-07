@@ -41,6 +41,16 @@
       "output_schema": "compact_commands.v1",
       "timeout_ms": 5000,
       "enabled": true
+    },
+    {
+      "script_id": "workshop_822950976_adapter",
+      "source": "workshop_import",
+      "display_name": "Automatic LCDs 2",
+      "module": "worker.scripts.workshop_822950976_adapter",
+      "input_schema": "adapter_tick.v1",
+      "output_schema": "compact_commands.v1",
+      "timeout_ms": 1000,
+      "enabled": false
     }
   ]
 }

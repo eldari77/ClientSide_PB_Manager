@@ -72,10 +72,20 @@ def run(request: dict[str, Any]) -> dict[str, Any]:
     )
 
 
-def update_manifest(root: Path, script_id: str, module_name: str, display_name: str) -> None:
+def update_manifest(root: Path, script_id: str, module_name: str, display_name: str, workshop_id: str | None = None) -> None:
     manifest_path = root / "worker" / "manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     scripts = manifest.setdefault("scripts", [])
+    if workshop_id:
+        virtual_source_path = f"data/imports/{workshop_id}/Script.cs"
+        scripts[:] = [
+            item
+            for item in scripts
+            if not (
+                item.get("runtime") == "virtual_pb_csharp"
+                and str(item.get("source_path", "")).replace("\\", "/") == virtual_source_path
+            )
+        ]
     for item in scripts:
         if item.get("script_id") == script_id:
             item["display_name"] = display_name
@@ -205,7 +215,7 @@ def prepare_adapter(root: Path, catalog_path: Path, workshop_id: str) -> dict[st
     script_id = f"workshop_{workshop_id}_adapter"
     module_path = root / "worker" / "scripts" / f"{module_name}.py"
     create_adapter_source(module_path, workshop_id, display_name)
-    update_manifest(root, script_id, module_name, display_name)
+    update_manifest(root, script_id, module_name, display_name, workshop_id)
 
     report = {
         "schema": REPORT_SCHEMA,
@@ -218,6 +228,7 @@ def prepare_adapter(root: Path, catalog_path: Path, workshop_id: str) -> dict[st
         "source_path": str(source),
         "imported_script": str(imported_script),
         "analysis": analyze_script(imported_script),
+        "compatibility": compatibility,
         "status": "adapter_scaffold_created",
         "meaning": "manual_adapter_required means the Workshop PB script is available locally, but it cannot be safely executed unchanged outside Space Engineers. The scaffold is a starting point for mapping PB state to external worker logic.",
     }

@@ -104,8 +104,28 @@ static JsonObject Analyze(string source)
             unsupported.Add(item);
         }
     }
+    var supportedInterfaces = new HashSet<string>(StringComparer.Ordinal)
+    {
+        "IMyAirtightHangarDoor",
+        "IMyDoor",
+        "IMyGridTerminalSystem",
+        "IMyLightingBlock",
+        "IMyProgrammableBlock",
+        "IMySoundBlock",
+        "IMyTerminalBlock",
+        "IMyTextSurface",
+    };
+    var unsupportedInterfaces = new JsonArray();
+    foreach (var match in Regex.Matches(source, @"\bIMy[A-Za-z0-9_]+\b").Select(item => item.Value).Distinct().OrderBy(item => item))
+    {
+        if (!supportedInterfaces.Contains(match))
+        {
+            unsupportedInterfaces.Add(match);
+            unsupported.Add($"unsupported_interface:{match}");
+        }
+    }
     var supportedTypes = new JsonArray();
-    foreach (var item in new[] { "IMyDoor", "IMyAirtightHangarDoor", "IMyLightingBlock", "IMySoundBlock", "IMyTextSurface" })
+    foreach (var item in supportedInterfaces.OrderBy(item => item))
     {
         if (source.Contains(item, StringComparison.Ordinal))
         {
@@ -116,6 +136,7 @@ static JsonObject Analyze(string source)
     {
         ["status"] = unsupported.Count == 0 ? "supported" : "unsupported",
         ["unsupported_apis"] = unsupported,
+        ["unsupported_interfaces"] = unsupportedInterfaces,
         ["supported_block_types"] = supportedTypes,
         ["uses_grid_terminal_system"] = source.Contains("GridTerminalSystem", StringComparison.Ordinal),
         ["uses_runtime"] = source.Contains("Runtime.", StringComparison.Ordinal),
