@@ -299,6 +299,14 @@ button or run:
 .\tools\open_worker_ui.ps1
 ```
 
+The status page includes an `Open Configuration UI` button. The helper above
+registers the per-user `novali-client-side-pb-manager://` URL protocol so that
+button can launch the Windows WPF manager. To register the protocol directly:
+
+```powershell
+.\tools\register_manager_protocol.ps1
+```
+
 ## Safety Defaults
 
 - Workshop files are read-only inputs. Imports are copied into `data/imports`.

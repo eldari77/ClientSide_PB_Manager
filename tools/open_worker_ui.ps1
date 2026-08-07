@@ -9,6 +9,11 @@ $ErrorActionPreference = "Stop"
 
 Push-Location $ProjectRoot
 try {
+    $protocolInstaller = Join-Path $ProjectRoot "tools\register_manager_protocol.ps1"
+    if (Test-Path -LiteralPath $protocolInstaller) {
+        & $protocolInstaller -ProjectRoot $ProjectRoot | Out-Null
+    }
+
     docker compose up --build -d client-side-pb-worker
 
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)

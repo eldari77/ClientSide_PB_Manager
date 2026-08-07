@@ -84,6 +84,8 @@ def test_worker_status_page_renders_container_ui_link_target(tmp_path: Path):
     assert "Processed requests" in html
     assert "pb-bridge-001" in html
     assert "virtual_whip_auto_door" in html
+    assert "Open Configuration UI" in html
+    assert "novali-client-side-pb-manager://open" in html
 
 
 def test_docker_compose_publishes_worker_ui_port():

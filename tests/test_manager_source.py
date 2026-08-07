@@ -29,3 +29,15 @@ def test_worker_ui_powershell_launcher_exists():
     assert "docker compose up --build -d client-side-pb-worker" in source
     assert "http://localhost:8788" in source
     assert "[switch]$NoOpen" in source
+    assert "register_manager_protocol.ps1" in source
+
+
+def test_manager_protocol_launcher_scripts_exist():
+    register = Path("tools/register_manager_protocol.ps1").read_text(encoding="utf-8")
+    launch = Path("tools/launch_manager.ps1").read_text(encoding="utf-8")
+
+    assert "novali-client-side-pb-manager" in register
+    assert "URL Protocol" in register
+    assert "tools\\launch_manager.ps1" in register
+    assert '-ProjectRoot `"$ProjectRoot`" -ProtocolUrl `"%1`"' in register
+    assert "NOVALI.ClientSidePBManager.csproj" in launch

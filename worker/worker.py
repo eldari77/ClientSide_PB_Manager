@@ -919,6 +919,9 @@ def render_status_page(root: Path) -> str:
     main {{ max-width: 980px; margin: 0 auto; }}
     h1 {{ font-size: 26px; margin: 0 0 18px; letter-spacing: 0; }}
     h2 {{ font-size: 16px; margin: 22px 0 10px; letter-spacing: 0; }}
+    .actions {{ display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 18px; }}
+    .button {{ display: inline-block; border: 1px solid #3b82f6; border-radius: 6px; background: #1d4ed8; color: #f8fafc; padding: 10px 14px; text-decoration: none; font-weight: 600; }}
+    .button.secondary {{ background: #141b24; border-color: #475569; }}
     .grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; }}
     .metric {{ border: 1px solid #263445; border-radius: 6px; padding: 14px; background: #141b24; }}
     .label {{ color: #9fb0c3; font-size: 12px; }}
@@ -932,6 +935,10 @@ def render_status_page(root: Path) -> str:
 <body>
 <main>
   <h1>NOVALI Client-Side PB Gateway</h1>
+  <section class="actions">
+    <a class="button" href="novali-client-side-pb-manager://open">Open Configuration UI</a>
+    <a class="button secondary" href="/status.json">Status JSON</a>
+  </section>
   <section class="grid">
     <div class="metric"><div class="label">Processed requests</div><div class="value">{html.escape(str(worker_status.get('processed', 0)))}</div></div>
     <div class="metric"><div class="label">Worker updated</div><div class="value">{html.escape(str(worker_status.get('updated_at', 'not yet')))}</div></div>
