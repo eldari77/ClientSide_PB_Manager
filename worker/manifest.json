@@ -40,7 +40,7 @@
       "input_schema": "virtual_pb_tick.v1",
       "output_schema": "compact_commands.v1",
       "timeout_ms": 5000,
-      "enabled": false
+      "enabled": true
     }
   ]
 }
