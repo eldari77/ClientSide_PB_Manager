@@ -8,6 +8,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from worker.virtual_pb import analyze_virtual_pb_script
+
 
 REPORT_SCHEMA = "novali.client_side_pb.adapter_prep_report.v1"
 
@@ -94,17 +96,71 @@ def update_manifest(root: Path, script_id: str, module_name: str, display_name: 
                 "enabled": False,
             }
         )
-    manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
 
 
-def mark_catalog_prepared(catalog_path: Path, workshop_id: str, notes: str) -> None:
+def can_prepare_virtual_pb(compatibility: dict[str, Any]) -> bool:
+    block_types = compatibility.get("supported_block_types")
+    return (
+        compatibility.get("status") == "supported"
+        and compatibility.get("uses_grid_terminal_system") is True
+        and isinstance(block_types, list)
+        and bool(block_types)
+    )
+
+
+def upsert_virtual_manifest(root: Path, workshop_id: str, display_name: str) -> str:
+    manifest_path = root / "worker" / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    scripts = manifest.setdefault("scripts", [])
+    source_path = f"data/imports/{workshop_id}/Script.cs"
+    manual_script_id = f"workshop_{workshop_id}_adapter"
+    selected: dict[str, Any] | None = None
+    kept_scripts = []
+    for item in scripts:
+        if item.get("script_id") == manual_script_id:
+            continue
+        if item.get("runtime") == "virtual_pb_csharp" and str(item.get("source_path", "")).replace("\\", "/") == source_path:
+            selected = item
+        kept_scripts.append(item)
+    scripts[:] = kept_scripts
+    if selected is None:
+        selected = {
+            "script_id": f"virtual_workshop_{workshop_id}",
+            "source": "workshop_import",
+            "display_name": display_name + " (Virtual PB)",
+            "runtime": "virtual_pb_csharp",
+            "source_path": source_path,
+            "input_schema": "virtual_pb_tick.v1",
+            "output_schema": "compact_commands.v1",
+            "timeout_ms": 5000,
+            "enabled": True,
+        }
+        scripts.append(selected)
+    else:
+        selected["source"] = "workshop_import"
+        selected["display_name"] = str(selected.get("display_name") or display_name + " (Virtual PB)")
+        selected["runtime"] = "virtual_pb_csharp"
+        selected["source_path"] = source_path
+        selected["input_schema"] = "virtual_pb_tick.v1"
+        selected["output_schema"] = "compact_commands.v1"
+        selected["timeout_ms"] = int(selected.get("timeout_ms", 5000) or 5000)
+        selected["enabled"] = True
+    module_path = root / "worker" / "scripts" / f"{safe_module_name(workshop_id)}.py"
+    if module_path.exists():
+        module_path.unlink()
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+    return str(selected["script_id"])
+
+
+def mark_catalog_prepared(catalog_path: Path, workshop_id: str, notes: str, compatibility: str = "adapter_scaffold_created") -> None:
     catalog = load_catalog(catalog_path)
     for record in catalog.get("records", []):
         if str(record.get("workshop_id", "")) == workshop_id:
-            record["compatibility"] = "adapter_scaffold_created"
+            record["compatibility"] = compatibility
             record["notes"] = notes
             break
-    catalog_path.write_text(json.dumps(catalog, indent=2), encoding="utf-8")
+    catalog_path.write_text(json.dumps(catalog, indent=2) + "\n", encoding="utf-8")
 
 
 def prepare_adapter(root: Path, catalog_path: Path, workshop_id: str) -> dict[str, Any]:
@@ -121,6 +177,29 @@ def prepare_adapter(root: Path, catalog_path: Path, workshop_id: str) -> dict[st
     import_dir.mkdir(parents=True, exist_ok=True)
     imported_script = import_dir / "Script.cs"
     shutil.copy2(source, imported_script)
+    compatibility = analyze_virtual_pb_script(imported_script)
+
+    if can_prepare_virtual_pb(compatibility):
+        script_id = upsert_virtual_manifest(root, workshop_id, display_name)
+        report = {
+            "schema": REPORT_SCHEMA,
+            "prepared_at": datetime.now(timezone.utc).isoformat(),
+            "workshop_id": workshop_id,
+            "display_name": display_name,
+            "script_id": script_id,
+            "runtime": "virtual_pb_csharp",
+            "enabled": True,
+            "source_path": str(source),
+            "imported_script": str(imported_script),
+            "analysis": analyze_script(imported_script),
+            "compatibility": compatibility,
+            "status": "virtual_pb_ready",
+            "meaning": "This Workshop PB script fits the reviewed virtual PB subset. It was imported unchanged and registered as a virtual_pb_csharp worker script.",
+        }
+        report_path = import_dir / "adapter_report.json"
+        report_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+        mark_catalog_prepared(catalog_path, workshop_id, f"Virtual PB adapter: {script_id}", "virtual_pb_ready")
+        return report
 
     module_name = safe_module_name(workshop_id)
     script_id = f"workshop_{workshop_id}_adapter"
@@ -143,7 +222,7 @@ def prepare_adapter(root: Path, catalog_path: Path, workshop_id: str) -> dict[st
         "meaning": "manual_adapter_required means the Workshop PB script is available locally, but it cannot be safely executed unchanged outside Space Engineers. The scaffold is a starting point for mapping PB state to external worker logic.",
     }
     report_path = import_dir / "adapter_report.json"
-    report_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
+    report_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     mark_catalog_prepared(catalog_path, workshop_id, f"Adapter scaffold: {script_id}")
     return report
 
@@ -164,4 +243,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

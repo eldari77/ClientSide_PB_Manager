@@ -14,7 +14,7 @@
     {
       "script_id": "workshop_1216126863_adapter",
       "source": "workshop_import",
-      "display_name": "Isy\u0027s Inventory Manager",
+      "display_name": "Isy's Inventory Manager",
       "module": "worker.scripts.workshop_1216126863_adapter",
       "input_schema": "adapter_tick.v1",
       "output_schema": "compact_commands.v1",
@@ -34,7 +34,7 @@
     {
       "script_id": "virtual_whip_auto_door",
       "source": "workshop_import",
-      "display_name": "Whip\u0027s Auto Door and Airlock Script (Virtual PB)",
+      "display_name": "Whip's Auto Door and Airlock Script (Virtual PB)",
       "runtime": "virtual_pb_csharp",
       "source_path": "data/imports/416932930/Script.cs",
       "input_schema": "virtual_pb_tick.v1",

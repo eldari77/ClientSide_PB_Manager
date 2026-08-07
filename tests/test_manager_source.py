@@ -22,6 +22,14 @@ def test_manager_has_worker_ui_launcher():
     assert "tools\\open_worker_ui.ps1" in source
 
 
+def test_prepare_adapter_guides_virtual_pb_workflow():
+    source = MANAGER.read_text(encoding="utf-8")
+
+    assert "virtual_pb_ready" in source
+    assert "Virtual PB adapter ready" in source
+    assert "SelectPreparedWorkerScript" in source
+
+
 def test_worker_ui_powershell_launcher_exists():
     script = Path("tools/open_worker_ui.ps1")
     source = script.read_text(encoding="utf-8")

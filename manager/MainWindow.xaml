@@ -21,7 +21,7 @@
             </Grid>
         </Border>
 
-        <TabControl Margin="12" Background="#F5F7FA">
+        <TabControl x:Name="MainTabs" Margin="12" Background="#F5F7FA">
             <TabItem Header="Workshop Scripts">
                 <DockPanel Margin="8">
                     <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
@@ -93,7 +93,7 @@
                 </DockPanel>
             </TabItem>
 
-            <TabItem Header="Worker Scripts">
+            <TabItem x:Name="WorkerScriptsTab" Header="Worker Scripts">
                 <DockPanel Margin="8">
                     <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
                         <Button Content="Refresh" Width="92" Margin="0,0,8,0" Click="RefreshWorkerScripts_Click" />

@@ -210,7 +210,51 @@ public partial class MainWindow : Window
         LoadWorkshopCatalog();
         LoadWorkerScripts();
         RefreshLogs();
-        StatusText.Text = "Adapter scaffold prepared";
+        var (status, scriptId) = ParseAdapterPrepResult(result);
+        if (string.Equals(status, "virtual_pb_ready", StringComparison.OrdinalIgnoreCase))
+        {
+            SelectPreparedWorkerScript(scriptId);
+            StatusText.Text = "Virtual PB adapter ready: " + scriptId;
+        }
+        else if (!string.IsNullOrWhiteSpace(scriptId))
+        {
+            SelectPreparedWorkerScript(scriptId);
+            StatusText.Text = "Manual adapter scaffold prepared: " + scriptId;
+        }
+        else
+        {
+            StatusText.Text = "Adapter scaffold prepared";
+        }
+    }
+
+    private static (string Status, string ScriptId) ParseAdapterPrepResult(string output)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(output);
+            return (GetString(doc.RootElement, "status"), GetString(doc.RootElement, "script_id"));
+        }
+        catch (JsonException)
+        {
+            return ("", "");
+        }
+    }
+
+    private void SelectPreparedWorkerScript(string scriptId)
+    {
+        if (string.IsNullOrWhiteSpace(scriptId))
+        {
+            return;
+        }
+        var script = _workerScripts.FirstOrDefault(item => string.Equals(item.ScriptId, scriptId, StringComparison.OrdinalIgnoreCase));
+        if (script == null)
+        {
+            return;
+        }
+        script.AllowedForBridge = true;
+        WorkerGrid.SelectedItem = script;
+        BridgeSelectedScriptBox.SelectedValue = script.ScriptId;
+        MainTabs.SelectedItem = WorkerScriptsTab;
     }
 
     private void RefreshFiles_Click(object sender, RoutedEventArgs e) => LoadBridgeFiles();
