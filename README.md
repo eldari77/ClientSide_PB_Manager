@@ -289,6 +289,10 @@ To launch the manager:
 dotnet run --project .\manager\NOVALI.ClientSidePBManager.csproj
 ```
 
+The Docker worker publishes a read-only status UI on
+`http://localhost:8788`. Docker Desktop shows this as a clickable port link for
+the `clientside_pb_script` container group.
+
 ## Safety Defaults
 
 - Workshop files are read-only inputs. Imports are copied into `data/imports`.

@@ -10,6 +10,7 @@ from worker.worker import (
     execute_request,
     learn_autocrafting_blueprints,
     load_manifest,
+    render_status_page,
     process_pending,
 )
 
@@ -46,6 +47,50 @@ def test_execute_rejects_bad_sequence():
     )
     assert result["status"] == "rejected"
     assert result["error_bucket"] == "sequence_invalid"
+
+
+def test_worker_status_page_renders_container_ui_link_target(tmp_path: Path):
+    data = tmp_path / "data"
+    data.mkdir()
+    (data / "worker_status.json").write_text(
+        json.dumps(
+            {
+                "schema": "novali.client_side_pb.worker_status.v1",
+                "updated_at": "2026-08-07T16:00:00+00:00",
+                "processed": 3,
+                "limiter_states": {"pb-bridge-001": "ok"},
+            }
+        ),
+        encoding="utf-8",
+    )
+    (data / "virtual_pb_compatibility.json").write_text(
+        json.dumps(
+            {
+                "schema": "novali.client_side_pb.virtual_pb_compatibility.v1",
+                "scripts": {
+                    "virtual_whip_auto_door": {
+                        "status": "supported",
+                        "emitted_command_kinds": ["set_door_open"],
+                    }
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    html = render_status_page(tmp_path)
+
+    assert "NOVALI Client-Side PB Gateway" in html
+    assert "Processed requests" in html
+    assert "pb-bridge-001" in html
+    assert "virtual_whip_auto_door" in html
+
+
+def test_docker_compose_publishes_worker_ui_port():
+    compose = Path("docker-compose.yml").read_text(encoding="utf-8")
+
+    assert "8788:8788" in compose
+    assert "NOVALI_CLIENT_SIDE_PB_UI_PORT" in compose
 
 
 def test_execute_rejects_script_not_allowed_for_bridge():

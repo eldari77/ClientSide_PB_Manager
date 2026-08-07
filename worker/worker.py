@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import argparse
+import html
 import importlib
 import json
 import os
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
@@ -869,21 +872,145 @@ def process_pending(root: Path, scripts: dict[str, WorkerScript]) -> int:
     return count
 
 
+def load_status_json(root: Path, name: str) -> dict[str, Any]:
+    path = root / "data" / name
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8-sig"))
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def render_status_page(root: Path) -> str:
+    worker_status = load_status_json(root, "worker_status.json")
+    plugin_status = load_status_json(root, "plugin_status.json")
+    virtual_pb = load_status_json(root, "virtual_pb_compatibility.json")
+    bridge_scripts = load_status_json(root, "bridge_scripts.json")
+    limiter_states = worker_status.get("limiter_states") if isinstance(worker_status.get("limiter_states"), dict) else {}
+    virtual_scripts = virtual_pb.get("scripts") if isinstance(virtual_pb.get("scripts"), dict) else {}
+    bridge_rows = "".join(
+        f"<tr><td>{html.escape(str(bridge_id))}</td><td>{html.escape(str(state))}</td></tr>"
+        for bridge_id, state in sorted(limiter_states.items())
+    ) or "<tr><td colspan=\"2\">No bridge requests processed yet.</td></tr>"
+    virtual_rows = "".join(
+        "<tr>"
+        f"<td>{html.escape(str(script_id))}</td>"
+        f"<td>{html.escape(str(report.get('status', 'unknown')))}</td>"
+        f"<td>{html.escape(', '.join(str(kind) for kind in report.get('emitted_command_kinds', [])))}</td>"
+        "</tr>"
+        for script_id, report in sorted(virtual_scripts.items())
+        if isinstance(report, dict)
+    ) or "<tr><td colspan=\"3\">No virtual PB compatibility report yet.</td></tr>"
+    selected_scripts = []
+    bridges = bridge_scripts.get("bridges") if isinstance(bridge_scripts.get("bridges"), dict) else {}
+    for bridge_id, bridge_config in sorted(bridges.items()):
+        if isinstance(bridge_config, dict):
+            selected_scripts.append(f"{bridge_id}: {bridge_config.get('selected_script_id', '')}")
+    selected_text = ", ".join(str(item) for item in selected_scripts) or "No bridge script assignments."
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NOVALI Client-Side PB Gateway</title>
+  <style>
+    :root {{ color-scheme: dark; font-family: Segoe UI, Arial, sans-serif; background: #0f141b; color: #e8eef7; }}
+    body {{ margin: 0; padding: 28px; }}
+    main {{ max-width: 980px; margin: 0 auto; }}
+    h1 {{ font-size: 26px; margin: 0 0 18px; letter-spacing: 0; }}
+    h2 {{ font-size: 16px; margin: 22px 0 10px; letter-spacing: 0; }}
+    .grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; }}
+    .metric {{ border: 1px solid #263445; border-radius: 6px; padding: 14px; background: #141b24; }}
+    .label {{ color: #9fb0c3; font-size: 12px; }}
+    .value {{ font-size: 22px; margin-top: 6px; }}
+    table {{ width: 100%; border-collapse: collapse; background: #141b24; border: 1px solid #263445; }}
+    th, td {{ text-align: left; padding: 10px; border-bottom: 1px solid #263445; vertical-align: top; }}
+    th {{ color: #b9c7d8; font-size: 12px; }}
+    code {{ color: #9fdaff; }}
+  </style>
+</head>
+<body>
+<main>
+  <h1>NOVALI Client-Side PB Gateway</h1>
+  <section class="grid">
+    <div class="metric"><div class="label">Processed requests</div><div class="value">{html.escape(str(worker_status.get('processed', 0)))}</div></div>
+    <div class="metric"><div class="label">Worker updated</div><div class="value">{html.escape(str(worker_status.get('updated_at', 'not yet')))}</div></div>
+    <div class="metric"><div class="label">Plugin state</div><div class="value">{html.escape(str(plugin_status.get('state', 'unknown')))}</div></div>
+  </section>
+  <h2>Bridge Assignments</h2>
+  <p><code>{html.escape(selected_text)}</code></p>
+  <h2>Limiter States</h2>
+  <table><thead><tr><th>Bridge</th><th>State</th></tr></thead><tbody>{bridge_rows}</tbody></table>
+  <h2>Virtual PB Compatibility</h2>
+  <table><thead><tr><th>Script</th><th>Status</th><th>Command Kinds</th></tr></thead><tbody>{virtual_rows}</tbody></table>
+</main>
+</body>
+</html>
+"""
+
+
+def start_status_server(root: Path, host: str, port: int) -> ThreadingHTTPServer:
+    class StatusHandler(BaseHTTPRequestHandler):
+        def do_GET(self) -> None:  # noqa: N802 - stdlib handler naming
+            if self.path in {"/", "/index.html"}:
+                body = render_status_page(root).encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+                return
+            if self.path == "/status.json":
+                payload = {
+                    "worker_status": load_status_json(root, "worker_status.json"),
+                    "plugin_status": load_status_json(root, "plugin_status.json"),
+                    "virtual_pb_compatibility": load_status_json(root, "virtual_pb_compatibility.json"),
+                }
+                body = json.dumps(payload, indent=2).encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+                return
+            self.send_response(404)
+            self.end_headers()
+
+        def log_message(self, format: str, *args: Any) -> None:
+            return
+
+    server = ThreadingHTTPServer((host, port), StatusHandler)
+    thread = threading.Thread(target=server.serve_forever, name="novali-worker-status-ui", daemon=True)
+    thread.start()
+    return server
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run NOVALI Client-Side PB worker.")
     parser.add_argument("--root", type=Path, default=Path(os.environ.get("NOVALI_CLIENT_SIDE_PB_ROOT", ".")))
     parser.add_argument("--once", action="store_true")
     parser.add_argument("--poll-seconds", type=float, default=float(os.environ.get("NOVALI_CLIENT_SIDE_PB_POLL_SECONDS", "1.0")))
+    parser.add_argument("--ui-host", default=os.environ.get("NOVALI_CLIENT_SIDE_PB_UI_HOST", "0.0.0.0"))
+    parser.add_argument("--ui-port", type=int, default=int(os.environ.get("NOVALI_CLIENT_SIDE_PB_UI_PORT", "8788")))
+    parser.add_argument("--no-ui", action="store_true")
     args = parser.parse_args()
 
     root = args.root.resolve()
+    server = None
+    if not args.once and not args.no_ui and args.ui_port > 0:
+        server = start_status_server(root, args.ui_host, args.ui_port)
     while True:
         scripts = load_manifest(root)
         processed = process_pending(root, scripts)
         if args.once:
             print(json.dumps({"processed": processed}, indent=2))
             return 0
-        time.sleep(max(args.poll_seconds, 0.1))
+        try:
+            time.sleep(max(args.poll_seconds, 0.1))
+        except KeyboardInterrupt:
+            if server is not None:
+                server.shutdown()
+            return 0
 
 
 if __name__ == "__main__":
