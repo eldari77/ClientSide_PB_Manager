@@ -809,13 +809,23 @@ def save_virtual_pb_compatibility_report(
         }
     )
     status = str(compatibility.get("status", "unknown"))
+    compatibility_emitted = compatibility.get("emitted_command_kinds")
+    if isinstance(compatibility_emitted, list) and compatibility_emitted:
+        emitted_kinds = sorted({str(kind) for kind in compatibility_emitted if str(kind)})
     scripts[script_id] = {
-        "compiled": status == "supported",
+        "compiled": bool(compatibility.get("compiled", status == "supported")),
         "status": status,
         "unsupported_apis": compatibility.get("unsupported_apis", []),
+        "unsupported_interfaces": compatibility.get("unsupported_interfaces", []),
+        "unsupported_members": compatibility.get("unsupported_members", []),
+        "required_interfaces": compatibility.get("required_interfaces", []),
+        "implemented_interfaces": compatibility.get("implemented_interfaces", []),
+        "available_command_kinds": compatibility.get("available_command_kinds", []),
+        "snapshot_requirements": compatibility.get("snapshot_requirements", []),
         "supported_block_types": compatibility.get("supported_block_types", []),
         "emitted_command_kinds": emitted_kinds,
         "last_run_status": str(output.get("adapter_status", output.get("status", "ok")) or "ok"),
+        "capability_version": compatibility.get("capability_version", ""),
         "summary": str(output.get("summary", "")),
         "updated_at": utc_now(),
     }
@@ -881,6 +891,16 @@ def load_status_json(root: Path, name: str) -> dict[str, Any]:
     return payload if isinstance(payload, dict) else {}
 
 
+def summarize_report_list(report: dict[str, Any], key: str, limit: int = 6) -> str:
+    values = report.get(key)
+    if not isinstance(values, list):
+        return ""
+    text_values = [str(value) for value in values if str(value)]
+    if len(text_values) > limit:
+        return ", ".join(text_values[:limit]) + f", +{len(text_values) - limit}"
+    return ", ".join(text_values)
+
+
 def render_status_page(root: Path) -> str:
     worker_status = load_status_json(root, "worker_status.json")
     plugin_status = load_status_json(root, "plugin_status.json")
@@ -896,11 +916,17 @@ def render_status_page(root: Path) -> str:
         "<tr>"
         f"<td>{html.escape(str(script_id))}</td>"
         f"<td>{html.escape(str(report.get('status', 'unknown')))}</td>"
-        f"<td>{html.escape(', '.join(str(kind) for kind in report.get('emitted_command_kinds', [])))}</td>"
+        f"<td>{html.escape(str(report.get('compiled', False)))}</td>"
+        f"<td>{html.escape(summarize_report_list(report, 'required_interfaces'))}</td>"
+        f"<td>{html.escape(summarize_report_list(report, 'emitted_command_kinds'))}</td>"
+        f"<td>{html.escape(summarize_report_list(report, 'available_command_kinds'))}</td>"
+        f"<td>{html.escape(summarize_report_list(report, 'unsupported_members'))}</td>"
+        f"<td>{html.escape(summarize_report_list(report, 'snapshot_requirements', 4))}</td>"
+        f"<td>{html.escape(str(report.get('last_run_status', 'unknown')))}</td>"
         "</tr>"
         for script_id, report in sorted(virtual_scripts.items())
         if isinstance(report, dict)
-    ) or "<tr><td colspan=\"3\">No virtual PB compatibility report yet.</td></tr>"
+    ) or "<tr><td colspan=\"9\">No virtual PB compatibility report yet.</td></tr>"
     selected_scripts = []
     bridges = bridge_scripts.get("bridges") if isinstance(bridge_scripts.get("bridges"), dict) else {}
     for bridge_id, bridge_config in sorted(bridges.items()):
@@ -916,7 +942,7 @@ def render_status_page(root: Path) -> str:
   <style>
     :root {{ color-scheme: dark; font-family: Segoe UI, Arial, sans-serif; background: #0f141b; color: #e8eef7; }}
     body {{ margin: 0; padding: 28px; }}
-    main {{ max-width: 980px; margin: 0 auto; }}
+    main {{ max-width: 1280px; margin: 0 auto; }}
     h1 {{ font-size: 26px; margin: 0 0 18px; letter-spacing: 0; }}
     h2 {{ font-size: 16px; margin: 22px 0 10px; letter-spacing: 0; }}
     .actions {{ display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 18px; }}
@@ -949,7 +975,7 @@ def render_status_page(root: Path) -> str:
   <h2>Limiter States</h2>
   <table><thead><tr><th>Bridge</th><th>State</th></tr></thead><tbody>{bridge_rows}</tbody></table>
   <h2>Virtual PB Compatibility</h2>
-  <table><thead><tr><th>Script</th><th>Status</th><th>Command Kinds</th></tr></thead><tbody>{virtual_rows}</tbody></table>
+  <table><thead><tr><th>Script</th><th>Status</th><th>Compiled</th><th>Required Interfaces</th><th>Emitted</th><th>Available Commands</th><th>Unsupported</th><th>Snapshots</th><th>Last Run</th></tr></thead><tbody>{virtual_rows}</tbody></table>
 </main>
 </body>
 </html>

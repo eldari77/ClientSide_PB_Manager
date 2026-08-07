@@ -113,6 +113,7 @@ def can_prepare_virtual_pb(compatibility: dict[str, Any]) -> bool:
     block_types = compatibility.get("supported_block_types")
     return (
         compatibility.get("status") == "supported"
+        and compatibility.get("compiled") is True
         and compatibility.get("uses_grid_terminal_system") is True
         and isinstance(block_types, list)
         and bool(block_types)
@@ -187,7 +188,7 @@ def prepare_adapter(root: Path, catalog_path: Path, workshop_id: str) -> dict[st
     import_dir.mkdir(parents=True, exist_ok=True)
     imported_script = import_dir / "Script.cs"
     shutil.copy2(source, imported_script)
-    compatibility = analyze_virtual_pb_script(imported_script)
+    compatibility = analyze_virtual_pb_script(imported_script, root)
 
     if can_prepare_virtual_pb(compatibility):
         script_id = upsert_virtual_manifest(root, workshop_id, display_name)

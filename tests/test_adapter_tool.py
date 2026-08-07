@@ -49,7 +49,21 @@ def test_prepare_adapter_creates_scaffold_and_manifest(tmp_path: Path):
     assert updated_catalog["records"][0]["compatibility"] == "adapter_scaffold_created"
 
 
-def test_prepare_adapter_prefers_virtual_pb_for_compatible_scripts(tmp_path: Path):
+def test_prepare_adapter_prefers_virtual_pb_for_compatible_scripts(tmp_path: Path, monkeypatch):
+    monkeypatch.setattr(
+        "workshop.adapter_tool.analyze_virtual_pb_script",
+        lambda script_path, root=None: {
+            "status": "supported",
+            "compiled": True,
+            "unsupported_apis": [],
+            "unsupported_interfaces": [],
+            "unsupported_members": [],
+            "supported_block_types": ["IMyDoor"],
+            "uses_grid_terminal_system": True,
+            "available_command_kinds": ["set_door_open"],
+            "snapshot_requirements": ["grid_snapshot.blocks[]"],
+        },
+    )
     root = tmp_path
     source_dir = root / "steam" / "416932930"
     source_dir.mkdir(parents=True)
@@ -138,7 +152,23 @@ public void Main(string argument)
     assert updated_catalog["records"][0]["compatibility"] == "virtual_pb_ready"
 
 
-def test_prepare_adapter_falls_back_for_unemulated_virtual_pb_interfaces(tmp_path: Path):
+def test_prepare_adapter_promotes_dynamic_virtual_pb_for_text_inventory_scripts(tmp_path: Path, monkeypatch):
+    monkeypatch.setattr(
+        "workshop.adapter_tool.analyze_virtual_pb_script",
+        lambda script_path, root=None: {
+            "status": "supported",
+            "compiled": True,
+            "unsupported_apis": [],
+            "unsupported_interfaces": [],
+            "unsupported_members": [],
+            "supported_block_types": ["IMyCargoContainer", "IMyDoor", "IMyTextPanel"],
+            "uses_grid_terminal_system": True,
+            "required_interfaces": ["IMyCargoContainer", "IMyDoor", "IMyTextPanel"],
+            "implemented_interfaces": ["IMyCargoContainer", "IMyDoor", "IMyTextPanel"],
+            "available_command_kinds": ["write_text_surface", "set_door_open"],
+            "snapshot_requirements": ["grid_snapshot.blocks[].inventories[].items[]"],
+        },
+    )
     root = tmp_path
     source_dir = root / "steam" / "822950976"
     source_dir.mkdir(parents=True)
@@ -205,13 +235,14 @@ public void Main(string argument)
 
     report = prepare_adapter(root, catalog, "822950976")
 
-    assert report["status"] == "adapter_scaffold_created"
-    assert report["script_id"] == "workshop_822950976_adapter"
+    assert report["status"] == "virtual_pb_ready"
+    assert report["script_id"] == "virtual_workshop_822950976"
+    assert report["runtime"] == "virtual_pb_csharp"
     assert report["analysis"]["uses_grid_terminal_system"] is True
-    assert report["compatibility"]["status"] == "unsupported"
-    assert "IMyCargoContainer" in report["compatibility"]["unsupported_interfaces"]
-    assert (root / "worker" / "scripts" / "workshop_822950976_adapter.py").exists()
+    assert report["compatibility"]["compiled"] is True
+    assert "IMyCargoContainer" in report["compatibility"]["implemented_interfaces"]
+    assert not (root / "worker" / "scripts" / "workshop_822950976_adapter.py").exists()
     manifest = json.loads((root / "worker" / "manifest.json").read_text(encoding="utf-8"))
-    assert [item["script_id"] for item in manifest["scripts"]] == ["workshop_822950976_adapter"]
+    assert [item["script_id"] for item in manifest["scripts"]] == ["virtual_workshop_822950976"]
     updated_catalog = json.loads(catalog.read_text(encoding="utf-8"))
-    assert updated_catalog["records"][0]["compatibility"] == "adapter_scaffold_created"
+    assert updated_catalog["records"][0]["compatibility"] == "virtual_pb_ready"

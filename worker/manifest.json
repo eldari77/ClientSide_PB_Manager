@@ -43,14 +43,15 @@
       "enabled": true
     },
     {
-      "script_id": "workshop_822950976_adapter",
+      "script_id": "virtual_workshop_822950976",
       "source": "workshop_import",
-      "display_name": "Automatic LCDs 2",
-      "module": "worker.scripts.workshop_822950976_adapter",
-      "input_schema": "adapter_tick.v1",
+      "display_name": "Automatic LCDs 2 (Virtual PB)",
+      "runtime": "virtual_pb_csharp",
+      "source_path": "data/imports/822950976/Script.cs",
+      "input_schema": "virtual_pb_tick.v1",
       "output_schema": "compact_commands.v1",
-      "timeout_ms": 1000,
-      "enabled": false
+      "timeout_ms": 5000,
+      "enabled": true
     }
   ]
 }
