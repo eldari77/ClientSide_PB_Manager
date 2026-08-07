@@ -14,6 +14,8 @@ public partial class MainWindow : Window
 {
     private const string BridgeOrchestratorScriptId = "bridge_orchestrator";
     private const string ChildWorkerScriptsJsonField = "child_worker_scripts";
+    private const string WorkerUiUrl = "http://localhost:8788";
+    private const string WorkerUiLauncherRelativePath = @"tools\open_worker_ui.ps1";
     private readonly string _root;
     private readonly ObservableCollection<WorkshopRecord> _workshopRecords = new();
     private readonly ObservableCollection<FileRecord> _bridgeFiles = new();
@@ -168,6 +170,29 @@ public partial class MainWindow : Window
         File.WriteAllText(Path.Combine(targetDir, "metadata.json"), JsonSerializer.Serialize(record, new JsonSerializerOptions { WriteIndented = true }));
         StatusText.Text = "Imported " + record.WorkshopId;
         RefreshLogs();
+    }
+
+    private void OpenWorkerUi_Click(object sender, RoutedEventArgs e)
+    {
+        var launcher = Path.Combine(_root, WorkerUiLauncherRelativePath);
+        if (File.Exists(launcher))
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "powershell.exe",
+                Arguments = "-NoProfile -ExecutionPolicy Bypass -File \"" + launcher + "\"",
+                WorkingDirectory = _root,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            });
+            StatusText.Text = "Opening worker UI...";
+            return;
+        }
+        Process.Start(new ProcessStartInfo
+        {
+            FileName = WorkerUiUrl,
+            UseShellExecute = true
+        });
     }
 
     private async void PrepareAdapter_Click(object sender, RoutedEventArgs e)

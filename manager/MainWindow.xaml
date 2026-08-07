@@ -14,7 +14,10 @@
                     <TextBlock Text="NOVALI Client-Side PB Bridge" Foreground="#F8FAFC" FontSize="18" FontWeight="SemiBold" />
                     <TextBlock x:Name="RootText" Foreground="#CBD5E1" FontSize="12" />
                 </StackPanel>
-                <TextBlock x:Name="StatusText" Grid.Column="1" Foreground="#BAE6FD" VerticalAlignment="Center" />
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="Open Worker UI" Width="118" Margin="0,0,12,0" Click="OpenWorkerUi_Click" />
+                    <TextBlock x:Name="StatusText" Foreground="#BAE6FD" VerticalAlignment="Center" />
+                </StackPanel>
             </Grid>
         </Border>
 
@@ -60,7 +63,8 @@
                 <DockPanel Margin="8">
                     <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
                         <Button Content="Refresh" Width="92" Margin="0,0,8,0" Click="RefreshFiles_Click" />
-                        <Button Content="Open Data" Width="92" Click="OpenData_Click" />
+                        <Button Content="Open Data" Width="92" Margin="0,0,8,0" Click="OpenData_Click" />
+                        <Button Content="Open Worker UI" Width="118" Click="OpenWorkerUi_Click" />
                     </StackPanel>
                     <Border x:Name="BridgePbConfigPrompt" DockPanel.Dock="Bottom" Visibility="Collapsed"
                             BorderBrush="#38BDF8" BorderThickness="1" Background="#E0F2FE"

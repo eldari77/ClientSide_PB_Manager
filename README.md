@@ -292,6 +292,12 @@ dotnet run --project .\manager\NOVALI.ClientSidePBManager.csproj
 The Docker worker publishes a read-only status UI on
 `http://localhost:8788`. Docker Desktop shows this as a clickable port link for
 the `clientside_pb_script` container group.
+If Docker Desktop does not show the link, use the manager's `Open Worker UI`
+button or run:
+
+```powershell
+.\tools\open_worker_ui.ps1
+```
 
 ## Safety Defaults
 
