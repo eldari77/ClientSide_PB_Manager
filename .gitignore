@@ -23,6 +23,11 @@ data/command_queues/
 data/plugin_status.json
 data/worker_status.json
 data/virtual_pb_compatibility.json
+data/virtual_pb_cache/
+data/bridge_health.json
+data/manager_launch.log
+data/manager_current_exe.txt
+data/manager_builds/
 
 # Local discovery/import state
 data/workshop_catalog.json

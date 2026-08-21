@@ -12,10 +12,10 @@ LIMITER_STATES = {"ok", "soft_limited", "cooldown", "disabled", "config_invalid"
 
 @dataclass(frozen=True)
 class BridgeLimitProfile:
-    runtime_ms_limit: float = 0.3
+    runtime_ms_limit: float = 0.25
     runtime_ms_soft_ratio: float = 0.75
-    cooldown_seconds: int = 10
-    max_commands_per_minute: int = 30
+    cooldown_seconds: int = 3
+    max_commands_per_minute: int = 60
     fail_closed: bool = True
 
 

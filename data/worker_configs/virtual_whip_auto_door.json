@@ -1,0 +1,37 @@
+{
+  "schema": "novali.client_side_pb.worker_config.v1",
+  "script_id": "virtual_whip_auto_door",
+  "display_name": "Whip\u0027s Auto Door and Airlock Script (Virtual PB)",
+  "entries": [
+    {
+      "key": "allowConnectedGrids",
+      "value": false,
+      "value_type": "bool",
+      "description": "Allow planning and applying commands across connected grids."
+    },
+    {
+      "key": "maxPlannedTransfers",
+      "value": 8,
+      "value_type": "int",
+      "description": "Maximum transfer or rename commands the worker plans per tick."
+    },
+    {
+      "key": "maxApplyCommands",
+      "value": 5,
+      "value_type": "int",
+      "description": "Maximum commands the PB shim may apply from one result."
+    },
+    {
+      "key": "inventorySortingDryRun",
+      "value": false,
+      "value_type": "bool",
+      "description": "Report planned sorting commands without applying them."
+    },
+    {
+      "key": "inventorySortingEnabled",
+      "value": true,
+      "value_type": "bool",
+      "description": "Enable Isy inventory sorting command planning for this worker."
+    }
+  ]
+}

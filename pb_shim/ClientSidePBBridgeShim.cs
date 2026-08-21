@@ -6,7 +6,7 @@
 // command application.
 
 const string Schema = "novali.client_side_pb_bridge.v1";
-const string ShimVersion = "2026-05-20-iim-action-parity-v13-customdata";
+const string ShimVersion = "baseline-template-v1";
 const string Begin = "NOVALI_CLIENT_SIDE_PB_JSON_BEGIN";
 const string End = "NOVALI_CLIENT_SIDE_PB_JSON_END";
 
@@ -14,19 +14,21 @@ string bridgeId = "pb-bridge-001";
 string mailboxMode = "both";
 string textPanelName = "NOVALI PB Bridge";
 string scriptId = "sample_status_adapter";
+string verificationNonce = "";
 string snapshotMode = "minimal";
 int maxCommandsPerMinute = 30;
-int maxApplyCommandsPerTick = 1;
+int maxApplyCommandsPerTick = 8;
 bool dynamicApplyCommands = true;
 int dynamicMinApplyCommandsPerTick = 1;
-int dynamicMaxApplyCommandsPerTick = 4;
+int dynamicMaxApplyCommandsPerTick = 8;
 double dynamicRuntimeLowRatio = 0.45;
 double dynamicRuntimeHighRatio = 0.75;
 int dynamicApplyBudget = 1;
+bool includeTerminalMetadata = false;
 bool failClosed = true;
 bool applyWorkerCommands = true;
 bool allowConnectedGridCommands = false;
-double runtimeMsLimit = 0.3;
+double runtimeMsLimit = 0.25;
 double runtimeMsSoftRatio = 0.75;
 int cooldownSeconds = 10;
 DateTime limiterCooldownUntilUtc = DateTime.MinValue;
@@ -42,6 +44,17 @@ int lastApplyApplied = 0;
 int lastApplySkipped = 0;
 int lastApplyEchoed = 0;
 string lastApplyLastSkip = "";
+string lastApplyActionText = "";
+string lastApplyActionTime = "";
+string lastApplyActionAtUtc = "";
+int lastReceivedSequence = -1;
+string lastReceivedStatus = "none";
+string lastResultCompletedAt = "";
+int lastQueueTotal = 0;
+int lastQueueDrained = 0;
+int lastQueueRemaining = 0;
+List<string> lastChildStatusLines = new List<string>();
+Dictionary<string, string> instanceLabels = new Dictionary<string, string>();
 int sequence = 0;
 DateTime lastRequestUtc = DateTime.MinValue;
 
@@ -71,7 +84,7 @@ public void Main(string argument, UpdateType updateSource)
         limiterState = "ok";
         SaveState();
         ClearMailboxText();
-        Echo("NOVALI shim=" + ShimVersion + " reset_seq=" + sequence.ToString());
+        EchoOperatorStatus("reset seq " + sequence.ToString(), -1);
         return;
     }
 
@@ -81,7 +94,7 @@ public void Main(string argument, UpdateType updateSource)
         var messageKind = ExtractString(mailboxText, "message_kind");
         if (messageKind == "request")
         {
-            Echo("NOVALI shim=" + ShimVersion + " request_pending=" + ExtractInt(mailboxText, "sequence").ToString());
+            EchoOperatorStatus("waiting for worker", ExtractInt(mailboxText, "sequence"));
             return;
         }
         if (messageKind == "result")
@@ -98,13 +111,13 @@ public void Main(string argument, UpdateType updateSource)
 
     if (!RuntimeLimiterAllowsRequest())
     {
-        Echo("NOVALI bridge limiter: " + limiterState + " last_ms=" + Runtime.LastRunTimeMs.ToString("0.000000"));
+        EchoOperatorStatus("limiter " + limiterState, -1);
         return;
     }
 
     if (!RateLimitAllowsRequest())
     {
-        Echo("NOVALI bridge rate limited.");
+        EchoOperatorStatus("rate limited", -1);
         return;
     }
 
@@ -113,7 +126,7 @@ public void Main(string argument, UpdateType updateSource)
     WriteMailboxText(request);
     lastRequestUtc = DateTime.UtcNow;
     SaveState();
-    Echo("NOVALI shim=" + ShimVersion + " staged_seq=" + sequence.ToString());
+    EchoOperatorStatus("request staged", sequence);
 }
 
 void EnsureConfig()
@@ -126,32 +139,65 @@ bridge_id=pb-bridge-001
 mailbox_mode=both
 text_panel_name=NOVALI PB Bridge
 script_id=sample_status_adapter
+verification_nonce=
 snapshot_mode=minimal
 max_commands_per_minute=30
-max_apply_commands_per_tick=1
+max_apply_commands_per_tick=8
 dynamic_apply_commands=true
 dynamic_min_apply_commands_per_tick=1
-dynamic_max_apply_commands_per_tick=4
+dynamic_max_apply_commands_per_tick=8
 dynamic_runtime_low_ratio=0.45
 dynamic_runtime_high_ratio=0.75
+include_terminal_metadata=false
 apply_worker_commands=true
 allow_connected_grid_commands=false
-runtime_ms_limit=0.3
+runtime_ms_limit=0.25
 runtime_ms_soft_ratio=0.75
 cooldown_seconds=10
 fail_closed=true
 
 " + Me.CustomData;
     }
-    else if (Me.CustomData.Contains("runtime_ms_limit=0.03"))
-    {
-        Me.CustomData = Me.CustomData.Replace("runtime_ms_limit=0.03", "runtime_ms_limit=0.3");
-    }
+    UpgradeLegacyConfigDefaults();
     EnsureConfigLine("dynamic_apply_commands", "dynamic_apply_commands=true");
     EnsureConfigLine("dynamic_min_apply_commands_per_tick", "dynamic_min_apply_commands_per_tick=1");
-    EnsureConfigLine("dynamic_max_apply_commands_per_tick", "dynamic_max_apply_commands_per_tick=4");
+    EnsureConfigLine("dynamic_max_apply_commands_per_tick", "dynamic_max_apply_commands_per_tick=8");
     EnsureConfigLine("dynamic_runtime_low_ratio", "dynamic_runtime_low_ratio=0.45");
     EnsureConfigLine("dynamic_runtime_high_ratio", "dynamic_runtime_high_ratio=0.75");
+    EnsureConfigLine("include_terminal_metadata", "include_terminal_metadata=false");
+    EnsureConfigLine("verification_nonce", "verification_nonce=");
+}
+
+void UpgradeLegacyConfigDefaults()
+{
+    ReplaceLegacyConfigLine("max_commands_per_minute", "30", "60");
+    ReplaceLegacyConfigLine("max_apply_commands_per_tick", "1", "8");
+    ReplaceLegacyConfigLine("max_apply_commands_per_tick", "4", "8");
+    ReplaceLegacyConfigLine("dynamic_max_apply_commands_per_tick", "4", "8");
+    ReplaceLegacyConfigLine("runtime_ms_limit", "0.03", "0.25");
+    ReplaceLegacyConfigLine("runtime_ms_limit", "0.3", "0.25");
+    ReplaceLegacyConfigLine("runtime_ms_limit", "0.300000", "0.25");
+    ReplaceLegacyConfigLine("cooldown_seconds", "10", "3");
+}
+
+void ReplaceLegacyConfigLine(string key, string oldValue, string newValue)
+{
+    var legacy = key + "=" + oldValue;
+    var replacement = key + "=" + newValue;
+    var lines = Me.CustomData.Split('\n');
+    var changed = false;
+    for (var i = 0; i < lines.Length; i++)
+    {
+        if (lines[i].Trim() == legacy)
+        {
+            lines[i] = replacement;
+            changed = true;
+        }
+    }
+    if (changed)
+    {
+        Me.CustomData = string.Join("\n", lines);
+    }
 }
 
 void EnsureConfigLine(string key, string line)
@@ -171,6 +217,7 @@ void EnsureConfigLine(string key, string line)
 
 void LoadConfig()
 {
+    instanceLabels.Clear();
     var lines = Me.CustomData.Split('\n');
     bool inSection = false;
     foreach (var raw in lines)
@@ -201,6 +248,7 @@ void LoadConfig()
         if (key == "mailbox_mode") mailboxMode = value;
         if (key == "text_panel_name") textPanelName = value;
         if (key == "script_id") scriptId = value;
+        if (key == "verification_nonce") verificationNonce = value;
         if (key == "snapshot_mode") snapshotMode = value;
         if (key == "max_commands_per_minute") int.TryParse(value, out maxCommandsPerMinute);
         if (key == "max_apply_commands_per_tick") int.TryParse(value, out maxApplyCommandsPerTick);
@@ -209,13 +257,92 @@ void LoadConfig()
         if (key == "dynamic_max_apply_commands_per_tick") int.TryParse(value, out dynamicMaxApplyCommandsPerTick);
         if (key == "dynamic_runtime_low_ratio") double.TryParse(value, out dynamicRuntimeLowRatio);
         if (key == "dynamic_runtime_high_ratio") double.TryParse(value, out dynamicRuntimeHighRatio);
+        if (key == "include_terminal_metadata") bool.TryParse(value, out includeTerminalMetadata);
         if (key == "apply_worker_commands") bool.TryParse(value, out applyWorkerCommands);
         if (key == "allow_connected_grid_commands") bool.TryParse(value, out allowConnectedGridCommands);
         if (key == "runtime_ms_limit") double.TryParse(value, out runtimeMsLimit);
         if (key == "runtime_ms_soft_ratio") double.TryParse(value, out runtimeMsSoftRatio);
         if (key == "cooldown_seconds") int.TryParse(value, out cooldownSeconds);
         if (key == "fail_closed") bool.TryParse(value, out failClosed);
+        if (key.StartsWith("instance_label."))
+        {
+            var instanceId = key.Substring("instance_label.".Length).Trim();
+            if (!string.IsNullOrWhiteSpace(instanceId))
+            {
+                instanceLabels[instanceId] = value;
+            }
+        }
     }
+}
+
+void EchoOperatorStatus(string status, int pendingSequence)
+{
+    Echo(RenderOperatorStatus(status, pendingSequence));
+}
+
+string RenderOperatorStatus(string status, int pendingSequence)
+{
+    var text = "NOVALI " + bridgeId + "\n" +
+        "State " + status + "\n" +
+        "Shim " + ShimVersion + "\n";
+    if (pendingSequence > 0)
+    {
+        text += "Pend seq " + pendingSequence.ToString() + "\n";
+    }
+    if (lastReceivedSequence > 0)
+    {
+        text += "Last seq " + lastReceivedSequence.ToString() + " @ " + ShortTimestamp(lastResultCompletedAt) + "\n";
+    }
+    else
+    {
+        text += "Last none\n";
+    }
+    text += "Apply " + CompactStatus(lastApplyStatus) + " " + lastApplyApplied.ToString() + "/" + lastApplyCommandCount.ToString() +
+        " skip=" + lastApplySkipped.ToString() + "\n" +
+        "Queue total=" + lastQueueTotal.ToString() + " rem=" + lastQueueRemaining.ToString() +
+        " drain=" + lastQueueDrained.ToString() + "\n" +
+        "Running:" + "\n";
+    if (lastChildStatusLines.Count == 0)
+    {
+        text += "- " + InstanceLabel(scriptId) + ": awaiting first result\n";
+        return text;
+    }
+    foreach (var line in lastChildStatusLines)
+    {
+        text += "- " + line + "\n";
+    }
+    return text;
+}
+
+string ShortTimestamp(string value)
+{
+    if (string.IsNullOrWhiteSpace(value))
+    {
+        return "unknown";
+    }
+    if (value.Length > 19)
+    {
+        return value.Substring(0, 19);
+    }
+    return value;
+}
+
+string InstanceLabel(string instanceId)
+{
+    if (instanceLabels.ContainsKey(instanceId))
+    {
+        return instanceLabels[instanceId];
+    }
+    return ShortInstanceId(instanceId);
+}
+
+string ShortInstanceId(string instanceId)
+{
+    if (instanceId.StartsWith(bridgeId + "-"))
+    {
+        return instanceId.Substring(bridgeId.Length + 1).Replace("_", " ");
+    }
+    return instanceId.Replace("_", " ");
 }
 
 void CaptureRuntimeTelemetry()
@@ -240,6 +367,18 @@ void LoadState()
         }
         var key = line.Substring(0, split).Trim();
         var value = line.Substring(split + 1).Trim();
+        if (key == "last_apply_action_text")
+        {
+            lastApplyActionText = value;
+        }
+        if (key == "last_apply_action_time")
+        {
+            lastApplyActionTime = value;
+        }
+        if (key == "last_apply_action_at_utc")
+        {
+            lastApplyActionAtUtc = value;
+        }
         if (key == "sequence")
         {
             int storedSequence;
@@ -255,7 +394,15 @@ void SaveState()
 {
     Storage = "schema=" + Schema + "\n" +
         "shim_version=" + ShimVersion + "\n" +
-        "sequence=" + sequence.ToString() + "\n";
+        "sequence=" + sequence.ToString() + "\n" +
+        SaveField("last_apply_action_text", lastApplyActionText) +
+        SaveField("last_apply_action_time", lastApplyActionTime) +
+        SaveField("last_apply_action_at_utc", lastApplyActionAtUtc);
+}
+
+string SaveField(string key, string value)
+{
+    return key + "=" + (value ?? "").Replace("\r", "\\r").Replace("\n", "\\n") + "\n";
 }
 
 bool RuntimeLimiterAllowsRequest()
@@ -343,6 +490,7 @@ string BuildRequest()
         Quote("sequence") + ":" + sequence.ToString() + "," +
         Quote("script_id") + ":" + Quote(scriptId) + "," +
         Quote("request_kind") + ":" + Quote("adapter_tick") + "," +
+        Quote("include_terminal_metadata") + ":" + (includeTerminalMetadata ? "true" : "false") + "," +
         Quote("runtime_telemetry") + ":{" +
             Quote("last_runtime_ms") + ":" + Runtime.LastRunTimeMs.ToString("0.000000") + "," +
             Quote("max_runtime_ms") + ":" + maxRuntimeMs.ToString("0.000000") + "," +
@@ -358,6 +506,8 @@ string BuildRequest()
         "}," +
         Quote("state") + ":{" +
             Quote("shim_version") + ":" + Quote(ShimVersion) + "," +
+            Quote("verification_nonce") + ":" + Quote(verificationNonce) + "," +
+            Quote("requested_at_utc") + ":" + Quote(DateTime.UtcNow.ToString("o")) + "," +
             Quote("snapshot_mode") + ":" + Quote(snapshotMode) + "," +
             Quote("block_count") + ":" + blockCount.ToString() + "," +
             Quote("inventory_count") + ":" + inventoryCount.ToString() + "," +
@@ -369,7 +519,10 @@ string BuildRequest()
                 Quote("applied") + ":" + lastApplyApplied.ToString() + "," +
                 Quote("skipped") + ":" + lastApplySkipped.ToString() + "," +
                 Quote("echo") + ":" + lastApplyEchoed.ToString() + "," +
-                Quote("last_skip") + ":" + Quote(lastApplyLastSkip) +
+                Quote("last_skip") + ":" + Quote(lastApplyLastSkip) + "," +
+                Quote("last_action_text") + ":" + Quote(lastApplyActionText) + "," +
+                Quote("last_action_time") + ":" + Quote(lastApplyActionTime) + "," +
+                Quote("last_action_at_utc") + ":" + Quote(lastApplyActionAtUtc) +
             "}" +
         "}" +
     "}";
@@ -451,10 +604,9 @@ bool ApplyResultIfCurrent(string text)
     {
         lastResultWasStale = true;
         RecordApplyTelemetry(resultSequence, status, "stale_result", 0, 0, 0, 0, "identity_or_sequence_mismatch");
-        Echo("NOVALI bridge ignored non-current result.");
+        EchoOperatorStatus("stale result ignored", -1);
         return true;
     }
-    Echo("NOVALI bridge result: " + status);
     var commandText = ExtractString(text, "text");
     if (!string.IsNullOrWhiteSpace(commandText) && text.IndexOf("\"commands\"") < 0)
     {
@@ -472,7 +624,88 @@ bool ApplyResultIfCurrent(string text)
     {
         RecordApplyTelemetry(resultSequence, status, "apply_disabled", 0, 0, 0, 0, "");
     }
+    CacheResultStatus(text, resultSequence, status);
+    EchoOperatorStatus(status == "ok" ? "active" : status, -1);
     return true;
+}
+
+void CacheResultStatus(string resultText, int resultSequence, string status)
+{
+    lastReceivedSequence = resultSequence;
+    lastReceivedStatus = status;
+    lastResultCompletedAt = ExtractString(resultText, "completed_at");
+    var commandQueue = ExtractLastObjectForKey(resultText, "command_queue");
+    if (!string.IsNullOrWhiteSpace(commandQueue))
+    {
+        lastQueueTotal = Math.Max(0, ExtractInt(commandQueue, "queued"));
+        lastQueueDrained = Math.Max(0, ExtractInt(commandQueue, "drained"));
+        lastQueueRemaining = Math.Max(0, ExtractInt(commandQueue, "remaining"));
+    }
+    else
+    {
+        lastQueueTotal = Math.Max(0, ExtractInt(resultText, "queued_commands"));
+        lastQueueDrained = Math.Max(0, ExtractInt(resultText, "drained_commands"));
+        lastQueueRemaining = Math.Max(0, ExtractInt(resultText, "remaining_commands"));
+    }
+    lastChildStatusLines = BuildChildStatusLines(resultText);
+}
+
+List<string> BuildChildStatusLines(string resultText)
+{
+    var lines = new List<string>();
+    var children = ExtractObjectsFromArray(resultText, "child_results");
+    foreach (var child in children)
+    {
+        var childId = ExtractString(child, "script_id");
+        if (string.IsNullOrWhiteSpace(childId))
+        {
+            continue;
+        }
+        var childStatus = ExtractString(child, "status");
+        var error = ExtractString(child, "error_bucket");
+        var summary = ExtractString(child, "summary");
+        var queue = ExtractLastObjectForKey(child, "command_queue");
+        var queued = Math.Max(0, ExtractInt(queue, "queued"));
+        var remaining = Math.Max(0, ExtractInt(queue, "remaining"));
+        var line = InstanceLabel(childId) + ": " + (string.IsNullOrWhiteSpace(childStatus) ? "unknown" : childStatus);
+        if (!string.IsNullOrWhiteSpace(error) && error != "none")
+        {
+            line += " " + error;
+        }
+        line += " q=" + queued.ToString() + " rem=" + remaining.ToString();
+        if (!string.IsNullOrWhiteSpace(summary))
+        {
+            line += " - " + Truncate(summary, 32);
+        }
+        lines.Add(line);
+    }
+    return lines;
+}
+
+string CompactStatus(string value)
+{
+    if (value == "no_commands")
+    {
+        return "no_cmd";
+    }
+    if (value == "apply_disabled")
+    {
+        return "disabled";
+    }
+    return value;
+}
+
+string Truncate(string text, int maxLength)
+{
+    if (string.IsNullOrWhiteSpace(text) || text.Length <= maxLength)
+    {
+        return text;
+    }
+    if (maxLength <= 3)
+    {
+        return text.Substring(0, maxLength);
+    }
+    return text.Substring(0, maxLength - 3) + "...";
 }
 
 void RecordApplyTelemetry(int resultSequence, string resultStatus, string status, int commandCount, int applied, int skipped, int echoed, string lastSkip)
@@ -532,6 +765,7 @@ string ApplyWorkerCommands(string resultText, int resultSequence, string resultS
         {
             if (ApplyRenameBlockCommand(command))
             {
+                RecordActionText(DescribeCommandAction(kind, command));
                 applied++;
             }
             else
@@ -556,6 +790,7 @@ string ApplyWorkerCommands(string resultText, int resultSequence, string resultS
         {
             if (ApplyWriteBlockCustomDataCommand(command))
             {
+                RecordActionText(DescribeCommandAction(kind, command));
                 applied++;
             }
             else
@@ -568,6 +803,7 @@ string ApplyWorkerCommands(string resultText, int resultSequence, string resultS
         {
             if (ApplySetBlockEnabledCommand(command))
             {
+                RecordActionText(DescribeCommandAction(kind, command));
                 applied++;
             }
             else
@@ -580,6 +816,7 @@ string ApplyWorkerCommands(string resultText, int resultSequence, string resultS
         {
             if (ApplySetUseConveyorCommand(command))
             {
+                RecordActionText(DescribeCommandAction(kind, command));
                 applied++;
             }
             else
@@ -592,6 +829,7 @@ string ApplyWorkerCommands(string resultText, int resultSequence, string resultS
         {
             if (ApplySetDoorOpenCommand(command))
             {
+                RecordActionText(DescribeCommandAction(kind, command));
                 applied++;
             }
             else
@@ -604,6 +842,7 @@ string ApplyWorkerCommands(string resultText, int resultSequence, string resultS
         {
             if (ApplySetLightColorCommand(command))
             {
+                RecordActionText(DescribeCommandAction(kind, command));
                 applied++;
             }
             else
@@ -616,6 +855,7 @@ string ApplyWorkerCommands(string resultText, int resultSequence, string resultS
         {
             if (ApplySetAssemblerModeCommand(command))
             {
+                RecordActionText(DescribeCommandAction(kind, command));
                 applied++;
             }
             else
@@ -628,6 +868,7 @@ string ApplyWorkerCommands(string resultText, int resultSequence, string resultS
         {
             if (ApplySetAssemblerCooperativeModeCommand(command))
             {
+                RecordActionText(DescribeCommandAction(kind, command));
                 applied++;
             }
             else
@@ -640,6 +881,7 @@ string ApplyWorkerCommands(string resultText, int resultSequence, string resultS
         {
             if (ApplySetGasAutoRefillCommand(command))
             {
+                RecordActionText(DescribeCommandAction(kind, command));
                 applied++;
             }
             else
@@ -652,6 +894,7 @@ string ApplyWorkerCommands(string resultText, int resultSequence, string resultS
         {
             if (ApplyMoveAssemblerQueueItemCommand(command))
             {
+                RecordActionText(DescribeCommandAction(kind, command));
                 applied++;
             }
             else
@@ -664,6 +907,7 @@ string ApplyWorkerCommands(string resultText, int resultSequence, string resultS
         {
             if (ApplyRemoveAssemblerQueueItemCommand(command))
             {
+                RecordActionText(DescribeCommandAction(kind, command));
                 applied++;
             }
             else
@@ -676,6 +920,7 @@ string ApplyWorkerCommands(string resultText, int resultSequence, string resultS
         {
             if (ApplyEnqueueAssemblerBlueprintCommand(command))
             {
+                RecordActionText(DescribeCommandAction(kind, command));
                 applied++;
             }
             else
@@ -688,6 +933,7 @@ string ApplyWorkerCommands(string resultText, int resultSequence, string resultS
         {
             if (ApplyClearAssemblerQueueCommand(command))
             {
+                RecordActionText(DescribeCommandAction(kind, command));
                 applied++;
             }
             else
@@ -714,6 +960,99 @@ string ApplyWorkerCommands(string resultText, int resultSequence, string resultS
         report += " last_skip=" + lastCommandSkipReason;
     }
     return report;
+}
+
+void RecordActionText(string text)
+{
+    if (!string.IsNullOrWhiteSpace(text))
+    {
+        lastApplyActionText = Truncate(text, 180);
+        lastApplyActionTime = DateTime.Now.ToString("HH:mm:ss");
+        lastApplyActionAtUtc = DateTime.UtcNow.ToString("o");
+    }
+}
+
+string DescribeCommandAction(string kind, string command)
+{
+    var blockId = ExtractLong(command, "block_entity_id");
+    var block = ResolveTerminalBlock(blockId);
+    var name = BlockName(block, blockId);
+    if (kind == "rename_block")
+    {
+        return "Renamed " + name + " to '" + ExtractString(command, "new_name") + "'";
+    }
+    if (kind == "write_block_custom_data")
+    {
+        return "Updated custom data on " + name;
+    }
+    if (kind == "set_block_enabled")
+    {
+        return "Set " + name + " enabled=" + ExtractBool(command, "enabled").ToString();
+    }
+    if (kind == "set_use_conveyor")
+    {
+        return "Set conveyor on " + name + " to " + ExtractBool(command, "enabled").ToString();
+    }
+    if (kind == "set_door_open")
+    {
+        return "Set door " + name + " open=" + ExtractBool(command, "open").ToString();
+    }
+    if (kind == "set_light_color")
+    {
+        return "Set light color on " + name;
+    }
+    if (kind == "set_assembler_mode")
+    {
+        return "Set assembler " + name + " mode=" + ExtractString(command, "mode");
+    }
+    if (kind == "set_assembler_cooperative_mode")
+    {
+        return "Set assembler " + name + " cooperative=" + ExtractBool(command, "enabled").ToString();
+    }
+    if (kind == "set_gas_auto_refill")
+    {
+        return "Set gas auto refill on " + name + " to " + ExtractBool(command, "enabled").ToString();
+    }
+    if (kind == "move_assembler_queue_item")
+    {
+        return "Moved assembler queue item on " + name;
+    }
+    if (kind == "remove_assembler_queue_item")
+    {
+        return "Removed assembler queue item on " + name;
+    }
+    if (kind == "enqueue_assembler_blueprint")
+    {
+        return "Queued blueprint on " + name;
+    }
+    if (kind == "clear_assembler_queue")
+    {
+        return "Cleared assembler queue on " + name;
+    }
+    return "";
+}
+
+string DescribeTransferAction(string command, IMyTerminalBlock sourceBlock, IMyTerminalBlock destinationBlock, double moveAmount, string subtypeId)
+{
+    return "Moved: " + FormatActionAmount(moveAmount) + " " + subtypeId +
+        " from: '" + BlockName(sourceBlock, ExtractLong(command, "source_entity_id")) +
+        "' to: '" + BlockName(destinationBlock, ExtractLong(command, "destination_entity_id")) + "'";
+}
+
+string BlockName(IMyTerminalBlock block, long fallbackId)
+{
+    if (block != null && !string.IsNullOrWhiteSpace(block.CustomName))
+    {
+        return block.CustomName;
+    }
+    return fallbackId == 0 ? "unknown" : fallbackId.ToString();
+}
+
+string FormatActionAmount(double value)
+{
+    if (value >= 1000000) return (value / 1000000.0).ToString("0.##") + "M";
+    if (value >= 1000) return (value / 1000.0).ToString("0.##") + "K";
+    return value.ToString("0.##");
 }
 
 int ApplyCommandBudget(int resultBudget)
@@ -841,6 +1180,7 @@ bool ApplyTransferItemCommand(string command)
             lastCommandSkipReason = "transfer_failed";
             return false;
         }
+        RecordActionText(DescribeTransferAction(command, sourceBlock, destinationBlock, moveAmount, subtypeId));
         return true;
     }
     lastCommandSkipReason = "transfer_item_missing";
@@ -922,7 +1262,7 @@ bool ApplyWriteTextSurfaceCommand(string command)
             lastCommandSkipReason = "text_surface_missing";
             return false;
         }
-        PrepareIsyTextSurface(panel);
+        PrepareTextSurface(panel, command);
         if (!string.IsNullOrWhiteSpace(title))
         {
             panel.WritePublicTitle(title);
@@ -936,7 +1276,7 @@ bool ApplyWriteTextSurfaceCommand(string command)
         lastCommandSkipReason = "text_surface_missing";
         return false;
     }
-    PrepareIsyTextSurface(surface);
+    PrepareTextSurface(surface, command);
     surface.WriteText(text, append);
     return true;
 }
@@ -974,13 +1314,29 @@ bool ApplyWriteBlockCustomDataCommand(string command)
     return true;
 }
 
-void PrepareIsyTextSurface(IMyTextSurface surface)
+void PrepareTextSurface(IMyTextSurface surface, string command)
 {
-    surface.Font = "Debug";
-    surface.FontSize = 0.6f;
-    surface.TextPadding = 2f;
-    surface.Alignment = TextAlignment.LEFT;
-    surface.ContentType = ContentType.TEXT_AND_IMAGE;
+    var font = ExtractString(command, "font");
+    surface.Font = string.IsNullOrWhiteSpace(font) ? "Debug" : font;
+    var fontSize = ExtractDouble(command, "font_size");
+    surface.FontSize = (float)ClampDouble(fontSize <= 0 ? 0.6 : fontSize, 0.35, 2.0);
+    var textPadding = ExtractDouble(command, "text_padding");
+    surface.TextPadding = (float)ClampDouble(textPadding < 0 ? 2.0 : textPadding, 0.0, 20.0);
+    var alignment = ExtractString(command, "alignment").ToLower();
+    if (alignment == "center")
+    {
+        surface.Alignment = TextAlignment.CENTER;
+    }
+    else if (alignment == "right")
+    {
+        surface.Alignment = TextAlignment.RIGHT;
+    }
+    else
+    {
+        surface.Alignment = TextAlignment.LEFT;
+    }
+    var contentType = ExtractString(command, "content_type").ToLower();
+    surface.ContentType = contentType == "script" ? ContentType.SCRIPT : ContentType.TEXT_AND_IMAGE;
 }
 
 bool ApplySetBlockEnabledCommand(string command)
@@ -1422,6 +1778,109 @@ List<string> ExtractCommandObjects(string text)
     return commands;
 }
 
+List<string> ExtractObjectsFromArray(string text, string key)
+{
+    var objects = new List<string>();
+    var keyAt = text.IndexOf("\"" + key + "\"");
+    if (keyAt < 0)
+    {
+        return objects;
+    }
+    var arrayStart = text.IndexOf("[", keyAt);
+    if (arrayStart < 0)
+    {
+        return objects;
+    }
+    var arrayEnd = FindMatching(text, arrayStart, '[', ']');
+    if (arrayEnd <= arrayStart)
+    {
+        return objects;
+    }
+    var search = arrayStart + 1;
+    while (search < arrayEnd)
+    {
+        var objectStart = text.IndexOf("{", search);
+        if (objectStart < 0 || objectStart > arrayEnd)
+        {
+            break;
+        }
+        var objectEnd = FindMatching(text, objectStart, '{', '}');
+        if (objectEnd <= objectStart || objectEnd > arrayEnd)
+        {
+            break;
+        }
+        objects.Add(text.Substring(objectStart, objectEnd - objectStart + 1));
+        search = objectEnd + 1;
+    }
+    return objects;
+}
+
+string ExtractLastObjectForKey(string text, string key)
+{
+    var keyAt = text.LastIndexOf("\"" + key + "\"");
+    if (keyAt < 0)
+    {
+        return "";
+    }
+    var objectStart = text.IndexOf("{", keyAt);
+    if (objectStart < 0)
+    {
+        return "";
+    }
+    var objectEnd = FindMatching(text, objectStart, '{', '}');
+    if (objectEnd <= objectStart)
+    {
+        return "";
+    }
+    return text.Substring(objectStart, objectEnd - objectStart + 1);
+}
+
+int FindMatching(string text, int start, char open, char close)
+{
+    var depth = 0;
+    var inString = false;
+    var escaped = false;
+    for (var i = start; i < text.Length; i++)
+    {
+        var c = text[i];
+        if (inString)
+        {
+            if (escaped)
+            {
+                escaped = false;
+            }
+            else if (c == '\\')
+            {
+                escaped = true;
+            }
+            else if (c == '"')
+            {
+                inString = false;
+            }
+            continue;
+        }
+        if (c == '"')
+        {
+            inString = true;
+            continue;
+        }
+        if (c == open)
+        {
+            depth++;
+            continue;
+        }
+        if (c == close)
+        {
+            depth--;
+            if (depth == 0)
+            {
+                return i;
+            }
+        }
+    }
+    return -1;
+}
+
 string ReplaceMarkedBlock(string original, string replacement)
 {
     var start = original.IndexOf(Begin);
@@ -1626,5 +2085,12 @@ int ClampByte(int value)
 {
     if (value < 0) return 0;
     if (value > 255) return 255;
+    return value;
+}
+
+double ClampDouble(double value, double min, double max)
+{
+    if (value < min) return min;
+    if (value > max) return max;
     return value;
 }

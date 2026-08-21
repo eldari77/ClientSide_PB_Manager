@@ -2,11 +2,37 @@
   "schema": "novali.client_side_pb.bridge_scripts.v1",
   "bridges": {
     "pb-bridge-001": {
-      "selected_script_id": "workshop_1216126863_adapter",
+      "selected_script_id": "pb-bridge-001-orchestrator",
       "allowed_worker_scripts": [
-        "workshop_1216126863_adapter"
+        "pb-bridge-001-orchestrator",
+        "pb-bridge-001-virtual_whip_auto_door",
+        "pb-bridge-001-workshop_1216126863_adapter"
       ],
-      "updated_at": "2026-05-19T17:49:26.0786897Z"
+      "child_worker_scripts": [
+        {
+          "script_id": "pb-bridge-001-virtual_whip_auto_door",
+          "enabled": true,
+          "budget": 2,
+          "priority": 10,
+          "role": "reactive",
+          "reactive": true,
+          "expires_after_sequences": 1,
+          "fairness_weight": 3,
+          "operator_status": "ready_virtual_pb"
+        },
+        {
+          "script_id": "pb-bridge-001-workshop_1216126863_adapter",
+          "enabled": true,
+          "budget": 8,
+          "priority": 11,
+          "role": "maintenance",
+          "reactive": false,
+          "expires_after_sequences": 0,
+          "fairness_weight": 2,
+          "operator_status": "ready_profile"
+        }
+      ],
+      "updated_at": "2026-08-20T23:02:17.8198381Z"
     }
   }
 }

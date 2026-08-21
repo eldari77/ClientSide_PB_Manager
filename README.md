@@ -136,7 +136,7 @@ Sorting is controlled from the Worker Scripts tab, Config sub-tab:
 
 - `inventorySortingEnabled`: plan sorting work for this adapter.
 - `inventorySortingDryRun`: report proposed commands without applying them.
-- `maxApplyCommands`: worker-side apply budget, default `1`.
+- `maxApplyCommands`: worker-side apply budget, default `8`.
 - `maxPlannedTransfers`: maximum planned transfer/rename commands per tick.
 - `maxPlannedMachineCommands`: maximum planned LCD/machine commands per tick.
 - `dynamicCommandQueueDrain`: let the Docker worker drain queued commands from
@@ -158,8 +158,8 @@ Sorting is controlled from the Worker Scripts tab, Config sub-tab:
 The PB shim only applies allowlisted command kinds and keeps same-construct
 sorting as the default. Its command apply rate is dynamic by default:
 `dynamic_apply_commands=true`, `dynamic_min_apply_commands_per_tick=1`, and
-`dynamic_max_apply_commands_per_tick=4`. The configured
-`runtime_ms_limit=0.3` profile is the primary driver: the shim steps the apply
+`dynamic_max_apply_commands_per_tick=8`. The configured
+`runtime_ms_limit=0.25` profile is the primary driver: the shim steps the apply
 budget up while the last PB runtime is comfortably below the cap and steps it
 down as the soft threshold approaches. The older `max_apply_commands_per_tick`
 is still available as the fixed cap when dynamic apply is disabled.
@@ -200,10 +200,10 @@ to cargo.
 ## Runtime Limiter
 
 The companion manager has a Limits tab backed by `data/bridge_limits.json`.
-The default profile treats `0.3` as the PB runtime-ms ceiling for this
+The default profile treats `0.25` as the PB runtime-ms ceiling for this
 client-side bridge:
 
-- hard limit: `runtime_ms_limit=0.3`
+- hard limit: `runtime_ms_limit=0.25`
 - soft skip threshold: `runtime_ms_limit * runtime_ms_soft_ratio`
 - dynamic apply budget: `dynamic_apply_budget`, clamped by
   `dynamic_min_apply_commands_per_tick` and
@@ -292,6 +292,20 @@ dotnet run --project .\manager\NOVALI.ClientSidePBManager.csproj
 The Docker worker publishes a read-only status UI on
 `http://localhost:8788`. Docker Desktop shows this as a clickable port link for
 the `clientside_pb_script` container group.
+If Docker Desktop does not show the link, use the manager's `Open Worker UI`
+button or run:
+
+```powershell
+.\tools\open_worker_ui.ps1
+```
+
+The status page includes an `Open Configuration UI` button. The helper above
+registers the per-user `novali-client-side-pb-manager://` URL protocol so that
+button can launch the Windows WPF manager. To register the protocol directly:
+
+```powershell
+.\tools\register_manager_protocol.ps1
+```
 
 ## Safety Defaults
 
@@ -314,3 +328,9 @@ the `clientside_pb_script` container group.
   `error_bucket=snapshot_missing`.
 - PB-side command application is allowlisted and rate-limited. The default is
   one immediate command per PB run.
+
+## License
+
+This repository is source-available under the [NOVALI Client-Side PB Bridge Proprietary Beta License](LICENSE.md). It is not open source.
+
+You may view, download, install, and run it for evaluation, development testing, and approved private beta testing. Redistribution, commercial use, derivative publication, and public or live server use outside an approved beta require prior written permission.

@@ -1,0 +1,22 @@
+[NOVALI.ClientSidePB]
+bridge_id=pb-bridge-001
+mailbox_mode=both
+text_panel_name=NOVALI PB Bridge
+script_id=pb-bridge-001-orchestrator
+verification_nonce=
+snapshot_mode=minimal
+max_commands_per_minute=30
+max_apply_commands_per_tick=8
+dynamic_apply_commands=true
+dynamic_min_apply_commands_per_tick=1
+dynamic_max_apply_commands_per_tick=8
+dynamic_runtime_low_ratio=0.45
+dynamic_runtime_high_ratio=0.75
+include_terminal_metadata=false
+apply_worker_commands=true
+allow_connected_grid_commands=false
+runtime_ms_limit=0.25
+runtime_ms_soft_ratio=0.75
+cooldown_seconds=3
+fail_closed=true
+

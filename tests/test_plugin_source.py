@@ -52,6 +52,7 @@ def test_plugin_grid_snapshot_contains_isy_block_fields():
         "production_queue_count",
         "production_queue",
         "gas_auto_refill",
+        "gas_auto_refill_supported",
         "stockpile",
         "gas_filled_ratio",
         "is_lcd",
@@ -69,8 +70,29 @@ def test_plugin_grid_snapshot_contains_isy_block_fields():
         "door_open_ratio",
         "door_status",
         "color",
+        "font",
+        "font_size",
+        "text_padding",
+        "alignment",
+        "content_type",
+        "surface_size",
+        "texture_size",
+        "custom_name_with_faction",
+        "has_local_player_access",
+        "terminal_actions",
+        "terminal_properties",
     ]:
         assert f'Quote("{field}")' in source
+
+
+def test_plugin_reads_text_surface_metadata_for_virtual_pb_fidelity():
+    source = PLUGIN.read_text(encoding="utf-8")
+
+    assert "AppendTextSurfaceSnapshotFields(builder, block);" in source
+    assert 'ReadSurfaceString(surface, "Font", "Debug")' in source
+    assert 'ReadSurfaceDouble(surface, "FontSize", 0.6)' in source
+    assert 'ReadSurfaceVectorJson(surface, "SurfaceSize", 512, 512)' in source
+    assert 'ReadSurfaceVectorJson(surface, "TextureSize", 512, 512)' in source
 
 
 def test_plugin_fallback_preserves_lcd_custom_data_and_text():
@@ -111,7 +133,32 @@ def test_plugin_snapshot_reads_queue_and_machine_setup_state():
     assert 'method.Name.EndsWith(".GetQueue", StringComparison.Ordinal)' in source
     assert 'ReadBoolMember(block, "CooperativeMode", false)' in source
     assert 'ReadGasAutoRefill(block)' in source
+
+
+def test_plugin_snapshot_reads_terminal_metadata_for_read_only_harness():
+    source = PLUGIN.read_text(encoding="utf-8")
+
+    assert "ShouldIncludeTerminalMetadata(body)" in source
+    assert "BuildGridSnapshotJson(programmableBlock, includeTerminalMetadata)" in source
+    assert "BuildGridBlockJson(slimBlock.FatBlock, includeTerminalMetadata)" in source
+    assert 'ReadStringMember(block, "CustomNameWithFaction", ReadStringMember(block, "CustomName"))' in source
+    assert 'ReadBoolMethod(block, "HasLocalPlayerAccess", true)' in source
+    assert 'ReadBoolMethod(block, "HasNobodyPlayerAccessToBlock", true)' in source
+    assert 'if (includeTerminalMetadata)' in source
+    assert "BuildTerminalActionsJson(block)" in source
+    assert "BuildTerminalPropertiesJson(block)" in source
+    assert 'ReadTerminalList(block, "GetActions")' in source
+    assert 'ReadTerminalList(block, "GetProperties")' in source
+    assert "HasGasAutoRefillProperty(block)" in source
     assert 'ReadBoolMember(block, "Stockpile", false)' in source
+
+
+def test_plugin_reports_missing_gas_auto_refill_property_separately_from_false():
+    source = PLUGIN.read_text(encoding="utf-8")
+
+    assert 'Quote("gas_auto_refill_supported")' in source
+    assert 'HasBoolTerminalProperty(block, "AutoRefill")' in source
+    assert 'HasBoolTerminalProperty(block, "AutoRefillBottles")' in source
 
 
 def test_plugin_json_quote_escapes_control_characters():
@@ -122,3 +169,14 @@ def test_plugin_json_quote_escapes_control_characters():
     assert 'builder.Append("\\\\t");' in source
     assert 'char.IsControl(c)' in source
     assert 'ToString("x4", CultureInfo.InvariantCulture)' in source
+
+
+def test_plugin_distinguishes_expected_result_lag_from_sequence_mismatch():
+    source = PLUGIN.read_text(encoding="utf-8")
+
+    assert "ReturnResultIfPresent(entity, customData, bridgeId, sequence, body)" in source
+    assert 'var lastAppliedSequence = ExtractNestedJsonInt(requestBody, "last_apply", "sequence");' in source
+    assert '_lastResultState = "result_already_applied";' in source
+    assert '_lastResultState = "waiting_for_current_result";' in source
+    assert '_lastResultState = "result_future_sequence";' in source
+    assert "ExtractNestedJsonInt" in source

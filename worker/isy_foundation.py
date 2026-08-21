@@ -1,7 +1,16 @@
 from __future__ import annotations
 
 from collections import Counter
+from datetime import datetime
 from typing import Any
+
+from worker.block_selectors import (
+    block_contains_keyword,
+    blocks_matching_keyword,
+    first_block_matching_keyword,
+    surface_index_for_custom_data_tag,
+)
+from worker.text_surface_layout import layout_text_for_surface
 
 ICE_VOLUME_PER_UNIT = 0.00037
 ORE_VOLUME_PER_UNIT = 0.00037
@@ -272,14 +281,21 @@ def plan_lcd_reports(
             if len(commands) >= max_machine:
                 skipped["budget"] += 1
                 break
+            layout = layout_text_for_surface(report_text(label, request, blocks, block), block, as_int(request.get("sequence"), 0))
             commands.append(
                 {
                     "kind": "write_text_surface",
                     "command_id": command_id(request, "lcd", len(commands) + 1),
                     "block_entity_id": entity_id(block),
-                    "surface_index": 0,
+                    "surface_index": lcd_keyword_surface_index(block, keyword),
                     "append": False,
-                    "text": report_text(label, request, blocks, block),
+                    "text": layout["text"],
+                    "font": layout["font"],
+                    "font_size": layout["font_size"],
+                    "text_padding": layout["text_padding"],
+                    "alignment": layout["alignment"],
+                    "content_type": layout["content_type"],
+                    "layout": layout["layout"],
                 }
             )
             if label == "autocrafting":
@@ -330,6 +346,9 @@ def plan_autocrafting(
         str(config.get("autocraftingKeyword") or DEFAULT_LCD_KEYWORDS["autocrafting"]),
     )
     blueprint_specs = autocrafting_blueprint_specs(request, blocks)
+    custom_data_blueprints = parse_virtual_pb_custom_data_blueprints(virtual_pb_custom_data(request))
+    for item in custom_data_blueprints["items"].values():
+        add_blueprint_spec(blueprint_specs, item)
     discovered_custom_data = autocrafting_discovered_custom_data(autocrafting_lcd, blocks, config, blueprint_specs) if autocrafting_lcd else ""
     if discovered_custom_data and supports_custom_data_commands(request):
         append_command(
@@ -428,12 +447,16 @@ def plan_autocrafting(
         feed_autocrafting_materials(blocks, active_assemblers, material_needs_by_machine, append_command, skipped)
     cleanup_assembler_input_ingots(blocks, component_assemblers, config, blueprint_specs, append_command, skipped)
     if len(commands) >= max_machine:
-        return module_summary(True, assemblers, proposed, skipped)
+        summary = module_summary(True, assemblers, proposed, skipped)
+        summary["virtual_pb_custom_data"] = custom_data_blueprint_summary(custom_data_blueprints)
+        return summary
     if not assemblers:
         skipped["assembler_missing"] += 1
     elif not active_assemblers:
         skipped["active_assembler_missing"] += 1
-    return module_summary(True, assemblers, proposed, skipped)
+    summary = module_summary(True, assemblers, proposed, skipped)
+    summary["virtual_pb_custom_data"] = custom_data_blueprint_summary(custom_data_blueprints)
+    return summary
 
 
 def plan_refinery(
@@ -707,7 +730,9 @@ def plan_gas_balancing(
         setup_commands = []
         if as_bool(generator.get("use_conveyor"), False):
             setup_commands.append(("gas_conveyor", {"kind": "set_use_conveyor", "block_entity_id": entity_id(generator), "enabled": False}))
-        if not as_bool(generator.get("gas_auto_refill"), False):
+        if not as_bool(generator.get("gas_auto_refill_supported"), False):
+            skipped["gas_auto_refill_unsupported"] += 1
+        elif not as_bool(generator.get("gas_auto_refill"), False):
             setup_commands.append(("gas_auto_refill", {"kind": "set_gas_auto_refill", "block_entity_id": entity_id(generator), "enabled": True}))
         current_ice = inventory_amount(generator, is_ice_item)
         target_ice = gas_generator_target_ice(generator)
@@ -856,31 +881,45 @@ def report_text(
 
 
 def render_main_lcd(request: dict[str, Any], blocks: list[dict[str, Any]]) -> str:
-    cargo = count_blocks(blocks, "is_cargo")
+    config = request.get("worker_config") if isinstance(request.get("worker_config"), dict) else {}
     refineries = count_blocks(blocks, "is_refinery")
     generators = count_blocks(blocks, "is_gas_generator")
     reactors = count_blocks(blocks, "is_reactor")
     assemblers = count_blocks(blocks, "is_assembler")
+    survival_kits = count_blocks(blocks, "is_survival_kit")
     inventories = sum(len(block.get("inventories") or []) for block in blocks if isinstance(block.get("inventories"), list))
-    items = 0
+    inventories_with_items = 0
     for block in blocks:
         for inventory in block.get("inventories") if isinstance(block.get("inventories"), list) else []:
-            if isinstance(inventory, dict):
-                items += len(inventory.get("items") or [])
-    config = request.get("worker_config") if isinstance(request.get("worker_config"), dict) else {}
+            if isinstance(inventory, dict) and inventory.get("items"):
+                inventories_with_items += 1
+    special_containers = count_special_containers(blocks)
     lines = [
         "Isy's Inventory Manager",
         "========================",
         "",
-        "Script is running in station mode",
-        "",
-        "Task: NOVALI bridge planning",
-        "Script step: foundation / offloaded",
-        "",
-        "Managed blocks:",
-        f"  {cargo} Cargo Containers",
-        f"  {inventories} inventories contain {items} item stacks",
     ]
+    summaries = main_lcd_container_summaries(blocks, config)
+    if summaries:
+        for summary in summaries:
+            percent = summary["percent"]
+            lines.append(
+                f"{summary['count']}x {summary['label']}: {format_isy_volume(summary['current_volume'])} / "
+                f"{format_isy_volume(summary['max_volume'])} {percent * 100:0.1f}%"
+            )
+            lines.append(main_lcd_bar(percent))
+        lines.append(f"=> {sum(summary['count'] for summary in summaries)} type containers: Balancing OFF")
+    else:
+        lines.append("Script is running in station mode")
+    lines.extend(
+        [
+            "",
+            "Managed blocks:",
+            f"  {inventories} Inventories (total) / {inventories_with_items} inventories contain items",
+        ]
+    )
+    if special_containers:
+        lines.append(f"  {special_containers} Special Containers")
     if refineries:
         lines.append(f"  {refineries} Refineries: Ore Balancing {'ON' if as_bool(config.get('enableOreBalancing'), True) else 'OFF'}")
     if generators:
@@ -893,8 +932,165 @@ def render_main_lcd(request: dict[str, Any], blocks: list[dict[str, Any]]) -> st
             f"Uncraft {'ON' if as_bool(config.get('enableAutodisassembling'), False) else 'OFF'} | "
             f"Cleanup {'ON' if as_bool(config.get('enableAssemblerCleanup'), False) else 'OFF'}"
         )
-    lines.extend(["", "Last Action:", f"Bridge sequence {request.get('sequence', 0)} processed"])
+    if survival_kits:
+        lines.append(f"  {survival_kits} Survival Kits: Ingot Crafting OFF | Auto OFF")
+    lines.extend(["", "Last Action:"])
+    lines.extend(main_lcd_last_action_lines(request))
     return "\n".join(lines).rstrip() + "\n"
+
+
+def main_lcd_container_summaries(blocks: list[dict[str, Any]], config: dict[str, Any]) -> list[dict[str, Any]]:
+    categories = [
+        ("Ores", "oreContainerKeyword", "Ores", is_refinery_ore_item),
+        ("Ingots", "ingotContainerKeyword", "Ingots", is_ingot_item),
+        ("Components", "componentContainerKeyword", "Components", is_component_item),
+        ("Tools", "toolContainerKeyword", "Tools", is_tool_item),
+        ("Ammo", "ammoContainerKeyword", "Ammo", is_ammo_item),
+        ("Bottles", "bottleContainerKeyword", "Bottles", is_bottle_item),
+    ]
+    summaries: list[dict[str, Any]] = []
+    used_ids: set[int] = set()
+    for label, keyword_key, default_keyword, predicate in categories:
+        keyword = str(config.get(keyword_key) or default_keyword).strip().lower()
+        matching = [
+            block
+            for block in blocks
+            if same_construct(block)
+            and as_bool(block.get("is_cargo"), False)
+            and entity_id(block) not in used_ids
+            and keyword
+            and keyword in str(block.get("name", "")).lower()
+        ]
+        if not matching:
+            matching = [
+                block
+                for block in blocks
+                if same_construct(block)
+                and as_bool(block.get("is_cargo"), False)
+                and entity_id(block) not in used_ids
+                and block_contains_item(block, predicate)
+            ]
+        if not matching:
+            continue
+        used_ids.update(entity_id(block) for block in matching)
+        current, maximum = container_volumes(matching)
+        summaries.append(
+            {
+                "label": label,
+                "count": len(matching),
+                "current_volume": current,
+                "max_volume": maximum,
+                "percent": max(0.0, min(1.0, current / maximum if maximum > 0 else 0.0)),
+            }
+        )
+    return summaries
+
+
+def block_contains_item(block: dict[str, Any], predicate: Any) -> bool:
+    return any(
+        isinstance(item, dict) and predicate(item)
+        for inventory in (block.get("inventories") if isinstance(block.get("inventories"), list) else [])
+        if isinstance(inventory, dict)
+        for item in (inventory.get("items") if isinstance(inventory.get("items"), list) else [])
+    )
+
+
+def container_volumes(blocks: list[dict[str, Any]]) -> tuple[float, float]:
+    current = 0.0
+    maximum = 0.0
+    for block in blocks:
+        for inventory in block.get("inventories") if isinstance(block.get("inventories"), list) else []:
+            if not isinstance(inventory, dict):
+                continue
+            current += max(0.0, as_float(inventory.get("current_volume"), 0))
+            maximum += max(0.0, as_float(inventory.get("max_volume"), 0))
+    return current, maximum
+
+
+def count_special_containers(blocks: list[dict[str, Any]]) -> int:
+    count = 0
+    for block in blocks:
+        if not same_construct(block) or not as_bool(block.get("is_cargo"), False):
+            continue
+        haystack = (str(block.get("name", "")) + "\n" + str(block.get("custom_data", ""))).lower()
+        if "special" in haystack or "[iim]" in haystack:
+            count += 1
+    return count
+
+
+def format_isy_volume(volume_units: float) -> str:
+    liters = max(0.0, volume_units) * 1000.0
+    if liters >= 1000000:
+        return f"{trim_decimal(liters / 1000000.0)} ML"
+    if liters >= 1000:
+        return f"{trim_decimal(liters / 1000.0)} kL"
+    return f"{trim_decimal(liters)} L"
+
+
+def trim_decimal(value: float) -> str:
+    text = f"{value:0.1f}"
+    return text[:-2] if text.endswith(".0") else text
+
+
+def main_lcd_bar(percent: float, width: int = 58) -> str:
+    filled = max(0, min(width, int(round(percent * width))))
+    return "[" + ("|" * filled).ljust(width, ".") + "]"
+
+
+def main_lcd_last_action_lines(request: dict[str, Any]) -> list[str]:
+    config = request.get("worker_config") if isinstance(request.get("worker_config"), dict) else {}
+    state = request.get("state") if isinstance(request.get("state"), dict) else {}
+    explicit = str(state.get("last_action_text") or "").strip()
+    if explicit:
+        return timestamp_action_lines(explicit, state, config)
+    last_apply = state.get("last_apply") if isinstance(state.get("last_apply"), dict) else {}
+    explicit = str(last_apply.get("last_action_text") or "").strip()
+    if explicit:
+        return timestamp_action_lines(explicit, last_apply, config)
+    status = str(last_apply.get("status") or "").strip()
+    sequence = as_int(last_apply.get("sequence"), 0)
+    if status and status not in {"no_commands", "apply_disabled"} and sequence > 0:
+        return [f"Sequence {sequence}: inventory action processed"]
+    return ["No recent inventory action recorded"]
+
+
+def timestamp_action_lines(action_text: str, action_state: dict[str, Any], config: dict[str, Any]) -> list[str]:
+    lines = action_text.splitlines()
+    if not lines or not as_bool(config.get("showTimeStamp"), True):
+        return lines
+    action_time = last_action_time_text(action_state)
+    if not action_time:
+        return lines
+    lines[0] = f"{action_time}: {lines[0]}"
+    return lines
+
+
+def last_action_time_text(action_state: dict[str, Any]) -> str:
+    explicit = str(action_state.get("last_action_time") or "").strip()
+    if explicit:
+        return explicit
+    return format_action_time_from_iso(str(action_state.get("last_action_at_utc") or "").strip())
+
+
+def format_action_time_from_iso(value: str) -> str:
+    if not value:
+        return ""
+    text = value.replace("Z", "+00:00")
+    if "." in text:
+        prefix, suffix = text.split(".", 1)
+        digits = []
+        rest = ""
+        for index, char in enumerate(suffix):
+            if char.isdigit():
+                digits.append(char)
+                continue
+            rest = suffix[index:]
+            break
+        text = prefix + "." + "".join(digits[:6]) + rest
+    try:
+        return datetime.fromisoformat(text).strftime("%H:%M:%S")
+    except ValueError:
+        return ""
 
 
 def render_inventory_lcd(
@@ -1083,7 +1279,7 @@ def autocrafting_discovered_custom_data(
 def supports_custom_data_commands(request: dict[str, Any]) -> bool:
     state = request.get("state") if isinstance(request.get("state"), dict) else {}
     version = str(state.get("shim_version", "")).lower()
-    return "v13" in version or "customdata" in version
+    return "baseline-template" in version or "v13" in version or "customdata" in version
 
 
 def autocrafting_modifiers_text() -> str:
@@ -1225,16 +1421,19 @@ def is_food_processor(block: dict[str, Any]) -> bool:
 
 
 def first_named(blocks: list[dict[str, Any]], keyword: str) -> dict[str, Any] | None:
-    lowered = keyword.lower()
-    for block in blocks:
-        if lowered in str(block.get("name", "")).lower():
-            return block
-    return None
+    return first_block_matching_keyword(blocks, keyword)
 
 
 def named_blocks(blocks: list[dict[str, Any]], keyword: str) -> list[dict[str, Any]]:
-    lowered = keyword.lower()
-    return [block for block in blocks if lowered in str(block.get("name", "")).lower()]
+    return blocks_matching_keyword(blocks, keyword)
+
+
+def block_matches_lcd_keyword(block: dict[str, Any], keyword: str) -> bool:
+    return block_contains_keyword(block, keyword)
+
+
+def lcd_keyword_surface_index(block: dict[str, Any], keyword: str) -> int:
+    return surface_index_for_custom_data_tag(block, keyword)
 
 
 def command_id(request: dict[str, Any], module: str, index: int) -> str:
@@ -1367,6 +1566,59 @@ def autocrafting_blueprint_specs(request: dict[str, Any], blocks: list[dict[str,
                 continue
             add_blueprint_spec(specs, {"component_subtype": name, "blueprint_id": blueprint_id, "aliases": [name, blueprint_suffix(blueprint_id)]})
     return specs
+
+
+def virtual_pb_custom_data(request: dict[str, Any]) -> str:
+    virtual_pb = request.get("virtual_pb") if isinstance(request.get("virtual_pb"), dict) else {}
+    custom_data = str(virtual_pb.get("custom_data", "") or "")
+    if custom_data:
+        return custom_data
+    config = request.get("worker_config") if isinstance(request.get("worker_config"), dict) else {}
+    return str(config.get("virtualPbCustomData", "") or "")
+
+
+def parse_virtual_pb_custom_data_blueprints(custom_data: str) -> dict[str, Any]:
+    items: dict[str, dict[str, Any]] = {}
+    no_bp_items: list[str] = []
+    in_table = False
+    for raw_line in str(custom_data or "").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or line.startswith("//"):
+            continue
+        if line.lower().replace(" ", "") == "itemid;blueprintid":
+            in_table = True
+            continue
+        if not in_table or ";" not in line:
+            continue
+        item_id, blueprint_id = [part.strip() for part in line.split(";", 1)]
+        if not item_id or "/" not in item_id:
+            continue
+        if blueprint_id.lower() == "nobp":
+            no_bp_items.append(item_id)
+            continue
+        type_id, subtype = [part.strip() for part in item_id.split("/", 1)]
+        if not type_id or not subtype or not blueprint_id:
+            continue
+        spec = {
+            "component_subtype": subtype,
+            "blueprint_id": blueprint_id,
+            "output_type_id": type_id,
+            "aliases": [subtype, blueprint_suffix(blueprint_id)],
+            "source": "virtual_pb_custom_data",
+        }
+        key = normalize_recipe_key(subtype)
+        if key:
+            items[key] = spec
+    return {"items": items, "no_bp_items": no_bp_items}
+
+
+def custom_data_blueprint_summary(parsed: dict[str, Any]) -> dict[str, int]:
+    items = parsed.get("items") if isinstance(parsed.get("items"), dict) else {}
+    no_bp_items = parsed.get("no_bp_items") if isinstance(parsed.get("no_bp_items"), list) else []
+    return {
+        "blueprint_map_entries": len(items),
+        "no_bp_entries": len(no_bp_items),
+    }
 
 
 def add_blueprint_spec(specs: dict[str, dict[str, Any]], spec: dict[str, Any]) -> None:
@@ -2165,7 +2417,21 @@ def rotate_foundation_commands(request: dict[str, Any], commands: list[dict[str,
     offset = as_int(request.get("sequence"), 0) % len(commands)
     rotated = commands[offset:] + commands[:offset]
     prioritized = sorted(rotated, key=foundation_command_priority)
-    return prioritized[:max_machine]
+    selected = prioritized[:max_machine]
+    return reserve_text_surface_refreshes(selected, prioritized, max_machine)
+
+
+def reserve_text_surface_refreshes(selected: list[dict[str, Any]], candidates: list[dict[str, Any]], max_machine: int) -> list[dict[str, Any]]:
+    if max_machine <= 1:
+        return selected
+    if any(str(command.get("kind", "")) == "write_text_surface" for command in selected):
+        return selected
+    lcd_candidates = [command for command in candidates if str(command.get("kind", "")) == "write_text_surface"]
+    if not lcd_candidates:
+        return selected
+    reserved_slots = min(len(lcd_candidates), max(1, max_machine // 6))
+    protected_count = max(0, len(selected) - reserved_slots)
+    return selected[:protected_count] + lcd_candidates[:reserved_slots]
 
 
 def foundation_command_priority(command: dict[str, Any]) -> int:
@@ -2185,17 +2451,17 @@ def foundation_command_priority(command: dict[str, Any]) -> int:
         return 5
     if kind == "transfer_item" and reason == "autocrafting_ore_refining":
         return 6
-    if kind == "write_text_surface":
-        return 7
     if kind == "transfer_item" and reason == "refinery_output_cleanup":
-        return 8
+        return 7
     if kind == "transfer_item" and reason == "assembler_output_cleanup":
-        return 9
+        return 8
     if kind == "transfer_item" and reason == "refinery_input_unload":
-        return 10
+        return 9
     if kind in {"set_use_conveyor", "set_assembler_cooperative_mode"}:
-        return 11
+        return 10
     if kind == "transfer_item":
+        return 11
+    if kind == "write_text_surface":
         return 12
     if kind == "write_block_custom_data":
         return 13

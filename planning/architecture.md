@@ -193,7 +193,7 @@ repeating already-applied conveyor, mode, cooperative, and auto-refill setup.
 
 ## PB Runtime Limiter
 
-The default limiter profile treats `0.3` as the PB runtime-ms ceiling for the
+The default limiter profile treats `0.25` as the PB runtime-ms ceiling for the
 client-side bridge. The shim
 emits `last_runtime_ms`, `max_runtime_ms`, `current_instruction_count`,
 `max_instruction_count`, and `limiter_state` in each request that reaches the

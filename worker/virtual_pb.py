@@ -7,51 +7,84 @@ from pathlib import Path
 from typing import Any
 
 
-UNSAFE_PATTERNS = {
-    "System.IO": "System.IO",
-    "File.": "File.",
-    "Directory.": "Directory.",
-    "System.Net": "System.Net",
-    "HttpClient": "HttpClient",
-    "Process.": "Process.",
-    "System.Diagnostics": "System.Diagnostics",
-    "Thread": "Thread",
-    "Task.": "Task.",
-    "Reflection": "Reflection",
-    "Activator.": "Activator.",
-    "Marshal.": "Marshal.",
-}
+def analyze_virtual_pb_script(script_path: Path, root: Path | None = None) -> dict[str, Any]:
+    active_root = (root or Path(".")).resolve()
+    project = active_root / "virtual_pb_runner" / "NOVALI.VirtualPBRunner.csproj"
+    if project.exists():
+        with tempfile.TemporaryDirectory(prefix="novali-virtual-pb-analyze-") as temp_dir:
+            output_path = Path(temp_dir) / "compatibility.json"
+            try:
+                completed = subprocess.run(
+                    [
+                        "dotnet",
+                        "run",
+                        "--project",
+                        str(project),
+                        "--",
+                        "--mode",
+                        "analyze",
+                        "--script",
+                        str(script_path),
+                        "--output",
+                        str(output_path),
+                    ],
+                    cwd=str(active_root),
+                    text=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    timeout=120,
+                    check=False,
+                )
+            except subprocess.TimeoutExpired:
+                return {
+                    "status": "unsupported",
+                    "compiled": False,
+                    "unsupported_apis": ["compile_timeout"],
+                    "unsupported_interfaces": [],
+                    "unsupported_members": ["compile_timeout"],
+                    "error_bucket": "virtual_pb_compile_timeout",
+                }
+            if completed.returncode == 0 and output_path.exists():
+                payload = json.loads(output_path.read_text(encoding="utf-8-sig"))
+                payload.setdefault("runner_stdout", completed.stdout[-1000:])
+                return payload
+            return {
+                "status": "unsupported",
+                "compiled": False,
+                "unsupported_apis": ["runner_unavailable"],
+                "unsupported_interfaces": [],
+                "unsupported_members": ["runner_unavailable"],
+                "blocked_members": [],
+                "blocked_command_mappings": [],
+                "missing_types": [],
+                "missing_members": [],
+                "compile_errors": [],
+                "error_bucket": "virtual_pb_runner_unavailable",
+                "runner_unavailable": True,
+                "runner_stdout": completed.stdout[-1000:],
+                "runner_stderr": completed.stderr[-1000:],
+            }
 
-
-def analyze_virtual_pb_script(script_path: Path) -> dict[str, Any]:
-    try:
-        source = script_path.read_text(encoding="utf-8", errors="replace")
-    except OSError as exc:
-        return {"status": "missing", "unsupported_apis": [], "error": type(exc).__name__}
-    unsupported = sorted(label for pattern, label in UNSAFE_PATTERNS.items() if pattern in source)
-    supported_block_types = sorted(
-        block_type
-        for block_type in [
-            "IMyDoor",
-            "IMyAirtightHangarDoor",
-            "IMyLightingBlock",
-            "IMySoundBlock",
-            "IMyTextSurface",
-        ]
-        if block_type in source
-    )
     return {
-        "status": "unsupported" if unsupported else "supported",
-        "unsupported_apis": unsupported,
-        "supported_block_types": supported_block_types,
-        "uses_grid_terminal_system": "GridTerminalSystem" in source,
-        "uses_runtime": "Runtime." in source,
-        "uses_custom_data": "CustomData" in source,
+        "status": "unsupported",
+        "compiled": False,
+        "unsupported_apis": ["runner_unavailable"],
+        "unsupported_interfaces": [],
+        "unsupported_members": ["runner_unavailable"],
+        "blocked_members": [],
+        "blocked_command_mappings": [],
+        "missing_types": [],
+        "missing_members": [],
+        "compile_errors": [],
+        "supported_block_types": [],
+        "runner_unavailable": True,
+        "error_bucket": "virtual_pb_runner_unavailable",
     }
 
 
 def run_virtual_pb(script_path: Path, request: dict[str, Any], root: Path | None = None) -> dict[str, Any]:
-    compatibility = analyze_virtual_pb_script(script_path)
+    active_root = (root or Path(".")).resolve()
+    compatibility = analyze_virtual_pb_script(script_path, active_root)
     if compatibility["status"] != "supported":
         return {
             "adapter_status": "rejected",
@@ -61,7 +94,6 @@ def run_virtual_pb(script_path: Path, request: dict[str, Any], root: Path | None
             "error_bucket": "virtual_pb_unsupported_api",
         }
 
-    active_root = (root or Path(".")).resolve()
     project = active_root / "virtual_pb_runner" / "NOVALI.VirtualPBRunner.csproj"
     if not project.exists():
         return {
@@ -76,27 +108,9 @@ def run_virtual_pb(script_path: Path, request: dict[str, Any], root: Path | None
         request_path = Path(temp_dir) / "request.json"
         output_path = Path(temp_dir) / "output.json"
         request_path.write_text(json.dumps(request), encoding="utf-8")
-        completed = subprocess.run(
-            [
-                "dotnet",
-                "run",
-                "--project",
-                str(project),
-                "--",
-                "--script",
-                str(script_path),
-                "--request",
-                str(request_path),
-                "--output",
-                str(output_path),
-            ],
-            cwd=str(active_root),
-            text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            timeout=15,
-            check=False,
-        )
+        completed = run_virtual_pb_runner_process(project, script_path, request_path, output_path, active_root)
+        if completed.returncode != 0 or not output_path.exists():
+            completed = run_virtual_pb_runner_process(project, script_path, request_path, output_path, active_root)
         if completed.returncode != 0 or not output_path.exists():
             return {
                 "adapter_status": "failed",
@@ -108,7 +122,45 @@ def run_virtual_pb(script_path: Path, request: dict[str, Any], root: Path | None
                 "runner_stderr": completed.stderr[-1000:],
             }
         payload = json.loads(output_path.read_text(encoding="utf-8"))
-    payload.setdefault("compatibility", compatibility)
+    generated_compatibility = payload.get("compatibility") if isinstance(payload.get("compatibility"), dict) else {}
+    merged_compatibility = dict(generated_compatibility)
+    for key, value in compatibility.items():
+        if key not in {"status", "compiled"} or key not in merged_compatibility:
+            merged_compatibility[key] = value
+    for key, value in generated_compatibility.items():
+        if key in {"status", "compiled", "emitted_command_kinds"}:
+            merged_compatibility[key] = value
+    payload["compatibility"] = merged_compatibility
     payload.setdefault("summary", "Virtual PB tick processed.")
     payload.setdefault("commands", [])
     return payload
+
+
+def run_virtual_pb_runner_process(
+    project: Path,
+    script_path: Path,
+    request_path: Path,
+    output_path: Path,
+    active_root: Path,
+) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [
+            "dotnet",
+            "run",
+            "--project",
+            str(project),
+            "--",
+            "--script",
+            str(script_path),
+            "--request",
+            str(request_path),
+            "--output",
+            str(output_path),
+        ],
+        cwd=str(active_root),
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        timeout=60,
+        check=False,
+    )

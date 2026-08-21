@@ -6,17 +6,9 @@
       "source": "local_worker",
       "display_name": "Sample Status Adapter",
       "module": "worker.scripts.sample_status_adapter",
+      "runtime": "python",
+      "source_path": "",
       "input_schema": "status_summary.v1",
-      "output_schema": "compact_commands.v1",
-      "timeout_ms": 1000,
-      "enabled": true
-    },
-    {
-      "script_id": "workshop_1216126863_adapter",
-      "source": "workshop_import",
-      "display_name": "Isy\u0027s Inventory Manager",
-      "module": "worker.scripts.workshop_1216126863_adapter",
-      "input_schema": "adapter_tick.v1",
       "output_schema": "compact_commands.v1",
       "timeout_ms": 1000,
       "enabled": true
@@ -26,6 +18,8 @@
       "source": "local_worker",
       "display_name": "Bridge Orchestrator",
       "module": "worker.scripts.bridge_orchestrator",
+      "runtime": "python",
+      "source_path": "",
       "input_schema": "adapter_tick.v1",
       "output_schema": "compact_commands.v1",
       "timeout_ms": 3000,
@@ -34,13 +28,51 @@
     {
       "script_id": "virtual_whip_auto_door",
       "source": "workshop_import",
-      "display_name": "Whip\u0027s Auto Door and Airlock Script (Virtual PB)",
+      "display_name": "Whip's Auto Door and Airlock Script (Virtual PB)",
+      "module": "",
       "runtime": "virtual_pb_csharp",
       "source_path": "data/imports/416932930/Script.cs",
       "input_schema": "virtual_pb_tick.v1",
       "output_schema": "compact_commands.v1",
       "timeout_ms": 5000,
       "enabled": true
+    },
+    {
+      "script_id": "virtual_workshop_822950976",
+      "source": "workshop_import",
+      "display_name": "Automatic LCDs 2 (Virtual PB)",
+      "module": "",
+      "runtime": "virtual_pb_csharp",
+      "source_path": "data/imports/822950976/Script.cs",
+      "input_schema": "virtual_pb_tick.v1",
+      "output_schema": "compact_commands.v1",
+      "timeout_ms": 5000,
+      "enabled": true
+    },
+    {
+      "script_id": "workshop_2831096030_adapter",
+      "source": "workshop_import",
+      "display_name": "Vector Thrust OS",
+      "module": "worker.scripts.workshop_2831096030_adapter",
+      "runtime": "python",
+      "source_path": "",
+      "input_schema": "adapter_tick.v1",
+      "output_schema": "compact_commands.v1",
+      "timeout_ms": 1000,
+      "enabled": false
+    },
+    {
+      "script_id": "workshop_1216126863_adapter",
+      "source": "workshop_import",
+      "display_name": "Isy's Inventory Manager",
+      "module": "worker.scripts.workshop_1216126863_adapter",
+      "runtime": "python",
+      "source_path": "",
+      "input_schema": "adapter_tick.v1",
+      "output_schema": "compact_commands.v1",
+      "timeout_ms": 1000,
+      "enabled": true,
+      "profile_id": "isy_inventory_manager"
     }
   ]
 }
