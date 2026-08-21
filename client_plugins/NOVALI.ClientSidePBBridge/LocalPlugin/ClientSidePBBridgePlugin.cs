@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -188,7 +189,7 @@ namespace NOVALI.ClientSidePBBridge
                     _lastBridgeId = bridgeId;
                     _lastSequence = sequence;
                 }
-                if (ReturnResultIfPresent(entity, customData, bridgeId, sequence))
+                if (ReturnResultIfPresent(entity, customData, bridgeId, sequence, body))
                 {
                     _returnedResults++;
                     _lastBridgeId = bridgeId;
@@ -218,13 +219,25 @@ namespace NOVALI.ClientSidePBBridge
             }
             else
             {
-                var gridSnapshot = BuildGridSnapshotJson(programmableBlock);
+                var includeTerminalMetadata = ShouldIncludeTerminalMetadata(body);
+                var gridSnapshot = BuildGridSnapshotJson(programmableBlock, includeTerminalMetadata);
                 if (!string.IsNullOrWhiteSpace(gridSnapshot))
                 {
                     enriched = AppendJsonProperty(enriched, "grid_snapshot", gridSnapshot, ref _lastGridSnapshotState);
                 }
             }
             return enriched;
+        }
+
+        private static bool ShouldIncludeTerminalMetadata(string body)
+        {
+            if (ExtractJsonBool(body, "include_terminal_metadata", false))
+            {
+                return true;
+            }
+            var mode = ExtractJsonString(body, "snapshot_mode");
+            return string.Equals(mode, "terminal_metadata", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(mode, "full", StringComparison.OrdinalIgnoreCase);
         }
 
         private string AppendJsonProperty(string body, string propertyName, string propertyJson, ref string state)
@@ -383,7 +396,7 @@ namespace NOVALI.ClientSidePBBridge
             return builder.ToString();
         }
 
-        private string BuildGridSnapshotJson(object programmableBlock)
+        private string BuildGridSnapshotJson(object programmableBlock, bool includeTerminalMetadata)
         {
             _lastGridSnapshotBlocks = 0;
             _lastGridSnapshotLcds = 0;
@@ -422,12 +435,12 @@ namespace NOVALI.ClientSidePBBridge
                     string blockJson;
                     try
                     {
-                        blockJson = BuildGridBlockJson(slimBlock.FatBlock);
+                        blockJson = BuildGridBlockJson(slimBlock.FatBlock, includeTerminalMetadata);
                     }
                     catch (Exception ex)
                     {
                         RecordGridSnapshotSkip(slimBlock.FatBlock, ex);
-                        blockJson = BuildGridBlockFallbackJson(slimBlock.FatBlock);
+                        blockJson = BuildGridBlockFallbackJson(slimBlock.FatBlock, includeTerminalMetadata);
                         if (string.IsNullOrWhiteSpace(blockJson))
                         {
                             continue;
@@ -567,7 +580,7 @@ namespace NOVALI.ClientSidePBBridge
                 "|conveyor=" + (conveyor ? "true" : "false");
         }
 
-        private string BuildGridBlockJson(object block)
+        private string BuildGridBlockJson(object block, bool includeTerminalMetadata)
         {
             if (block == null)
             {
@@ -614,6 +627,7 @@ namespace NOVALI.ClientSidePBBridge
             builder.Append("{");
             builder.Append(Quote("entity_id")).Append(":").Append(ReadLongMember(block, "EntityId", 0).ToString()).Append(",");
             builder.Append(Quote("name")).Append(":").Append(Quote(ReadStringMember(block, "CustomName"))).Append(",");
+            builder.Append(Quote("custom_name_with_faction")).Append(":").Append(Quote(ReadStringMember(block, "CustomNameWithFaction", ReadStringMember(block, "CustomName")))).Append(",");
             builder.Append(Quote("type")).Append(":").Append(Quote(type)).Append(",");
             builder.Append(Quote("subtype")).Append(":").Append(Quote(subtype)).Append(",");
             builder.Append(Quote("same_construct")).Append(":true,");
@@ -621,13 +635,26 @@ namespace NOVALI.ClientSidePBBridge
             builder.Append(Quote("use_conveyor")).Append(":").Append(ReadBoolMember(block, "UseConveyorSystem", ReadBoolMember(block, "UseConveyor", false)) ? "true" : "false").Append(",");
             builder.Append(Quote("inventory_count")).Append(":").Append(inventoryCount.ToString()).Append(",");
             builder.Append(Quote("surface_count")).Append(":").Append(surfaceCount.ToString()).Append(",");
+            AppendTextSurfaceSnapshotFields(builder, block);
             builder.Append(Quote("text")).Append(":").Append(Quote(Limit(ReadSurfaceText(block), 600))).Append(",");
             builder.Append(Quote("custom_data")).Append(":").Append(Quote(Limit(ReadStringMember(block, "CustomData"), 600))).Append(",");
+            builder.Append(Quote("detailed_info")).Append(":").Append(Quote(Limit(ReadStringMember(block, "DetailedInfo"), 600))).Append(",");
+            builder.Append(Quote("custom_info")).Append(":").Append(Quote(Limit(ReadStringMember(block, "CustomInfo"), 600))).Append(",");
+            builder.Append(Quote("has_local_player_access")).Append(":").Append(ReadBoolMethod(block, "HasLocalPlayerAccess", true) ? "true" : "false").Append(",");
+            builder.Append(Quote("has_nobody_player_access")).Append(":").Append(ReadBoolMethod(block, "HasNobodyPlayerAccessToBlock", true) ? "true" : "false").Append(",");
+            builder.Append(Quote("has_player_access")).Append(":").Append(ReadBoolMethod(block, "HasLocalPlayerAccess", true) ? "true" : "false").Append(",");
+            builder.Append(Quote("has_player_access_with_nobody_check")).Append(":").Append((ReadBoolMethod(block, "HasLocalPlayerAccess", true) || ReadBoolMethod(block, "HasNobodyPlayerAccessToBlock", true)) ? "true" : "false").Append(",");
+            if (includeTerminalMetadata)
+            {
+                builder.Append(Quote("terminal_actions")).Append(":").Append(BuildTerminalActionsJson(block)).Append(",");
+                builder.Append(Quote("terminal_properties")).Append(":").Append(BuildTerminalPropertiesJson(block)).Append(",");
+            }
             builder.Append(Quote("assembler_mode")).Append(":").Append(Quote(ReadStringMember(block, "Mode"))).Append(",");
             builder.Append(Quote("assembler_cooperative_mode")).Append(":").Append(ReadBoolMember(block, "CooperativeMode", false) ? "true" : "false").Append(",");
             builder.Append(Quote("production_queue_count")).Append(":").Append(ReadIntMember(block, "QueueCount", 0).ToString()).Append(",");
             builder.Append(Quote("production_queue")).Append(":").Append(BuildProductionQueueJson(block)).Append(",");
             builder.Append(Quote("gas_auto_refill")).Append(":").Append(ReadGasAutoRefill(block) ? "true" : "false").Append(",");
+            builder.Append(Quote("gas_auto_refill_supported")).Append(":").Append(HasGasAutoRefillProperty(block) ? "true" : "false").Append(",");
             builder.Append(Quote("stockpile")).Append(":").Append(ReadBoolMember(block, "Stockpile", false) ? "true" : "false").Append(",");
             builder.Append(Quote("gas_filled_ratio")).Append(":").Append(FormatDouble(ReadDoubleLikeMember(block, "FilledRatio"))).Append(",");
             builder.Append(Quote("door_open_ratio")).Append(":").Append(FormatDouble(ReadDoubleLikeMember(block, "OpenRatio"))).Append(",");
@@ -651,7 +678,7 @@ namespace NOVALI.ClientSidePBBridge
             return builder.ToString();
         }
 
-        private string BuildGridBlockFallbackJson(object block)
+        private string BuildGridBlockFallbackJson(object block, bool includeTerminalMetadata)
         {
             if (block == null)
             {
@@ -690,6 +717,7 @@ namespace NOVALI.ClientSidePBBridge
             return "{" +
                 Quote("entity_id") + ":" + ReadLongMember(block, "EntityId", 0).ToString() + "," +
                 Quote("name") + ":" + Quote(name) + "," +
+                Quote("custom_name_with_faction") + ":" + Quote(ReadStringMember(block, "CustomNameWithFaction", name)) + "," +
                 Quote("type") + ":" + Quote(typeName) + "," +
                 Quote("subtype") + ":" + Quote("") + "," +
                 Quote("same_construct") + ":true," +
@@ -697,13 +725,29 @@ namespace NOVALI.ClientSidePBBridge
                 Quote("use_conveyor") + ":false," +
                 Quote("inventory_count") + ":0," +
                 Quote("surface_count") + ":" + (isLcd ? "1" : "0") + "," +
+                Quote("font") + ":" + Quote("Debug") + "," +
+                Quote("font_size") + ":0.6," +
+                Quote("text_padding") + ":2," +
+                Quote("alignment") + ":" + Quote("LEFT") + "," +
+                Quote("content_type") + ":" + Quote("TEXT_AND_IMAGE") + "," +
+                Quote("surface_size") + ":{\"x\":512,\"y\":512}," +
+                Quote("texture_size") + ":{\"x\":512,\"y\":512}," +
                 Quote("text") + ":" + Quote(Limit(text, 600)) + "," +
                 Quote("custom_data") + ":" + Quote(Limit(customData, 600)) + "," +
+                Quote("detailed_info") + ":" + Quote(Limit(ReadStringMember(block, "DetailedInfo"), 600)) + "," +
+                Quote("custom_info") + ":" + Quote(Limit(ReadStringMember(block, "CustomInfo"), 600)) + "," +
+                Quote("has_local_player_access") + ":" + (ReadBoolMethod(block, "HasLocalPlayerAccess", true) ? "true" : "false") + "," +
+                Quote("has_nobody_player_access") + ":" + (ReadBoolMethod(block, "HasNobodyPlayerAccessToBlock", true) ? "true" : "false") + "," +
+                Quote("has_player_access") + ":" + (ReadBoolMethod(block, "HasLocalPlayerAccess", true) ? "true" : "false") + "," +
+                Quote("has_player_access_with_nobody_check") + ":" + ((ReadBoolMethod(block, "HasLocalPlayerAccess", true) || ReadBoolMethod(block, "HasNobodyPlayerAccessToBlock", true)) ? "true" : "false") + "," +
+                (includeTerminalMetadata ? Quote("terminal_actions") + ":" + BuildTerminalActionsJson(block) + "," : "") +
+                (includeTerminalMetadata ? Quote("terminal_properties") + ":" + BuildTerminalPropertiesJson(block) + "," : "") +
                 Quote("assembler_mode") + ":" + Quote("") + "," +
                 Quote("assembler_cooperative_mode") + ":false," +
                 Quote("production_queue_count") + ":0," +
                 Quote("production_queue") + ":[]," +
                 Quote("gas_auto_refill") + ":false," +
+                Quote("gas_auto_refill_supported") + ":false," +
                 Quote("stockpile") + ":false," +
                 Quote("gas_filled_ratio") + ":0," +
                 Quote("door_open_ratio") + ":" + FormatDouble(ReadDoubleLikeMember(block, "OpenRatio")) + "," +
@@ -724,6 +768,118 @@ namespace NOVALI.ClientSidePBBridge
                 Quote("is_sound") + ":" + (isSound ? "true" : "false") + "," +
                 Quote("inventories") + ":[]" +
                 "}";
+        }
+
+        private static string BuildTerminalActionsJson(object block)
+        {
+            var actions = ReadTerminalList(block, "GetActions");
+            if (actions == null)
+            {
+                return "[]";
+            }
+            var builder = new StringBuilder();
+            builder.Append("[");
+            var count = 0;
+            foreach (var action in actions)
+            {
+                if (action == null)
+                {
+                    continue;
+                }
+                var id = ReadStringMember(action, "Id");
+                if (string.IsNullOrWhiteSpace(id))
+                {
+                    continue;
+                }
+                if (count > 0)
+                {
+                    builder.Append(",");
+                }
+                builder.Append("{");
+                builder.Append(Quote("id")).Append(":").Append(Quote(Limit(id, 120))).Append(",");
+                builder.Append(Quote("name")).Append(":").Append(Quote(Limit(ReadStringMember(action, "Name", id), 160)));
+                builder.Append("}");
+                count++;
+                if (count >= 80)
+                {
+                    break;
+                }
+            }
+            builder.Append("]");
+            return builder.ToString();
+        }
+
+        private static string BuildTerminalPropertiesJson(object block)
+        {
+            var properties = ReadTerminalList(block, "GetProperties");
+            if (properties == null)
+            {
+                return "[]";
+            }
+            var builder = new StringBuilder();
+            builder.Append("[");
+            var count = 0;
+            foreach (var property in properties)
+            {
+                if (property == null)
+                {
+                    continue;
+                }
+                var id = ReadStringMember(property, "Id");
+                if (string.IsNullOrWhiteSpace(id))
+                {
+                    continue;
+                }
+                if (count > 0)
+                {
+                    builder.Append(",");
+                }
+                builder.Append("{");
+                builder.Append(Quote("id")).Append(":").Append(Quote(Limit(id, 120))).Append(",");
+                builder.Append(Quote("type")).Append(":").Append(Quote(Limit(ReadStringMember(property, "TypeName", "Object"), 80)));
+                builder.Append("}");
+                count++;
+                if (count >= 120)
+                {
+                    break;
+                }
+            }
+            builder.Append("]");
+            return builder.ToString();
+        }
+
+        private static IEnumerable ReadTerminalList(object block, string methodName)
+        {
+            var method = FindInstanceMethod(block, methodName);
+            if (method == null)
+            {
+                return null;
+            }
+            var parameters = method.GetParameters();
+            if (parameters.Length == 0)
+            {
+                return null;
+            }
+            try
+            {
+                var list = Activator.CreateInstance(parameters[0].ParameterType);
+                if (list == null)
+                {
+                    return null;
+                }
+                var args = new object[parameters.Length];
+                args[0] = list;
+                for (var index = 1; index < args.Length; index++)
+                {
+                    args[index] = null;
+                }
+                method.Invoke(block, args);
+                return list as IEnumerable;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         private string SafeGridInventoriesJson(object block, int inventoryCount)
@@ -830,6 +986,61 @@ namespace NOVALI.ClientSidePBBridge
                 }
             }
             return "";
+        }
+
+        private static void AppendTextSurfaceSnapshotFields(StringBuilder builder, object block)
+        {
+            var surface = ReadTextSurface(block, 0) ?? block;
+            builder.Append(Quote("font")).Append(":").Append(Quote(ReadSurfaceString(surface, "Font", "Debug"))).Append(",");
+            builder.Append(Quote("font_size")).Append(":").Append(FormatDouble(ReadSurfaceDouble(surface, "FontSize", 0.6))).Append(",");
+            builder.Append(Quote("text_padding")).Append(":").Append(FormatDouble(ReadSurfaceDouble(surface, "TextPadding", 2.0))).Append(",");
+            builder.Append(Quote("alignment")).Append(":").Append(Quote(ReadSurfaceString(surface, "Alignment", "LEFT"))).Append(",");
+            builder.Append(Quote("content_type")).Append(":").Append(Quote(ReadSurfaceString(surface, "ContentType", "TEXT_AND_IMAGE"))).Append(",");
+            builder.Append(Quote("surface_size")).Append(":").Append(ReadSurfaceVectorJson(surface, "SurfaceSize", 512, 512)).Append(",");
+            builder.Append(Quote("texture_size")).Append(":").Append(ReadSurfaceVectorJson(surface, "TextureSize", 512, 512)).Append(",");
+        }
+
+        private static string ReadSurfaceString(object surface, string name, string fallback)
+        {
+            var value = ReadObjectMember(surface, name);
+            return value == null ? fallback : value.ToString();
+        }
+
+        private static double ReadSurfaceDouble(object surface, string name, double fallback)
+        {
+            var value = ReadObjectMember(surface, name);
+            if (value == null)
+            {
+                return fallback;
+            }
+            try
+            {
+                return Convert.ToDouble(value, CultureInfo.InvariantCulture);
+            }
+            catch
+            {
+                return fallback;
+            }
+        }
+
+        private static string ReadSurfaceVectorJson(object surface, string name, double fallbackX, double fallbackY)
+        {
+            var vector = ReadObjectMember(surface, name);
+            if (vector == null)
+            {
+                return "{" + Quote("x") + ":" + FormatDouble(fallbackX) + "," + Quote("y") + ":" + FormatDouble(fallbackY) + "}";
+            }
+            var x = ReadDoubleLikeMember(vector, "X");
+            var y = ReadDoubleLikeMember(vector, "Y");
+            if (x <= 0)
+            {
+                x = fallbackX;
+            }
+            if (y <= 0)
+            {
+                y = fallbackY;
+            }
+            return "{" + Quote("x") + ":" + FormatDouble(x) + "," + Quote("y") + ":" + FormatDouble(y) + "}";
         }
 
         private static bool TryReadTextSurfaceText(object block, out string text)
@@ -1043,6 +1254,35 @@ namespace NOVALI.ClientSidePBBridge
             return ReadBoolMember(block, "AutoRefill", ReadBoolMember(block, "AutoRefillBottles", false));
         }
 
+        private static bool HasGasAutoRefillProperty(object block)
+        {
+            return HasBoolTerminalProperty(block, "AutoRefill") ||
+                HasBoolTerminalProperty(block, "AutoRefillBottles") ||
+                HasInstanceMember(block, "AutoRefill") ||
+                HasInstanceMember(block, "AutoRefillBottles");
+        }
+
+        private static bool HasBoolTerminalProperty(object block, string propertyName)
+        {
+            if (block == null)
+            {
+                return false;
+            }
+            var getProperty = FindInstanceMethod(block, "GetProperty", new[] { typeof(string) });
+            if (getProperty == null)
+            {
+                return false;
+            }
+            try
+            {
+                return getProperty.Invoke(block, new object[] { propertyName }) != null;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         private bool StageRequestIfNew(string bridgeId, int sequence, string body)
         {
             int last;
@@ -1056,7 +1296,7 @@ namespace NOVALI.ClientSidePBBridge
             return true;
         }
 
-        private bool ReturnResultIfPresent(object programmableBlock, string customData, string bridgeId, int sequence)
+        private bool ReturnResultIfPresent(object programmableBlock, string customData, string bridgeId, int sequence, string requestBody)
         {
             var path = Path.Combine(_root, "data", "bridge_results", SafeFileName(bridgeId) + ".json");
             if (!File.Exists(path))
@@ -1070,9 +1310,22 @@ namespace NOVALI.ClientSidePBBridge
                 _lastResultState = "result_kind_mismatch";
                 return false;
             }
-            if (ExtractJsonInt(result, "sequence") != sequence)
+            var resultSequence = ExtractJsonInt(result, "sequence");
+            if (resultSequence != sequence)
             {
-                _lastResultState = "result_sequence_mismatch";
+                var lastAppliedSequence = ExtractNestedJsonInt(requestBody, "last_apply", "sequence");
+                if (resultSequence > sequence)
+                {
+                    _lastResultState = "result_future_sequence";
+                }
+                else if (lastAppliedSequence >= resultSequence)
+                {
+                    _lastResultState = "result_already_applied";
+                }
+                else
+                {
+                    _lastResultState = "waiting_for_current_result";
+                }
                 return false;
             }
             if (!string.Equals(ExtractJsonString(result, "bridge_id"), bridgeId, StringComparison.OrdinalIgnoreCase))
@@ -1280,6 +1533,82 @@ namespace NOVALI.ClientSidePBBridge
             return "";
         }
 
+        private static int ExtractNestedJsonInt(string json, string objectKey, string nestedKey)
+        {
+            var nested = ExtractJsonObject(json, objectKey);
+            return string.IsNullOrWhiteSpace(nested) ? -1 : ExtractJsonInt(nested, nestedKey);
+        }
+
+        private static string ExtractJsonObject(string json, string key)
+        {
+            var needle = "\"" + key + "\"";
+            var start = json.IndexOf(needle, StringComparison.OrdinalIgnoreCase);
+            if (start < 0)
+            {
+                return "";
+            }
+            start += needle.Length;
+            while (start < json.Length && char.IsWhiteSpace(json[start]))
+            {
+                start++;
+            }
+            if (start >= json.Length || json[start] != ':')
+            {
+                return "";
+            }
+            start++;
+            while (start < json.Length && char.IsWhiteSpace(json[start]))
+            {
+                start++;
+            }
+            if (start >= json.Length || json[start] != '{')
+            {
+                return "";
+            }
+            var objectStart = start;
+            var depth = 0;
+            var inString = false;
+            var escaped = false;
+            for (; start < json.Length; start++)
+            {
+                var ch = json[start];
+                if (inString)
+                {
+                    if (escaped)
+                    {
+                        escaped = false;
+                    }
+                    else if (ch == '\\')
+                    {
+                        escaped = true;
+                    }
+                    else if (ch == '"')
+                    {
+                        inString = false;
+                    }
+                    continue;
+                }
+                if (ch == '"')
+                {
+                    inString = true;
+                    continue;
+                }
+                if (ch == '{')
+                {
+                    depth++;
+                }
+                else if (ch == '}')
+                {
+                    depth--;
+                    if (depth == 0)
+                    {
+                        return json.Substring(objectStart, start - objectStart + 1);
+                    }
+                }
+            }
+            return "";
+        }
+
         private static string ExtractJsonString(string json, string key)
         {
             var needle = "\"" + key + "\"";
@@ -1342,6 +1671,39 @@ namespace NOVALI.ClientSidePBBridge
             return int.TryParse(json.Substring(start, end - start), out value) ? value : -1;
         }
 
+        private static bool ExtractJsonBool(string json, string key, bool fallback)
+        {
+            var needle = "\"" + key + "\"";
+            var start = json.IndexOf(needle, StringComparison.OrdinalIgnoreCase);
+            if (start < 0)
+            {
+                return fallback;
+            }
+            start += needle.Length;
+            while (start < json.Length && char.IsWhiteSpace(json[start]))
+            {
+                start++;
+            }
+            if (start >= json.Length || json[start] != ':')
+            {
+                return fallback;
+            }
+            start++;
+            while (start < json.Length && char.IsWhiteSpace(json[start]))
+            {
+                start++;
+            }
+            if (start + 4 <= json.Length && string.Equals(json.Substring(start, 4), "true", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+            if (start + 5 <= json.Length && string.Equals(json.Substring(start, 5), "false", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+            return fallback;
+        }
+
         private static MethodInfo FindInstanceMethod(object source, string name, Type[] parameterTypes)
         {
             if (source == null)
@@ -1371,6 +1733,24 @@ namespace NOVALI.ClientSidePBBridge
                     }
                 }
                 if (matches)
+                {
+                    return method;
+                }
+            }
+            return null;
+        }
+
+        private static MethodInfo FindInstanceMethod(object source, string name)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+            var methods = source.GetType().GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            foreach (var method in methods)
+            {
+                if (string.Equals(method.Name, name, StringComparison.Ordinal) ||
+                    method.Name.EndsWith("." + name, StringComparison.Ordinal))
                 {
                     return method;
                 }
@@ -1429,6 +1809,12 @@ namespace NOVALI.ClientSidePBBridge
             return "";
         }
 
+        private static string ReadStringMember(object source, string name, string fallback)
+        {
+            var value = ReadStringMember(source, name);
+            return string.IsNullOrWhiteSpace(value) ? fallback : value;
+        }
+
         private static object ReadObjectMember(object source, string name)
         {
             if (source == null)
@@ -1467,6 +1853,26 @@ namespace NOVALI.ClientSidePBBridge
             {
                 return null;
             }
+        }
+
+        private static bool HasInstanceMember(object source, string name)
+        {
+            if (source == null)
+            {
+                return false;
+            }
+            var type = source.GetType();
+            try
+            {
+                if (type.GetProperty(name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance) != null)
+                {
+                    return true;
+                }
+            }
+            catch
+            {
+            }
+            return type.GetField(name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance) != null;
         }
 
         private static int ReadIntMember(object source, string name, int fallback)
@@ -1516,6 +1922,29 @@ namespace NOVALI.ClientSidePBBridge
             }
             bool parsed;
             return bool.TryParse(value.ToString(), out parsed) ? parsed : fallback;
+        }
+
+        private static bool ReadBoolMethod(object source, string name, bool fallback)
+        {
+            var method = FindInstanceMethod(source, name, Type.EmptyTypes);
+            if (method == null)
+            {
+                return fallback;
+            }
+            try
+            {
+                var value = method.Invoke(source, null);
+                if (value is bool)
+                {
+                    return (bool)value;
+                }
+                bool parsed;
+                return value != null && bool.TryParse(value.ToString(), out parsed) ? parsed : fallback;
+            }
+            catch
+            {
+                return fallback;
+            }
         }
 
         private static double ReadDoubleLikeMember(object source, string name)

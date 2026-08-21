@@ -1,4 +1,15 @@
-from worker.isy_foundation import plan_isy_foundation, rotate_commands
+from worker.isy_foundation import (
+    parse_virtual_pb_custom_data_blueprints,
+    plan_isy_foundation,
+    render_main_lcd,
+    rotate_commands,
+    supports_custom_data_commands,
+)
+
+
+def test_isy_supports_neutral_baseline_shim_version():
+    assert supports_custom_data_commands({"state": {"shim_version": "baseline-template-v1"}})
+    assert supports_custom_data_commands({"state": {"shim_version": "2026-05-20-iim-action-parity-v13-customdata"}})
 
 
 def inventory_block(entity_id=1, name="Cargo Components", items=None):
@@ -92,6 +103,141 @@ def test_lcd_planner_emits_write_text_surface_for_matching_panels():
     assert any("IIM Autocrafting" in command["text"] for command in commands)
     assert next(command for command in commands if command["block_entity_id"] == 12)["title"] == "Craft item manually once to show up here"
     assert result["isy_foundation"]["lcd"]["proposed_commands"] == 3
+
+
+def test_lcd_planner_matches_isy_surface_tags_in_custom_data():
+    request = base_request(
+        [
+            grid_block(10, "LCD Panel ISY Main", is_lcd=True, surface_count=1, custom_data="@0 IIM-main\nshowWarnings=true"),
+            grid_block(11, "LCD Panel Ore", is_lcd=True, surface_count=1, custom_data="@0 IIM-inventory\nOre 1000000"),
+            grid_block(12, "LCD Panel Ingots", is_lcd=True, surface_count=1, custom_data="@0 IIM-inventory\nIngot 1000000"),
+            grid_block(13, "Autocrafting LCD Panel", is_lcd=True, surface_count=1),
+        ],
+        {
+            "mainLCDKeyword": "IIM-main",
+            "inventoryLCDKeyword": "IIM-inventory",
+            "warningsLCDKeyword": "",
+            "actionsLCDKeyword": "",
+            "performanceLCDKeyword": "",
+        },
+    )
+    request["state"] = {"shim_version": "2026-05-20-iim-action-parity-v13-customdata"}
+
+    result = plan_isy_foundation(request)
+    commands = [command for command in result["commands"] if command["kind"] == "write_text_surface"]
+
+    assert {command["block_entity_id"] for command in commands} == {10, 11, 12, 13}
+    assert any("Isy's Inventory Manager" in command["text"] for command in commands)
+    assert result["isy_foundation"]["lcd"]["proposed_commands"] == 4
+
+
+def test_main_lcd_uses_script_owned_status_instead_of_bridge_status():
+    request = base_request(
+        [
+            grid_block(10, "IIM-main", is_lcd=True, surface_count=1),
+            grid_block(
+                20,
+                "Ores Alpha",
+                is_cargo=True,
+                inventories=[
+                    {
+                        "index": 0,
+                        "current_volume": 1700,
+                        "max_volume": 10800,
+                        "items": [grid_inventory_item("MyObjectBuilder_Ore", "Iron", 1200)],
+                    }
+                ],
+            ),
+            grid_block(
+                21,
+                "Ingots Alpha",
+                is_cargo=True,
+                inventories=[
+                    {
+                        "index": 0,
+                        "current_volume": 67,
+                        "max_volume": 14400,
+                        "items": [grid_inventory_item("MyObjectBuilder_Ingot", "Iron", 65000)],
+                    }
+                ],
+            ),
+            grid_block(
+                22,
+                "Components Alpha",
+                is_cargo=True,
+                inventories=[
+                    {
+                        "index": 0,
+                        "current_volume": 1200,
+                        "max_volume": 14400,
+                        "items": [grid_inventory_item("MyObjectBuilder_Component", "SteelPlate", 65800)],
+                    }
+                ],
+            ),
+            grid_block(
+                30,
+                "Refinery 7",
+                is_refinery=True,
+                inventories=[
+                    {"index": 0, "items": []},
+                    {"index": 1, "items": [grid_inventory_item("MyObjectBuilder_Ingot", "Cobalt", 12)]},
+                ],
+            ),
+            grid_block(40, "Assembler", is_assembler=True),
+        ],
+        {
+            "mainLCDKeyword": "IIM-main",
+            "inventoryLCDKeyword": "",
+            "warningsLCDKeyword": "",
+            "actionsLCDKeyword": "",
+            "performanceLCDKeyword": "",
+        },
+    )
+
+    main_text = render_main_lcd(request, request["grid_snapshot"]["blocks"])
+
+    assert "Isy's Inventory Manager" in main_text
+    assert "Ores:" in main_text
+    assert "Ingots:" in main_text
+    assert "Components:" in main_text
+    assert "Managed blocks:" in main_text
+    assert "Refineries: Ore Balancing ON" in main_text
+    assert "Assemblers: Craft ON" in main_text
+    assert "Last Action:" in main_text
+    assert "NOVALI" not in main_text
+    assert "bridge planning" not in main_text
+    assert "foundation / offloaded" not in main_text
+    assert "Bridge sequence" not in main_text
+
+
+def test_main_lcd_uses_pb_last_apply_action_text_instead_of_sequence_fallback():
+    request = base_request(
+        [grid_block(10, "IIM-main", is_lcd=True, surface_count=1)],
+        {
+            "mainLCDKeyword": "IIM-main",
+            "inventoryLCDKeyword": "",
+            "warningsLCDKeyword": "",
+            "actionsLCDKeyword": "",
+            "performanceLCDKeyword": "",
+        },
+    )
+    request["state"] = {
+            "last_apply": {
+                "sequence": 51,
+                "status": "processed",
+                "last_action_time": "17:38:36",
+                "last_action_at_utc": "2026-08-20T23:41:02.0000000Z",
+                "last_action_text": "Moved: 288.29 Silicon\nfrom: 'Refinery 4'\nto: '7x11x3 Cargo Container Ingots (0%)'",
+            }
+        }
+
+    main_text = render_main_lcd(request, request["grid_snapshot"]["blocks"])
+
+    assert "17:38:36:" in main_text
+    assert "Moved: 288.29 Silicon" in main_text
+    assert "from: 'Refinery 4'" in main_text
+    assert "to: '7x11x3 Cargo Container Ingots (0%)'" in main_text
+    assert "Sequence 51: inventory action processed" not in main_text
 
 
 def test_inventory_lcd_uses_isy_custom_data_filters():
@@ -494,6 +640,67 @@ def test_autocrafting_queues_modded_goal_from_persisted_blueprint_memory():
     enqueue = next(command for command in result["commands"] if command["kind"] == "enqueue_assembler_blueprint")
     assert enqueue["blueprint_id"] == "MyObjectBuilder_BlueprintDefinition/QuantumCoreComponent"
     assert enqueue["amount"] == 100.0
+
+
+def test_autocrafting_uses_virtual_pb_custom_data_blueprint_map():
+    request = base_request(
+        [
+            grid_block(12, "Autocrafting", is_lcd=True, surface_count=1, custom_data="@0 Autocrafting\nsdx_componentTitaniumPlate=25"),
+            grid_block(
+                20,
+                "Assembler",
+                is_assembler=True,
+                use_conveyor=False,
+                assembler_mode="assembly",
+                assembler_cooperative_mode=True,
+                inventories=[{"index": 0, "items": []}, {"index": 1, "items": []}],
+                production_queue=[],
+            ),
+        ],
+        {
+            "mainLCDKeyword": "",
+            "inventoryLCDKeyword": "",
+            "warningsLCDKeyword": "",
+            "actionsLCDKeyword": "",
+            "performanceLCDKeyword": "",
+            "enableOreBalancing": False,
+            "enableIceBalancing": False,
+            "enableUraniumBalancing": False,
+            "maxPlannedMachineCommands": 10,
+            "autocraftingQueueBatchSize": 100,
+        },
+    )
+    request["state"] = {"shim_version": "2026-05-20-iim-action-parity-v13-customdata"}
+    request["virtual_pb"] = {
+        "custom_data": "\n".join(
+            [
+                "station_mode;",
+                "itemID;blueprintID",
+                "MyObjectBuilder_Component/sdx_componentTitaniumPlate;MyObjectBuilder_BlueprintDefinition/sdx_itemsBlueprintT0TitaniumPlate",
+                "MyObjectBuilder_Ingot/Titanium;noBP",
+            ]
+        )
+    }
+
+    result = plan_isy_foundation(request)
+
+    enqueue = next(command for command in result["commands"] if command["kind"] == "enqueue_assembler_blueprint")
+    assert enqueue["blueprint_id"] == "MyObjectBuilder_BlueprintDefinition/sdx_itemsBlueprintT0TitaniumPlate"
+    assert enqueue["amount"] == 25.0
+    assert result["isy_foundation"]["autocrafting"]["virtual_pb_custom_data"]["blueprint_map_entries"] == 1
+    assert result["isy_foundation"]["autocrafting"]["virtual_pb_custom_data"]["no_bp_entries"] == 1
+
+
+def test_parse_virtual_pb_custom_data_blueprint_map_preserves_no_bp_rows():
+    parsed = parse_virtual_pb_custom_data_blueprints(
+        "station_mode;\n"
+        "itemID;blueprintID\n"
+        "MyObjectBuilder_Component/SteelPlate;MyObjectBuilder_BlueprintDefinition/sdx_itemsBlueprintT0SteelPlate\n"
+        "MyObjectBuilder_Ingot/Iron;noBP\n"
+    )
+
+    assert parsed["items"]["steelplate"]["blueprint_id"] == "MyObjectBuilder_BlueprintDefinition/sdx_itemsBlueprintT0SteelPlate"
+    assert parsed["no_bp_items"] == ["MyObjectBuilder_Ingot/Iron"]
 
 
 def test_autocrafting_feeds_materials_for_manually_queued_components():
@@ -1218,12 +1425,104 @@ def test_lcd_commands_are_not_starved_by_inventory_transfers():
     assert "transfer_item" in seen_kinds
 
 
+def test_foundation_prefers_refinery_output_cleanup_before_lcd_when_budget_is_tight():
+    request = base_request(
+        [
+            grid_block(10, "IIM-main", is_lcd=True, surface_count=1),
+            grid_block(
+                30,
+                "Refinery",
+                is_refinery=True,
+                use_conveyor=False,
+                inventories=[
+                    {"index": 0, "current_volume": 0, "max_volume": 75, "items": []},
+                    {"index": 1, "current_volume": 0, "max_volume": 75, "items": [grid_inventory_item("MyObjectBuilder_Ingot", "Cobalt", 12)]},
+                ],
+            ),
+            grid_block(60, "Bulk Cargo Container Ingots", is_cargo=True, inventories=grid_inventory([])),
+        ],
+        {
+            "maxApplyCommands": 1,
+            "maxPlannedMachineCommands": 1,
+            "enableAutocrafting": False,
+            "enableIceBalancing": False,
+            "enableUraniumBalancing": False,
+        },
+    )
+
+    result = plan_isy_foundation(request)
+
+    assert result["commands"][0]["kind"] == "transfer_item"
+    assert result["commands"][0]["reason"] == "refinery_output_cleanup"
+
+
+def test_lcd_refresh_gets_reserved_slot_when_maintenance_commands_are_continuous():
+    blocks = [
+        grid_block(10, "LCD Panel ISY Main [IsyLCD]", is_lcd=True, surface_count=1, custom_data="@0 IIM-main"),
+        grid_block(
+            30,
+            "Refinery",
+            is_refinery=True,
+            use_conveyor=False,
+            inventories=[
+                {"index": 0, "current_volume": 0, "max_volume": 75, "items": []},
+                {"index": 1, "current_volume": 0, "max_volume": 75, "items": [grid_inventory_item("MyObjectBuilder_Ingot", "Cobalt", 12)]},
+            ],
+        ),
+        grid_block(
+            31,
+            "Refinery 2",
+            is_refinery=True,
+            use_conveyor=False,
+            inventories=[
+                {"index": 0, "current_volume": 0, "max_volume": 75, "items": []},
+                {"index": 1, "current_volume": 0, "max_volume": 75, "items": [grid_inventory_item("MyObjectBuilder_Ingot", "Magnesium", 12)]},
+            ],
+        ),
+        grid_block(60, "Bulk Cargo Container Ingots", is_cargo=True, inventories=grid_inventory([])),
+    ]
+    request = base_request(
+        blocks,
+        {
+            "maxApplyCommands": 8,
+            "maxPlannedMachineCommands": 2,
+            "inventorySortingEnabled": False,
+            "mainLCDKeyword": "IIM-main",
+            "enableAutocrafting": False,
+            "enableIceBalancing": False,
+            "enableUraniumBalancing": False,
+            "inventoryLCDKeyword": "",
+            "warningsLCDKeyword": "",
+            "actionsLCDKeyword": "",
+            "performanceLCDKeyword": "",
+        },
+    )
+
+    result = plan_isy_foundation(request)
+
+    assert any(command["kind"] == "transfer_item" for command in result["commands"])
+    assert any(command["kind"] == "write_text_surface" for command in result["commands"])
+
+
+def test_foundation_command_priority_keeps_operational_maintenance_ahead_of_lcd_refreshes():
+    from worker.isy_foundation import foundation_command_priority
+
+    lcd = {"kind": "write_text_surface"}
+    refinery_output = {"kind": "transfer_item", "reason": "refinery_output_cleanup"}
+    assembler_output = {"kind": "transfer_item", "reason": "assembler_output_cleanup"}
+    set_conveyor = {"kind": "set_use_conveyor"}
+
+    assert foundation_command_priority(refinery_output) < foundation_command_priority(lcd)
+    assert foundation_command_priority(assembler_output) < foundation_command_priority(lcd)
+    assert foundation_command_priority(set_conveyor) < foundation_command_priority(lcd)
+
+
 def test_machine_command_planning_rotates_before_machine_cap():
     blocks = [
         grid_block(10, "Main LCD", is_lcd=True, surface_count=1),
         grid_block(20, "Assembler", is_assembler=True, use_conveyor=True),
         grid_block(30, "Refinery", is_refinery=True, use_conveyor=True),
-        grid_block(40, "O2/H2 Generator", is_gas_generator=True, use_conveyor=True, gas_auto_refill=False),
+        grid_block(40, "O2/H2 Generator", is_gas_generator=True, use_conveyor=True, gas_auto_refill=False, gas_auto_refill_supported=True),
         grid_block(50, "Reactor", is_reactor=True),
         grid_block(
             60,
@@ -1399,7 +1698,7 @@ def test_refinery_gas_and_reactor_foundations_emit_isy_setup_commands():
     request = base_request(
         [
             grid_block(30, "Refinery", is_refinery=True, use_conveyor=True),
-            grid_block(40, "O2/H2 Generator", is_gas_generator=True, use_conveyor=True, gas_auto_refill=False),
+            grid_block(40, "O2/H2 Generator", is_gas_generator=True, use_conveyor=True, gas_auto_refill=False, gas_auto_refill_supported=True),
             grid_block(50, "Reactor", is_reactor=True, enabled=False),
             grid_block(
                 60,
@@ -1440,11 +1739,54 @@ def test_refinery_gas_and_reactor_foundations_emit_isy_setup_commands():
     ]
 
 
+def test_gas_balancing_does_not_plan_auto_refill_when_property_is_unsupported():
+    request = base_request(
+        [
+            grid_block(
+                40,
+                "O2/H20 Generator",
+                is_gas_generator=True,
+                use_conveyor=False,
+                gas_auto_refill=False,
+                gas_auto_refill_supported=False,
+            )
+        ],
+        {"enableAutocrafting": False, "mainLCDKeyword": ""},
+    )
+    result = plan_isy_foundation(request)
+    commands = [
+        {key: command[key] for key in ("kind", "block_entity_id", "enabled") if key in command}
+        for command in result["commands"]
+    ]
+
+    assert {"kind": "set_gas_auto_refill", "block_entity_id": 40, "enabled": True} not in commands
+    assert result["isy_foundation"]["gas"]["skipped_reasons"]["gas_auto_refill_unsupported"] == 1
+
+
+def test_gas_balancing_does_not_plan_auto_refill_when_support_is_unknown():
+    request = base_request(
+        [
+            grid_block(
+                40,
+                "O2/H20 Generator",
+                is_gas_generator=True,
+                use_conveyor=False,
+                gas_auto_refill=False,
+            )
+        ],
+        {"enableAutocrafting": False, "mainLCDKeyword": ""},
+    )
+    result = plan_isy_foundation(request)
+
+    assert "set_gas_auto_refill" not in [command["kind"] for command in result["commands"]]
+    assert result["isy_foundation"]["gas"]["skipped_reasons"]["gas_auto_refill_unsupported"] == 1
+
+
 def test_machine_setup_still_runs_without_matching_source_inventory():
     request = base_request(
         [
             grid_block(30, "Refinery", is_refinery=True, use_conveyor=True),
-            grid_block(40, "O2/H2 Generator", is_gas_generator=True, use_conveyor=True, gas_auto_refill=False),
+            grid_block(40, "O2/H2 Generator", is_gas_generator=True, use_conveyor=True, gas_auto_refill=False, gas_auto_refill_supported=True),
             grid_block(50, "Reactor", is_reactor=True),
         ],
         {"enableAutocrafting": False, "mainLCDKeyword": ""},

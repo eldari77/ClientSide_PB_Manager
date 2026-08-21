@@ -1,0 +1,4628 @@
+{
+  "schema": "novali.client_side_pb.se_api_surface.v1",
+  "generated_at": "2026-08-20T21:12:18.724482+00:00",
+  "source": "C:\\Users\\eLDARi\\Documents\\VScode\\.venv\\ClientSide_PB_Script\\data\\se_api_surface_source.cs",
+  "assembly_version": "",
+  "api_hash": "af821a418a81a4c84e63dd92e018188cf10bcab7ff217d21d15185a860a4164a",
+  "interfaces": {
+    "IMyAdvancedDoor": {
+      "properties": {},
+      "methods": {}
+    },
+    "IMyAirtightDoorBase": {
+      "properties": {},
+      "methods": {}
+    },
+    "IMyAirtightHangarDoor": {
+      "properties": {},
+      "methods": {}
+    },
+    "IMyAirtightSlideDoor": {
+      "properties": {},
+      "methods": {}
+    },
+    "IMyAssembler": {
+      "properties": {
+        "CooperativeMode": {
+          "type": "bool",
+          "can_write": true
+        },
+        "CurrentProgress": {
+          "type": "float",
+          "can_write": false
+        },
+        "DisassembleEnabled": {
+          "type": "bool",
+          "can_write": false
+        },
+        "Mode": {
+          "type": "Sandbox.ModAPI.Ingame.MyAssemblerMode",
+          "can_write": true
+        },
+        "Repeating": {
+          "type": "bool",
+          "can_write": true
+        }
+      },
+      "methods": {}
+    },
+    "IMyAttachableTopBlock": {
+      "properties": {
+        "Base": {
+          "type": "Sandbox.ModAPI.Ingame.IMyMechanicalConnectionBlock",
+          "can_write": false
+        },
+        "IsAttached": {
+          "type": "bool",
+          "can_write": false
+        }
+      },
+      "methods": {}
+    },
+    "IMyAttackPatternComponent": {
+      "properties": {
+        "AttackPatternId": {
+          "type": "long",
+          "can_write": false
+        },
+        "AttackPatternName": {
+          "type": "VRage.Utils.MyStringId",
+          "can_write": false
+        },
+        "AttackPatternTooltip": {
+          "type": "VRage.Utils.MyStringId",
+          "can_write": false
+        },
+        "HasEnemy": {
+          "type": "bool",
+          "can_write": false
+        },
+        "IsSelected": {
+          "type": "bool",
+          "can_write": false
+        }
+      },
+      "methods": {}
+    },
+    "IMyAutopilotWaypoint": {
+      "properties": {
+        "Matrix": {
+          "type": "VRageMath.MatrixD",
+          "can_write": false
+        },
+        "Name": {
+          "type": "string",
+          "can_write": false
+        },
+        "RelatedEntityId": {
+          "type": "long",
+          "can_write": false
+        },
+        "RelativeMatrix": {
+          "type": "VRageMath.MatrixD",
+          "can_write": false
+        }
+      },
+      "methods": {}
+    },
+    "IMyBasicMissionBlock": {
+      "properties": {
+        "SelectedMissionId": {
+          "type": "long",
+          "can_write": true
+        }
+      },
+      "methods": {}
+    },
+    "IMyBasicMissionComponent": {
+      "properties": {
+        "DetailedInfo": {
+          "type": "System.Text.StringBuilder",
+          "can_write": false
+        },
+        "IsSelected": {
+          "type": "bool",
+          "can_write": true
+        },
+        "MissionName": {
+          "type": "VRage.Utils.MyStringId",
+          "can_write": false
+        },
+        "UniqueSelectionId": {
+          "type": "long",
+          "can_write": false
+        }
+      },
+      "methods": {}
+    },
+    "IMyBasicMissionFollowHome": {
+      "properties": {
+        "MaxRange": {
+          "type": "float",
+          "can_write": true
+        },
+        "MinRange": {
+          "type": "float",
+          "can_write": true
+        },
+        "Wander": {
+          "type": "bool",
+          "can_write": true
+        }
+      },
+      "methods": {}
+    },
+    "IMyBasicMissionFollowPlayer": {
+      "properties": {
+        "FollowDistance": {
+          "type": "float",
+          "can_write": true
+        }
+      },
+      "methods": {}
+    },
+    "IMyBatteryBlock": {
+      "properties": {
+        "ChargeMode": {
+          "type": "Sandbox.ModAPI.Ingame.ChargeMode",
+          "can_write": true
+        },
+        "CurrentInput": {
+          "type": "float",
+          "can_write": false
+        },
+        "CurrentStoredPower": {
+          "type": "float",
+          "can_write": false
+        },
+        "HasCapacityRemaining": {
+          "type": "bool",
+          "can_write": false
+        },
+        "IsCharging": {
+          "type": "bool",
+          "can_write": false
+        },
+        "MaxInput": {
+          "type": "float",
+          "can_write": false
+        },
+        "MaxStoredPower": {
+          "type": "float",
+          "can_write": false
+        },
+        "OnlyDischarge": {
+          "type": "bool",
+          "can_write": true
+        },
+        "OnlyRecharge": {
+          "type": "bool",
+          "can_write": true
+        },
+        "SemiautoEnabled": {
+          "type": "bool",
+          "can_write": true
+        }
+      },
+      "methods": {}
+    },
+    "IMyBeacon": {
+      "properties": {
+        "HudText": {
+          "type": "string",
+          "can_write": true
+        },
+        "Radius": {
+          "type": "float",
+          "can_write": true
+        }
+      },
+      "methods": {}
+    },
+    "IMyBlockGroup": {
+      "properties": {
+        "Name": {
+          "type": "string",
+          "can_write": false
+        }
+      },
+      "methods": {
+        "GetBlocks": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "System.Collections.Generic.List`<Sandbox.ModAPI.Ingame.IMyTerminalBlock>",
+              "name": "blocks"
+            },
+            {
+              "type": "System.Func`<Sandbox.ModAPI.Ingame.IMyTerminalBlock, bool>",
+              "name": "collect"
+            }
+          ]
+        },
+        "GetBlocksOfType": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "<>",
+              "name": "blocks"
+            },
+            {
+              "type": "<, bool>",
+              "name": "collect"
+            }
+          ],
+          "overloads": [
+            {
+              "return_type": "void",
+              "parameters": [
+                {
+                  "type": "System.Collections.Generic.List`<Sandbox.ModAPI.Ingame.IMyTerminalBlock>",
+                  "name": "blocks"
+                },
+                {
+                  "type": "System.Func`<Sandbox.ModAPI.Ingame.IMyTerminalBlock, bool>",
+                  "name": "collect"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "IMyBroadcastControllerBlock": {
+      "properties": {},
+      "methods": {}
+    },
+    "IMyBroadcastListener": {
+      "properties": {
+        "IsActive": {
+          "type": "bool",
+          "can_write": false
+        },
+        "Tag": {
+          "type": "string",
+          "can_write": false
+        }
+      },
+      "methods": {}
+    },
+    "IMyCameraBlock": {
+      "properties": {
+        "AvailableScanRange": {
+          "type": "double",
+          "can_write": false
+        },
+        "EnableRaycast": {
+          "type": "bool",
+          "can_write": true
+        },
+        "IsActive": {
+          "type": "bool",
+          "can_write": false
+        },
+        "RaycastConeLimit": {
+          "type": "float",
+          "can_write": false
+        },
+        "RaycastDistanceLimit": {
+          "type": "double",
+          "can_write": false
+        },
+        "RaycastTimeMultiplier": {
+          "type": "float",
+          "can_write": false
+        }
+      },
+      "methods": {
+        "CanScan": {
+          "return_type": "bool",
+          "parameters": [
+            {
+              "type": "double",
+              "name": "distance"
+            },
+            {
+              "type": "VRageMath.Vector3D",
+              "name": "direction"
+            }
+          ],
+          "overloads": [
+            {
+              "return_type": "bool",
+              "parameters": [
+                {
+                  "type": "VRageMath.Vector3D",
+                  "name": "target"
+                }
+              ]
+            },
+            {
+              "return_type": "bool",
+              "parameters": [
+                {
+                  "type": "double",
+                  "name": "distance"
+                }
+              ]
+            }
+          ]
+        },
+        "Raycast": {
+          "return_type": "Sandbox.ModAPI.Ingame.MyDetectedEntityInfo",
+          "parameters": [
+            {
+              "type": "double",
+              "name": "distance"
+            },
+            {
+              "type": "float",
+              "name": "pitch"
+            },
+            {
+              "type": "float",
+              "name": "yaw"
+            }
+          ],
+          "overloads": [
+            {
+              "return_type": "Sandbox.ModAPI.Ingame.MyDetectedEntityInfo",
+              "parameters": [
+                {
+                  "type": "VRageMath.Vector3D",
+                  "name": "targetPos"
+                }
+              ]
+            },
+            {
+              "return_type": "Sandbox.ModAPI.Ingame.MyDetectedEntityInfo",
+              "parameters": [
+                {
+                  "type": "double",
+                  "name": "distance"
+                },
+                {
+                  "type": "VRageMath.Vector3D",
+                  "name": "targetDirection"
+                }
+              ]
+            }
+          ]
+        },
+        "TimeUntilScan": {
+          "return_type": "int",
+          "parameters": [
+            {
+              "type": "double",
+              "name": "distance"
+            }
+          ]
+        }
+      }
+    },
+    "IMyCargoContainer": {
+      "properties": {},
+      "methods": {}
+    },
+    "IMyCharacterAimAssistComponent": {
+      "properties": {},
+      "methods": {}
+    },
+    "IMyChatBroadcastControllerComponent": {
+      "properties": {
+        "BroadcastTarget": {
+          "type": "Sandbox.ModAPI.Ingame.BroadcastTarget",
+          "can_write": true
+        },
+        "CustomName": {
+          "type": "string",
+          "can_write": true
+        },
+        "MaxMessageCount": {
+          "type": "int",
+          "can_write": false
+        },
+        "UseAntenna": {
+          "type": "bool",
+          "can_write": true
+        }
+      },
+      "methods": {
+        "GetMessage": {
+          "return_type": "string",
+          "parameters": [
+            {
+              "type": "int",
+              "name": "messageIndex"
+            }
+          ]
+        },
+        "SendGps": {
+          "return_type": "void",
+          "parameters": []
+        },
+        "SendMessage": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "string",
+              "name": "message"
+            }
+          ],
+          "overloads": [
+            {
+              "return_type": "void",
+              "parameters": [
+                {
+                  "type": "int",
+                  "name": "messageIndex"
+                }
+              ]
+            }
+          ]
+        },
+        "SendRandomMessage": {
+          "return_type": "void",
+          "parameters": []
+        },
+        "SetMessage": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "int",
+              "name": "messageIndex"
+            },
+            {
+              "type": "string",
+              "name": "message"
+            }
+          ]
+        }
+      }
+    },
+    "IMyCockpit": {
+      "properties": {
+        "OxygenCapacity": {
+          "type": "float",
+          "can_write": false
+        },
+        "OxygenFilledRatio": {
+          "type": "float",
+          "can_write": false
+        }
+      },
+      "methods": {}
+    },
+    "IMyCollector": {
+      "properties": {
+        "UseConveyorSystem": {
+          "type": "bool",
+          "can_write": true
+        }
+      },
+      "methods": {}
+    },
+    "IMyConveyor": {
+      "properties": {},
+      "methods": {}
+    },
+    "IMyConveyorSorter": {
+      "properties": {
+        "DrainAll": {
+          "type": "bool",
+          "can_write": true
+        },
+        "Mode": {
+          "type": "Sandbox.ModAPI.Ingame.MyConveyorSorterMode",
+          "can_write": false
+        }
+      },
+      "methods": {
+        "AddItem": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "Sandbox.ModAPI.Ingame.MyInventoryItemFilter",
+              "name": "item"
+            }
+          ]
+        },
+        "GetFilterList": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "System.Collections.Generic.List`<Sandbox.ModAPI.Ingame.MyInventoryItemFilter>",
+              "name": "items"
+            }
+          ]
+        },
+        "IsAllowed": {
+          "return_type": "bool",
+          "parameters": [
+            {
+              "type": "VRage.Game.MyDefinitionId",
+              "name": "id"
+            }
+          ]
+        },
+        "RemoveItem": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "Sandbox.ModAPI.Ingame.MyInventoryItemFilter",
+              "name": "item"
+            }
+          ]
+        },
+        "SetFilter": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "Sandbox.ModAPI.Ingame.MyConveyorSorterMode",
+              "name": "mode"
+            },
+            {
+              "type": "System.Collections.Generic.List`<Sandbox.ModAPI.Ingame.MyInventoryItemFilter>",
+              "name": "items"
+            }
+          ]
+        }
+      }
+    },
+    "IMyConveyorTube": {
+      "properties": {},
+      "methods": {}
+    },
+    "IMyCryoChamber": {
+      "properties": {},
+      "methods": {}
+    },
+    "IMyCubeBlock": {
+      "properties": {
+        "BlockDefinition": {
+          "type": "VRage.ObjectBuilders.SerializableDefinitionId",
+          "can_write": false
+        },
+        "CubeGrid": {
+          "type": "VRage.Game.ModAPI.Ingame.IMyCubeGrid",
+          "can_write": false
+        },
+        "DefinitionDisplayNameText": {
+          "type": "string",
+          "can_write": false
+        },
+        "DisassembleRatio": {
+          "type": "float",
+          "can_write": false
+        },
+        "DisplayNameText": {
+          "type": "string",
+          "can_write": false
+        },
+        "IsBeingHacked": {
+          "type": "bool",
+          "can_write": false
+        },
+        "IsFunctional": {
+          "type": "bool",
+          "can_write": false
+        },
+        "IsWorking": {
+          "type": "bool",
+          "can_write": false
+        },
+        "Mass": {
+          "type": "float",
+          "can_write": false
+        },
+        "Max": {
+          "type": "VRageMath.Vector3I",
+          "can_write": false
+        },
+        "Min": {
+          "type": "VRageMath.Vector3I",
+          "can_write": false
+        },
+        "NumberInGrid": {
+          "type": "int",
+          "can_write": false
+        },
+        "Orientation": {
+          "type": "VRageMath.MyBlockOrientation",
+          "can_write": false
+        },
+        "OwnerId": {
+          "type": "long",
+          "can_write": false
+        },
+        "Position": {
+          "type": "VRageMath.Vector3I",
+          "can_write": false
+        }
+      },
+      "methods": {
+        "GetOwnerFactionTag": {
+          "return_type": "string",
+          "parameters": []
+        },
+        "GetPlayerRelationToOwner": {
+          "return_type": "VRage.Game.MyRelationsBetweenPlayerAndBlock",
+          "parameters": []
+        },
+        "GetUserRelationToOwner": {
+          "return_type": "VRage.Game.MyRelationsBetweenPlayerAndBlock",
+          "parameters": [
+            {
+              "type": "long",
+              "name": "playerId"
+            },
+            {
+              "type": "VRage.Game.MyRelationsBetweenPlayerAndBlock",
+              "name": "defaultNoUser"
+            }
+          ]
+        },
+        "UpdateIsWorking": {
+          "return_type": "void",
+          "parameters": []
+        },
+        "UpdateVisual": {
+          "return_type": "void",
+          "parameters": []
+        }
+      }
+    },
+    "IMyCubeGrid": {
+      "properties": {
+        "CustomName": {
+          "type": "string",
+          "can_write": true
+        },
+        "GridSize": {
+          "type": "float",
+          "can_write": false
+        },
+        "GridSizeEnum": {
+          "type": "VRage.Game.MyCubeSize",
+          "can_write": false
+        },
+        "IsStatic": {
+          "type": "bool",
+          "can_write": false
+        },
+        "LinearVelocity": {
+          "type": "VRageMath.Vector3",
+          "can_write": false
+        },
+        "Max": {
+          "type": "VRageMath.Vector3I",
+          "can_write": false
+        },
+        "Min": {
+          "type": "VRageMath.Vector3I",
+          "can_write": false
+        },
+        "Speed": {
+          "type": "float",
+          "can_write": false
+        }
+      },
+      "methods": {
+        "CubeExists": {
+          "return_type": "bool",
+          "parameters": [
+            {
+              "type": "VRageMath.Vector3I",
+              "name": "pos"
+            }
+          ]
+        },
+        "GetCubeBlock": {
+          "return_type": "VRage.Game.ModAPI.Ingame.IMySlimBlock",
+          "parameters": [
+            {
+              "type": "VRageMath.Vector3I",
+              "name": "pos"
+            }
+          ]
+        },
+        "GridIntegerToWorld": {
+          "return_type": "VRageMath.Vector3D",
+          "parameters": [
+            {
+              "type": "VRageMath.Vector3I",
+              "name": "gridCoords"
+            }
+          ]
+        },
+        "IsSameConstructAs": {
+          "return_type": "bool",
+          "parameters": [
+            {
+              "type": "VRage.Game.ModAPI.Ingame.IMyCubeGrid",
+              "name": "other"
+            }
+          ]
+        },
+        "WorldToGridInteger": {
+          "return_type": "VRageMath.Vector3I",
+          "parameters": [
+            {
+              "type": "VRageMath.Vector3D",
+              "name": "coords"
+            }
+          ]
+        }
+      }
+    },
+    "IMyDecoy": {
+      "properties": {},
+      "methods": {}
+    },
+    "IMyDefensiveCombatBlock": {
+      "properties": {
+        "CustomFleeCoordinates": {
+          "type": "VRageMath.Vector3D>",
+          "can_write": true
+        },
+        "FleeBeaconEntityId": {
+          "type": "long>",
+          "can_write": false
+        },
+        "FleeCoordinates": {
+          "type": "VRageMath.Vector3D>",
+          "can_write": false
+        },
+        "FleeGps": {
+          "type": "VRage.Game.ObjectBuilders.AI.GpsInfo>",
+          "can_write": false
+        },
+        "FleeTrigger": {
+          "type": "VRage.Game.ModAPI.Ingame.FleeTrigger",
+          "can_write": true
+        },
+        "IsFleeing": {
+          "type": "bool",
+          "can_write": false
+        },
+        "LockTarget": {
+          "type": "bool",
+          "can_write": true
+        },
+        "SearchEnemyComponent": {
+          "type": "Sandbox.ModAPI.Ingame.IMySearchEnemyComponent",
+          "can_write": false
+        },
+        "WaypointZoneSize": {
+          "type": "float",
+          "can_write": true
+        }
+      },
+      "methods": {
+        "Flee": {
+          "return_type": "void",
+          "parameters": []
+        }
+      }
+    },
+    "IMyDoor": {
+      "properties": {
+        "Open": {
+          "type": "bool",
+          "can_write": false
+        },
+        "OpenRatio": {
+          "type": "float",
+          "can_write": false
+        },
+        "Status": {
+          "type": "Sandbox.ModAPI.Ingame.DoorStatus",
+          "can_write": false
+        }
+      },
+      "methods": {
+        "CloseDoor": {
+          "return_type": "void",
+          "parameters": []
+        },
+        "OpenDoor": {
+          "return_type": "void",
+          "parameters": []
+        },
+        "ToggleDoor": {
+          "return_type": "void",
+          "parameters": []
+        }
+      }
+    },
+    "IMyEmotionControllerBlock": {
+      "properties": {},
+      "methods": {}
+    },
+    "IMyEntity": {
+      "properties": {
+        "Closed": {
+          "type": "bool",
+          "can_write": false
+        },
+        "Components": {
+          "type": "VRage.Game.Components.Interfaces.IMyEntityComponentContainer",
+          "can_write": false
+        },
+        "DisplayName": {
+          "type": "string",
+          "can_write": false
+        },
+        "EntityId": {
+          "type": "long",
+          "can_write": false
+        },
+        "HasInventory": {
+          "type": "bool",
+          "can_write": false
+        },
+        "InventoryCount": {
+          "type": "int",
+          "can_write": false
+        },
+        "Name": {
+          "type": "string",
+          "can_write": false
+        },
+        "WorldAABB": {
+          "type": "VRageMath.BoundingBoxD",
+          "can_write": false
+        },
+        "WorldAABBHr": {
+          "type": "VRageMath.BoundingBoxD",
+          "can_write": false
+        },
+        "WorldMatrix": {
+          "type": "VRageMath.MatrixD",
+          "can_write": false
+        },
+        "WorldVolume": {
+          "type": "VRageMath.BoundingSphereD",
+          "can_write": false
+        },
+        "WorldVolumeHr": {
+          "type": "VRageMath.BoundingSphereD",
+          "can_write": false
+        }
+      },
+      "methods": {
+        "GetInventory": {
+          "return_type": "VRage.Game.ModAPI.Ingame.IMyInventory",
+          "parameters": [
+            {
+              "type": "int",
+              "name": "index"
+            }
+          ],
+          "overloads": [
+            {
+              "return_type": "VRage.Game.ModAPI.Ingame.IMyInventory",
+              "parameters": []
+            }
+          ]
+        },
+        "GetPosition": {
+          "return_type": "VRageMath.Vector3D",
+          "parameters": []
+        }
+      }
+    },
+    "IMyEventControllerBlock": {
+      "properties": {
+        "IsAndModeEnabled": {
+          "type": "bool",
+          "can_write": true
+        },
+        "IsLowerOrEqualCondition": {
+          "type": "bool",
+          "can_write": true
+        },
+        "Threshold": {
+          "type": "float",
+          "can_write": true
+        }
+      },
+      "methods": {}
+    },
+    "IMyExtendedPistonBase": {
+      "properties": {},
+      "methods": {}
+    },
+    "IMyFarmPlotLogic": {
+      "properties": {
+        "AmountOfSeedsRequired": {
+          "type": "int",
+          "can_write": false
+        },
+        "IsAlive": {
+          "type": "bool",
+          "can_write": false
+        },
+        "IsHarvestable": {
+          "type": "bool",
+          "can_write": false
+        },
+        "IsPlantFullyGrown": {
+          "type": "bool",
+          "can_write": false
+        },
+        "IsPlantPlanted": {
+          "type": "bool",
+          "can_write": false
+        },
+        "OutputItem": {
+          "type": "VRage.Game.MyDefinitionId",
+          "can_write": false
+        },
+        "OutputItemAmount": {
+          "type": "int",
+          "can_write": false
+        }
+      },
+      "methods": {
+        "GetDetailedInfoWithoutRequiredInput": {
+          "return_type": "string",
+          "parameters": []
+        }
+      }
+    },
+    "IMyFlightMovementBlock": {
+      "properties": {
+        "AlignToPGravity": {
+          "type": "bool",
+          "can_write": true
+        },
+        "CollisionAvoidance": {
+          "type": "bool",
+          "can_write": true
+        },
+        "CurrentWaypoint": {
+          "type": "Sandbox.ModAPI.Ingame.IMyAutopilotWaypoint",
+          "can_write": false
+        },
+        "FlightMode": {
+          "type": "Sandbox.ModAPI.Ingame.FlightMode",
+          "can_write": true
+        },
+        "IsAutoPilotEnabled": {
+          "type": "bool",
+          "can_write": false
+        },
+        "LookAtPosition": {
+          "type": "VRageMath.Vector3D>",
+          "can_write": true
+        },
+        "MinimalAltitude": {
+          "type": "float",
+          "can_write": true
+        },
+        "PrecisionMode": {
+          "type": "bool",
+          "can_write": true
+        },
+        "SpeedLimit": {
+          "type": "float",
+          "can_write": true
+        }
+      },
+      "methods": {
+        "GetWaypoints": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "System.Collections.Generic.List`<Sandbox.ModAPI.Ingame.IMyAutopilotWaypoint>",
+              "name": "points"
+            }
+          ]
+        }
+      }
+    },
+    "IMyFunctionalBlock": {
+      "properties": {
+        "Enabled": {
+          "type": "bool",
+          "can_write": true
+        }
+      },
+      "methods": {
+        "RequestEnable": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "bool",
+              "name": "enable"
+            }
+          ]
+        }
+      }
+    },
+    "IMyGasGenerator": {
+      "properties": {
+        "AutoRefill": {
+          "type": "bool",
+          "can_write": true
+        },
+        "IsProducing": {
+          "type": "bool",
+          "can_write": false
+        },
+        "UseConveyorSystem": {
+          "type": "bool",
+          "can_write": true
+        }
+      },
+      "methods": {}
+    },
+    "IMyGasTank": {
+      "properties": {
+        "AutoRefillBottles": {
+          "type": "bool",
+          "can_write": true
+        },
+        "Capacity": {
+          "type": "float",
+          "can_write": false
+        },
+        "FilledRatio": {
+          "type": "double",
+          "can_write": false
+        },
+        "Stockpile": {
+          "type": "bool",
+          "can_write": true
+        }
+      },
+      "methods": {
+        "RefillBottles": {
+          "return_type": "void",
+          "parameters": []
+        }
+      }
+    },
+    "IMyGridProgramRuntimeInfo": {
+      "properties": {
+        "CurrentCallChainDepth": {
+          "type": "int",
+          "can_write": false
+        },
+        "CurrentInstructionCount": {
+          "type": "int",
+          "can_write": false
+        },
+        "LastRunTimeMs": {
+          "type": "double",
+          "can_write": false
+        },
+        "LifetimeTicks": {
+          "type": "long",
+          "can_write": false
+        },
+        "MaxCallChainDepth": {
+          "type": "int",
+          "can_write": false
+        },
+        "MaxInstructionCount": {
+          "type": "int",
+          "can_write": false
+        },
+        "TimeSinceLastRun": {
+          "type": "System.TimeSpan",
+          "can_write": false
+        },
+        "UpdateFrequency": {
+          "type": "Sandbox.ModAPI.Ingame.UpdateFrequency",
+          "can_write": true
+        }
+      },
+      "methods": {}
+    },
+    "IMyGridProgramWorldInfo": {
+      "properties": {
+        "InventoryMultiplier": {
+          "type": "float",
+          "can_write": false
+        },
+        "LargeShipMaxAngularSpeed": {
+          "type": "float",
+          "can_write": false
+        },
+        "LargeShipMaxSpeed": {
+          "type": "float",
+          "can_write": false
+        },
+        "PressurizationEnabled": {
+          "type": "bool",
+          "can_write": false
+        },
+        "SmallShipMaxAngularSpeed": {
+          "type": "float",
+          "can_write": false
+        },
+        "SmallShipMaxSpeed": {
+          "type": "float",
+          "can_write": false
+        }
+      },
+      "methods": {}
+    },
+    "IMyGridTerminalSystem": {
+      "properties": {},
+      "methods": {
+        "CanAccess": {
+          "return_type": "bool",
+          "parameters": [
+            {
+              "type": "Sandbox.ModAPI.Ingame.IMyTerminalBlock",
+              "name": "block"
+            },
+            {
+              "type": "Sandbox.ModAPI.Ingame.MyTerminalAccessScope",
+              "name": "scope"
+            }
+          ],
+          "overloads": [
+            {
+              "return_type": "bool",
+              "parameters": [
+                {
+                  "type": "VRage.Game.ModAPI.Ingame.IMyCubeGrid",
+                  "name": "grid"
+                },
+                {
+                  "type": "Sandbox.ModAPI.Ingame.MyTerminalAccessScope",
+                  "name": "scope"
+                }
+              ]
+            }
+          ]
+        },
+        "GetBlockGroupWithName": {
+          "return_type": "Sandbox.ModAPI.Ingame.IMyBlockGroup",
+          "parameters": [
+            {
+              "type": "string",
+              "name": "name"
+            }
+          ]
+        },
+        "GetBlockGroups": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "System.Collections.Generic.List`<Sandbox.ModAPI.Ingame.IMyBlockGroup>",
+              "name": "blockGroups"
+            },
+            {
+              "type": "System.Func`<Sandbox.ModAPI.Ingame.IMyBlockGroup, bool>",
+              "name": "collect"
+            }
+          ]
+        },
+        "GetBlockWithId": {
+          "return_type": "Sandbox.ModAPI.Ingame.IMyTerminalBlock",
+          "parameters": [
+            {
+              "type": "long",
+              "name": "id"
+            }
+          ]
+        },
+        "GetBlockWithName": {
+          "return_type": "Sandbox.ModAPI.Ingame.IMyTerminalBlock",
+          "parameters": [
+            {
+              "type": "string",
+              "name": "name"
+            }
+          ]
+        },
+        "GetBlocks": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "System.Collections.Generic.List`<Sandbox.ModAPI.Ingame.IMyTerminalBlock>",
+              "name": "blocks"
+            }
+          ]
+        },
+        "GetBlocksOfType": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "System.Collections.Generic.List`<Sandbox.ModAPI.Ingame.IMyTerminalBlock>",
+              "name": "blocks"
+            },
+            {
+              "type": "System.Func`<Sandbox.ModAPI.Ingame.IMyTerminalBlock, bool>",
+              "name": "collect"
+            }
+          ],
+          "overloads": [
+            {
+              "return_type": "void",
+              "parameters": [
+                {
+                  "type": "<>",
+                  "name": "blocks"
+                },
+                {
+                  "type": "<, bool>",
+                  "name": "collect"
+                }
+              ]
+            }
+          ]
+        },
+        "SearchBlocksOfName": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "string",
+              "name": "name"
+            },
+            {
+              "type": "System.Collections.Generic.List`<Sandbox.ModAPI.Ingame.IMyTerminalBlock>",
+              "name": "blocks"
+            },
+            {
+              "type": "System.Func`<Sandbox.ModAPI.Ingame.IMyTerminalBlock, bool>",
+              "name": "collect"
+            }
+          ]
+        }
+      }
+    },
+    "IMyGyro": {
+      "properties": {
+        "GyroOverride": {
+          "type": "bool",
+          "can_write": true
+        },
+        "GyroPower": {
+          "type": "float",
+          "can_write": true
+        },
+        "Pitch": {
+          "type": "float",
+          "can_write": true
+        },
+        "Roll": {
+          "type": "float",
+          "can_write": true
+        },
+        "Yaw": {
+          "type": "float",
+          "can_write": true
+        }
+      },
+      "methods": {}
+    },
+    "IMyIntergridCommunicationSystem": {
+      "properties": {
+        "Me": {
+          "type": "long",
+          "can_write": false
+        },
+        "UnicastListener": {
+          "type": "Sandbox.ModAPI.Ingame.IMyUnicastListener",
+          "can_write": false
+        }
+      },
+      "methods": {
+        "DisableBroadcastListener": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "Sandbox.ModAPI.Ingame.IMyBroadcastListener",
+              "name": "broadcastListener"
+            }
+          ]
+        },
+        "GetBroadcastListeners": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "System.Collections.Generic.List`<Sandbox.ModAPI.Ingame.IMyBroadcastListener>",
+              "name": "broadcastListeners"
+            },
+            {
+              "type": "System.Func`<Sandbox.ModAPI.Ingame.IMyBroadcastListener, bool>",
+              "name": "collect"
+            }
+          ]
+        },
+        "IsEndpointReachable": {
+          "return_type": "bool",
+          "parameters": [
+            {
+              "type": "long",
+              "name": "address"
+            },
+            {
+              "type": "Sandbox.ModAPI.Ingame.TransmissionDistance",
+              "name": "transmissionDistance"
+            }
+          ]
+        },
+        "RegisterBroadcastListener": {
+          "return_type": "Sandbox.ModAPI.Ingame.IMyBroadcastListener",
+          "parameters": [
+            {
+              "type": "string",
+              "name": "tag"
+            }
+          ]
+        },
+        "SendBroadcastMessage": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "string",
+              "name": "tag"
+            },
+            {
+              "type": "Sandbox.ModAPI.Ingame.TransmissionDistance",
+              "name": "transmissionDistance"
+            }
+          ]
+        },
+        "SendUnicastMessage": {
+          "return_type": "bool",
+          "parameters": [
+            {
+              "type": "long",
+              "name": "addressee"
+            },
+            {
+              "type": "string",
+              "name": "tag"
+            }
+          ]
+        }
+      }
+    },
+    "IMyInventory": {
+      "properties": {
+        "CanPutItems": {
+          "type": "bool",
+          "can_write": false
+        },
+        "CurrentMass": {
+          "type": "VRage.MyFixedPoint",
+          "can_write": false
+        },
+        "CurrentVolume": {
+          "type": "VRage.MyFixedPoint",
+          "can_write": false
+        },
+        "IsFull": {
+          "type": "bool",
+          "can_write": false
+        },
+        "ItemCount": {
+          "type": "int",
+          "can_write": false
+        },
+        "MaxVolume": {
+          "type": "VRage.MyFixedPoint",
+          "can_write": false
+        },
+        "Owner": {
+          "type": "VRage.Game.ModAPI.Ingame.IMyEntity",
+          "can_write": false
+        },
+        "VolumeFillFactor": {
+          "type": "float",
+          "can_write": false
+        }
+      },
+      "methods": {
+        "CanItemsBeAdded": {
+          "return_type": "bool",
+          "parameters": [
+            {
+              "type": "VRage.MyFixedPoint",
+              "name": "amount"
+            },
+            {
+              "type": "VRage.Game.ModAPI.Ingame.MyItemType",
+              "name": "itemType"
+            }
+          ]
+        },
+        "CanTransferItemTo": {
+          "return_type": "bool",
+          "parameters": [
+            {
+              "type": "VRage.Game.ModAPI.Ingame.IMyInventory",
+              "name": "otherInventory"
+            },
+            {
+              "type": "VRage.Game.ModAPI.Ingame.MyItemType",
+              "name": "itemType"
+            }
+          ]
+        },
+        "ContainItems": {
+          "return_type": "bool",
+          "parameters": [
+            {
+              "type": "VRage.MyFixedPoint",
+              "name": "amount"
+            },
+            {
+              "type": "VRage.Game.ModAPI.Ingame.MyItemType",
+              "name": "itemType"
+            }
+          ]
+        },
+        "FindItem": {
+          "return_type": "VRage.Game.ModAPI.Ingame.MyInventoryItem>",
+          "parameters": [
+            {
+              "type": "VRage.Game.ModAPI.Ingame.MyItemType",
+              "name": "itemType"
+            }
+          ]
+        },
+        "GetAcceptedItems": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "System.Collections.Generic.List`<VRage.Game.ModAPI.Ingame.MyItemType>",
+              "name": "itemsTypes"
+            },
+            {
+              "type": "System.Func`<VRage.Game.ModAPI.Ingame.MyItemType, bool>",
+              "name": "filter"
+            }
+          ]
+        },
+        "GetItemAmount": {
+          "return_type": "VRage.MyFixedPoint",
+          "parameters": [
+            {
+              "type": "VRage.Game.ModAPI.Ingame.MyItemType",
+              "name": "itemType"
+            }
+          ]
+        },
+        "GetItemAt": {
+          "return_type": "VRage.Game.ModAPI.Ingame.MyInventoryItem>",
+          "parameters": [
+            {
+              "type": "int",
+              "name": "index"
+            }
+          ]
+        },
+        "GetItemByID": {
+          "return_type": "VRage.Game.ModAPI.Ingame.MyInventoryItem>",
+          "parameters": [
+            {
+              "type": "System.UInt32",
+              "name": "id"
+            }
+          ]
+        },
+        "GetItems": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "System.Collections.Generic.List`<VRage.Game.ModAPI.Ingame.MyInventoryItem>",
+              "name": "items"
+            },
+            {
+              "type": "System.Func`<VRage.Game.ModAPI.Ingame.MyInventoryItem, bool>",
+              "name": "filter"
+            }
+          ]
+        },
+        "IsConnectedTo": {
+          "return_type": "bool",
+          "parameters": [
+            {
+              "type": "VRage.Game.ModAPI.Ingame.IMyInventory",
+              "name": "otherInventory"
+            }
+          ]
+        },
+        "IsItemAt": {
+          "return_type": "bool",
+          "parameters": [
+            {
+              "type": "int",
+              "name": "position"
+            }
+          ]
+        },
+        "TransferItemFrom": {
+          "return_type": "bool",
+          "parameters": [
+            {
+              "type": "VRage.Game.ModAPI.Ingame.IMyInventory",
+              "name": "sourceInventory"
+            },
+            {
+              "type": "int",
+              "name": "sourceItemIndex"
+            },
+            {
+              "type": "System.Nullable`<int>",
+              "name": "targetItemIndex"
+            },
+            {
+              "type": "System.Nullable`<bool>",
+              "name": "stackIfPossible"
+            },
+            {
+              "type": "System.Nullable`<VRage.MyFixedPoint>",
+              "name": "amount"
+            }
+          ],
+          "overloads": [
+            {
+              "return_type": "bool",
+              "parameters": [
+                {
+                  "type": "VRage.Game.ModAPI.Ingame.IMyInventory",
+                  "name": "sourceInventory"
+                },
+                {
+                  "type": "VRage.Game.ModAPI.Ingame.MyInventoryItem",
+                  "name": "item"
+                },
+                {
+                  "type": "System.Nullable`<VRage.MyFixedPoint>",
+                  "name": "amount"
+                }
+              ]
+            }
+          ]
+        },
+        "TransferItemTo": {
+          "return_type": "bool",
+          "parameters": [
+            {
+              "type": "VRage.Game.ModAPI.Ingame.IMyInventory",
+              "name": "dstInventory"
+            },
+            {
+              "type": "VRage.Game.ModAPI.Ingame.MyInventoryItem",
+              "name": "item"
+            },
+            {
+              "type": "System.Nullable`<VRage.MyFixedPoint>",
+              "name": "amount"
+            }
+          ],
+          "overloads": [
+            {
+              "return_type": "bool",
+              "parameters": [
+                {
+                  "type": "VRage.Game.ModAPI.Ingame.IMyInventory",
+                  "name": "dst"
+                },
+                {
+                  "type": "int",
+                  "name": "sourceItemIndex"
+                },
+                {
+                  "type": "System.Nullable`<int>",
+                  "name": "targetItemIndex"
+                },
+                {
+                  "type": "System.Nullable`<bool>",
+                  "name": "stackIfPossible"
+                },
+                {
+                  "type": "System.Nullable`<VRage.MyFixedPoint>",
+                  "name": "amount"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "IMyInventoryItem": {
+      "properties": {
+        "Amount": {
+          "type": "VRage.MyFixedPoint",
+          "can_write": true
+        },
+        "Content": {
+          "type": "VRage.ObjectBuilders.MyObjectBuilder_Base",
+          "can_write": true
+        },
+        "ItemId": {
+          "type": "System.UInt32",
+          "can_write": true
+        },
+        "Scale": {
+          "type": "float",
+          "can_write": true
+        }
+      },
+      "methods": {}
+    },
+    "IMyInventoryOwner": {
+      "properties": {
+        "EntityId": {
+          "type": "long",
+          "can_write": false
+        },
+        "HasInventory": {
+          "type": "bool",
+          "can_write": false
+        },
+        "InventoryCount": {
+          "type": "int",
+          "can_write": false
+        },
+        "UseConveyorSystem": {
+          "type": "bool",
+          "can_write": true
+        }
+      },
+      "methods": {
+        "GetInventory": {
+          "return_type": "VRage.Game.ModAPI.Ingame.IMyInventory",
+          "parameters": [
+            {
+              "type": "int",
+              "name": "index"
+            }
+          ]
+        }
+      }
+    },
+    "IMyItemProducerComponent": {
+      "properties": {},
+      "methods": {}
+    },
+    "IMyJumpDrive": {
+      "properties": {
+        "CurrentStoredPower": {
+          "type": "float",
+          "can_write": false
+        },
+        "JumpDistanceMeters": {
+          "type": "float",
+          "can_write": true
+        },
+        "JumpDistanceRatio": {
+          "type": "float",
+          "can_write": true
+        },
+        "MaxJumpDistanceMeters": {
+          "type": "float",
+          "can_write": false
+        },
+        "MaxStoredPower": {
+          "type": "float",
+          "can_write": false
+        },
+        "MinJumpDistanceMeters": {
+          "type": "float",
+          "can_write": false
+        },
+        "Recharge": {
+          "type": "bool",
+          "can_write": true
+        },
+        "Status": {
+          "type": "Sandbox.ModAPI.Ingame.MyJumpDriveStatus",
+          "can_write": false
+        }
+      },
+      "methods": {}
+    },
+    "IMyLargeTurretBase": {
+      "properties": {
+        "AIEnabled": {
+          "type": "bool",
+          "can_write": false
+        },
+        "Azimuth": {
+          "type": "float",
+          "can_write": true
+        },
+        "CanControl": {
+          "type": "bool",
+          "can_write": false
+        },
+        "Elevation": {
+          "type": "float",
+          "can_write": true
+        },
+        "EnableIdleRotation": {
+          "type": "bool",
+          "can_write": true
+        },
+        "HasTarget": {
+          "type": "bool",
+          "can_write": false
+        },
+        "IsAimed": {
+          "type": "bool",
+          "can_write": false
+        },
+        "IsUnderControl": {
+          "type": "bool",
+          "can_write": false
+        },
+        "Range": {
+          "type": "float",
+          "can_write": true
+        },
+        "TargetCharacters": {
+          "type": "bool",
+          "can_write": true
+        },
+        "TargetEnemies": {
+          "type": "bool",
+          "can_write": true
+        },
+        "TargetLargeGrids": {
+          "type": "bool",
+          "can_write": true
+        },
+        "TargetMeteors": {
+          "type": "bool",
+          "can_write": true
+        },
+        "TargetMissiles": {
+          "type": "bool",
+          "can_write": true
+        },
+        "TargetNeutrals": {
+          "type": "bool",
+          "can_write": true
+        },
+        "TargetSmallGrids": {
+          "type": "bool",
+          "can_write": true
+        },
+        "TargetStations": {
+          "type": "bool",
+          "can_write": true
+        }
+      },
+      "methods": {
+        "GetTargetedEntity": {
+          "return_type": "Sandbox.ModAPI.Ingame.MyDetectedEntityInfo",
+          "parameters": []
+        },
+        "GetTargetingGroup": {
+          "return_type": "string",
+          "parameters": []
+        },
+        "GetTargetingGroups": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "System.Collections.Generic.List`<string>",
+              "name": "targetingGroups"
+            }
+          ],
+          "overloads": [
+            {
+              "return_type": "string>",
+              "parameters": []
+            }
+          ]
+        },
+        "ResetTargetingToDefault": {
+          "return_type": "void",
+          "parameters": []
+        },
+        "SetManualAzimuthAndElevation": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "float",
+              "name": "azimuth"
+            },
+            {
+              "type": "float",
+              "name": "elevation"
+            }
+          ]
+        },
+        "SetTarget": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "VRageMath.Vector3D",
+              "name": "pos"
+            }
+          ]
+        },
+        "SetTargetingGroup": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "string",
+              "name": "groupSubtypeId"
+            }
+          ]
+        },
+        "SyncAzimuth": {
+          "return_type": "void",
+          "parameters": []
+        },
+        "SyncElevation": {
+          "return_type": "void",
+          "parameters": []
+        },
+        "SyncEnableIdleRotation": {
+          "return_type": "void",
+          "parameters": []
+        },
+        "TrackTarget": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "VRageMath.Vector3D",
+              "name": "pos"
+            },
+            {
+              "type": "VRageMath.Vector3",
+              "name": "velocity"
+            }
+          ]
+        }
+      }
+    },
+    "IMyLaserAntenna": {
+      "properties": {
+        "IsOutsideLimits": {
+          "type": "bool",
+          "can_write": false
+        },
+        "IsPermanent": {
+          "type": "bool",
+          "can_write": true
+        },
+        "Range": {
+          "type": "float",
+          "can_write": true
+        },
+        "RequireLoS": {
+          "type": "bool",
+          "can_write": false
+        },
+        "Status": {
+          "type": "Sandbox.ModAPI.Ingame.MyLaserAntennaStatus",
+          "can_write": false
+        },
+        "TargetCoords": {
+          "type": "VRageMath.Vector3D",
+          "can_write": false
+        }
+      },
+      "methods": {
+        "Connect": {
+          "return_type": "void",
+          "parameters": []
+        },
+        "SetTargetCoords": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "string",
+              "name": "coords"
+            }
+          ]
+        }
+      }
+    },
+    "IMyLightingBlock": {
+      "properties": {
+        "BlinkIntervalSeconds": {
+          "type": "float",
+          "can_write": true
+        },
+        "BlinkLenght": {
+          "type": "float",
+          "can_write": false
+        },
+        "BlinkLength": {
+          "type": "float",
+          "can_write": true
+        },
+        "BlinkOffset": {
+          "type": "float",
+          "can_write": true
+        },
+        "Color": {
+          "type": "VRageMath.Color",
+          "can_write": true
+        },
+        "Falloff": {
+          "type": "float",
+          "can_write": true
+        },
+        "Intensity": {
+          "type": "float",
+          "can_write": true
+        },
+        "Radius": {
+          "type": "float",
+          "can_write": true
+        },
+        "ReflectorRadius": {
+          "type": "float",
+          "can_write": false
+        }
+      },
+      "methods": {}
+    },
+    "IMyLightingComponent": {
+      "properties": {
+        "BlinkIntervalSeconds": {
+          "type": "float",
+          "can_write": true
+        },
+        "BlinkLength": {
+          "type": "float",
+          "can_write": true
+        },
+        "BlinkOffset": {
+          "type": "float",
+          "can_write": true
+        },
+        "Color": {
+          "type": "VRageMath.Color",
+          "can_write": true
+        },
+        "Falloff": {
+          "type": "float",
+          "can_write": true
+        },
+        "Intensity": {
+          "type": "float",
+          "can_write": true
+        },
+        "Radius": {
+          "type": "float",
+          "can_write": true
+        }
+      },
+      "methods": {}
+    },
+    "IMyMechanicalConnectionBlock": {
+      "properties": {
+        "IsAttached": {
+          "type": "bool",
+          "can_write": false
+        },
+        "IsLocked": {
+          "type": "bool",
+          "can_write": false
+        },
+        "PendingAttachment": {
+          "type": "bool",
+          "can_write": false
+        },
+        "SafetyLock": {
+          "type": "bool",
+          "can_write": true
+        },
+        "SafetyLockSpeed": {
+          "type": "float",
+          "can_write": true
+        },
+        "Top": {
+          "type": "Sandbox.ModAPI.Ingame.IMyAttachableTopBlock",
+          "can_write": false
+        },
+        "TopGrid": {
+          "type": "VRage.Game.ModAPI.Ingame.IMyCubeGrid",
+          "can_write": false
+        }
+      },
+      "methods": {
+        "Attach": {
+          "return_type": "void",
+          "parameters": []
+        },
+        "Detach": {
+          "return_type": "void",
+          "parameters": []
+        }
+      }
+    },
+    "IMyMessageProvider": {
+      "properties": {
+        "HasPendingMessage": {
+          "type": "bool",
+          "can_write": false
+        },
+        "MaxWaitingMessages": {
+          "type": "int",
+          "can_write": false
+        }
+      },
+      "methods": {
+        "AcceptMessage": {
+          "return_type": "Sandbox.ModAPI.Ingame.MyIGCMessage",
+          "parameters": []
+        },
+        "DisableMessageCallback": {
+          "return_type": "void",
+          "parameters": []
+        },
+        "SetMessageCallback": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "string",
+              "name": "argument"
+            }
+          ]
+        }
+      }
+    },
+    "IMyMotorAdvancedRotor": {
+      "properties": {},
+      "methods": {}
+    },
+    "IMyMotorAdvancedStator": {
+      "properties": {},
+      "methods": {}
+    },
+    "IMyMotorBase": {
+      "properties": {},
+      "methods": {}
+    },
+    "IMyMotorRotor": {
+      "properties": {},
+      "methods": {}
+    },
+    "IMyMotorStator": {
+      "properties": {
+        "Angle": {
+          "type": "float",
+          "can_write": false
+        },
+        "BrakingTorque": {
+          "type": "float",
+          "can_write": true
+        },
+        "Displacement": {
+          "type": "float",
+          "can_write": true
+        },
+        "LowerLimitDeg": {
+          "type": "float",
+          "can_write": true
+        },
+        "LowerLimitRad": {
+          "type": "float",
+          "can_write": true
+        },
+        "RotorLock": {
+          "type": "bool",
+          "can_write": true
+        },
+        "TargetVelocityRPM": {
+          "type": "float",
+          "can_write": true
+        },
+        "TargetVelocityRad": {
+          "type": "float",
+          "can_write": true
+        },
+        "Torque": {
+          "type": "float",
+          "can_write": true
+        },
+        "UpperLimitDeg": {
+          "type": "float",
+          "can_write": true
+        },
+        "UpperLimitRad": {
+          "type": "float",
+          "can_write": true
+        }
+      },
+      "methods": {
+        "RotateToAngle": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "Sandbox.ModAPI.Ingame.MyRotationDirection",
+              "name": "dir"
+            },
+            {
+              "type": "float",
+              "name": "desiredAng"
+            },
+            {
+              "type": "float",
+              "name": "velAbsRpm"
+            }
+          ]
+        }
+      }
+    },
+    "IMyMotorSuspension": {
+      "properties": {
+        "AirShockEnabled": {
+          "type": "bool",
+          "can_write": true
+        },
+        "Brake": {
+          "type": "bool",
+          "can_write": true
+        },
+        "Damping": {
+          "type": "float",
+          "can_write": false
+        },
+        "Friction": {
+          "type": "float",
+          "can_write": true
+        },
+        "Height": {
+          "type": "float",
+          "can_write": true
+        },
+        "InvertPropulsion": {
+          "type": "bool",
+          "can_write": true
+        },
+        "InvertSteer": {
+          "type": "bool",
+          "can_write": true
+        },
+        "IsParkingEnabled": {
+          "type": "bool",
+          "can_write": true
+        },
+        "MaxSteerAngle": {
+          "type": "float",
+          "can_write": true
+        },
+        "Power": {
+          "type": "float",
+          "can_write": true
+        },
+        "Propulsion": {
+          "type": "bool",
+          "can_write": true
+        },
+        "PropulsionOverride": {
+          "type": "float",
+          "can_write": true
+        },
+        "SteerAngle": {
+          "type": "float",
+          "can_write": false
+        },
+        "SteerReturnSpeed": {
+          "type": "float",
+          "can_write": false
+        },
+        "SteerSpeed": {
+          "type": "float",
+          "can_write": false
+        },
+        "Steering": {
+          "type": "bool",
+          "can_write": true
+        },
+        "SteeringOverride": {
+          "type": "float",
+          "can_write": true
+        },
+        "Strength": {
+          "type": "float",
+          "can_write": true
+        },
+        "SuspensionTravel": {
+          "type": "float",
+          "can_write": false
+        }
+      },
+      "methods": {}
+    },
+    "IMyOffensiveCombatBlock": {
+      "properties": {
+        "LastScan": {
+          "type": "int",
+          "can_write": false
+        },
+        "SearchEnemyComponent": {
+          "type": "Sandbox.ModAPI.Ingame.IMySearchEnemyComponent",
+          "can_write": false
+        },
+        "SelectedAttackPattern": {
+          "type": "long",
+          "can_write": true
+        },
+        "TargetPriority": {
+          "type": "VRage.Game.ModAPI.Ingame.OffensiveCombatTargetPriority",
+          "can_write": true
+        },
+        "UpdateTargetInterval": {
+          "type": "int",
+          "can_write": true
+        }
+      },
+      "methods": {
+        "TryGetSelectedAttackPattern": {
+          "return_type": "bool",
+          "parameters": [
+            {
+              "type": "Sandbox.ModAPI.Ingame.IMyAttackPatternComponent",
+              "name": "attackPatternComponent"
+            }
+          ],
+          "overloads": [
+            {
+              "return_type": "bool",
+              "parameters": [
+                {
+                  "type": "long",
+                  "name": "patternId"
+                },
+                {
+                  "type": "Sandbox.ModAPI.Ingame.IMyAttackPatternComponent",
+                  "name": "attackPatternComponent"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "IMyOffensiveCombatCircleOrbit": {
+      "properties": {
+        "CircleDistance": {
+          "type": "float",
+          "can_write": true
+        },
+        "CircleInPGravity": {
+          "type": "bool",
+          "can_write": true
+        },
+        "Facing": {
+          "type": "VRageMath.Base6Directions.DirectionFlags",
+          "can_write": true
+        },
+        "IsOrbiting": {
+          "type": "bool",
+          "can_write": false
+        }
+      },
+      "methods": {}
+    },
+    "IMyOffensiveCombatHitAndRun": {
+      "properties": {
+        "BreakOffDistance": {
+          "type": "float",
+          "can_write": true
+        },
+        "IsMovingAwayFromTarget": {
+          "type": "bool",
+          "can_write": false
+        },
+        "IsMovingToTarget": {
+          "type": "bool",
+          "can_write": false
+        },
+        "RetreatAngle": {
+          "type": "float",
+          "can_write": true
+        },
+        "RetreatDistance": {
+          "type": "float",
+          "can_write": true
+        },
+        "RetreatTimeout": {
+          "type": "float",
+          "can_write": true
+        }
+      },
+      "methods": {
+        "GetSelectedWeapons": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "System.Collections.Generic.List`<long>",
+              "name": "blockEntityIds"
+            }
+          ]
+        },
+        "IsWeaponSelected": {
+          "return_type": "bool",
+          "parameters": [
+            {
+              "type": "long",
+              "name": "blockEntityId"
+            }
+          ]
+        },
+        "SetSelectedWeapons": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "System.Collections.Generic.List`<long>",
+              "name": "blockEntityId"
+            }
+          ]
+        }
+      }
+    },
+    "IMyOffensiveCombatIntercept": {
+      "properties": {
+        "GuidanceType": {
+          "type": "VRage.Game.ModAPI.Ingame.GuidanceType",
+          "can_write": true
+        },
+        "ShouldOverrideCollisionAvoidance": {
+          "type": "bool",
+          "can_write": true
+        }
+      },
+      "methods": {}
+    },
+    "IMyOffensiveCombatStayAtRange": {
+      "properties": {
+        "EvasiveManeuverDistance": {
+          "type": "float",
+          "can_write": false
+        },
+        "EvasiveManeuvers": {
+          "type": "bool",
+          "can_write": true
+        },
+        "FacingPriority": {
+          "type": "VRageMath.Base6Directions.DirectionFlags",
+          "can_write": true
+        },
+        "MaximalDistance": {
+          "type": "float",
+          "can_write": true
+        },
+        "MinimalDistance": {
+          "type": "float",
+          "can_write": true
+        }
+      },
+      "methods": {}
+    },
+    "IMyOreDetector": {
+      "properties": {
+        "BroadcastUsingAntennas": {
+          "type": "bool",
+          "can_write": true
+        },
+        "Range": {
+          "type": "float",
+          "can_write": false
+        }
+      },
+      "methods": {}
+    },
+    "IMyPassage": {
+      "properties": {},
+      "methods": {}
+    },
+    "IMyPathRecorderBlock": {
+      "properties": {},
+      "methods": {}
+    },
+    "IMyPathRecorderComponent": {
+      "properties": {
+        "BeaconDisplayText": {
+          "type": "string",
+          "can_write": false
+        },
+        "BeaconEntityId": {
+          "type": "long>",
+          "can_write": false
+        },
+        "BeaconWorldPosition": {
+          "type": "VRageMath.Vector3D",
+          "can_write": false
+        },
+        "IsPlaying": {
+          "type": "bool",
+          "can_write": false
+        },
+        "IsRecording": {
+          "type": "bool",
+          "can_write": false
+        },
+        "MinimalDistance": {
+          "type": "float",
+          "can_write": true
+        },
+        "RecordInterval": {
+          "type": "System.Byte",
+          "can_write": true
+        },
+        "RepeatPath": {
+          "type": "bool",
+          "can_write": true
+        },
+        "ShowPath": {
+          "type": "bool",
+          "can_write": true
+        },
+        "ShowSelectedPoints": {
+          "type": "bool",
+          "can_write": true
+        }
+      },
+      "methods": {
+        "Play": {
+          "return_type": "void",
+          "parameters": []
+        },
+        "Record": {
+          "return_type": "void",
+          "parameters": []
+        },
+        "RemoveBeacon": {
+          "return_type": "void",
+          "parameters": []
+        },
+        "StopPlay": {
+          "return_type": "void",
+          "parameters": []
+        },
+        "StopRecord": {
+          "return_type": "void",
+          "parameters": []
+        }
+      }
+    },
+    "IMyPistonBase": {
+      "properties": {
+        "CurrentPosition": {
+          "type": "float",
+          "can_write": false
+        },
+        "HighestPosition": {
+          "type": "float",
+          "can_write": false
+        },
+        "LowestPosition": {
+          "type": "float",
+          "can_write": false
+        },
+        "MaxLimit": {
+          "type": "float",
+          "can_write": true
+        },
+        "MaxVelocity": {
+          "type": "float",
+          "can_write": false
+        },
+        "MinLimit": {
+          "type": "float",
+          "can_write": true
+        },
+        "NormalizedPosition": {
+          "type": "float",
+          "can_write": false
+        },
+        "Status": {
+          "type": "Sandbox.ModAPI.Ingame.PistonStatus",
+          "can_write": false
+        },
+        "Velocity": {
+          "type": "float",
+          "can_write": true
+        }
+      },
+      "methods": {
+        "Extend": {
+          "return_type": "void",
+          "parameters": []
+        },
+        "MoveToPosition": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "float",
+              "name": "extent"
+            },
+            {
+              "type": "float",
+              "name": "speed"
+            }
+          ]
+        },
+        "Retract": {
+          "return_type": "void",
+          "parameters": []
+        },
+        "Reverse": {
+          "return_type": "void",
+          "parameters": []
+        }
+      }
+    },
+    "IMyPistonTop": {
+      "properties": {},
+      "methods": {}
+    },
+    "IMyPowerProducer": {
+      "properties": {
+        "CurrentOutput": {
+          "type": "float",
+          "can_write": false
+        },
+        "CurrentOutputRatio": {
+          "type": "float",
+          "can_write": false
+        },
+        "MaxOutput": {
+          "type": "float",
+          "can_write": false
+        }
+      },
+      "methods": {}
+    },
+    "IMyProductionBlock": {
+      "properties": {
+        "InputInventory": {
+          "type": "VRage.Game.ModAPI.Ingame.IMyInventory",
+          "can_write": false
+        },
+        "IsProducing": {
+          "type": "bool",
+          "can_write": false
+        },
+        "IsQueueEmpty": {
+          "type": "bool",
+          "can_write": false
+        },
+        "NextItemId": {
+          "type": "System.UInt32",
+          "can_write": false
+        },
+        "OutputInventory": {
+          "type": "VRage.Game.ModAPI.Ingame.IMyInventory",
+          "can_write": false
+        },
+        "UseConveyorSystem": {
+          "type": "bool",
+          "can_write": true
+        }
+      },
+      "methods": {
+        "AddQueueItem": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "VRage.Game.MyDefinitionId",
+              "name": "blueprint"
+            },
+            {
+              "type": "VRage.MyFixedPoint",
+              "name": "amount"
+            }
+          ],
+          "overloads": [
+            {
+              "return_type": "void",
+              "parameters": [
+                {
+                  "type": "VRage.Game.MyDefinitionId",
+                  "name": "blueprint"
+                },
+                {
+                  "type": "double",
+                  "name": "amount"
+                }
+              ]
+            },
+            {
+              "return_type": "void",
+              "parameters": [
+                {
+                  "type": "VRage.Game.MyDefinitionId",
+                  "name": "blueprint"
+                },
+                {
+                  "type": "System.Decimal",
+                  "name": "amount"
+                }
+              ]
+            }
+          ]
+        },
+        "CanUseBlueprint": {
+          "return_type": "bool",
+          "parameters": [
+            {
+              "type": "VRage.Game.MyDefinitionId",
+              "name": "blueprint"
+            }
+          ]
+        },
+        "ClearQueue": {
+          "return_type": "void",
+          "parameters": []
+        },
+        "GetQueue": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "System.Collections.Generic.List`<Sandbox.ModAPI.Ingame.MyProductionItem>",
+              "name": "items"
+            }
+          ]
+        },
+        "InsertQueueItem": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "int",
+              "name": "idx"
+            },
+            {
+              "type": "VRage.Game.MyDefinitionId",
+              "name": "blueprint"
+            },
+            {
+              "type": "double",
+              "name": "amount"
+            }
+          ],
+          "overloads": [
+            {
+              "return_type": "void",
+              "parameters": [
+                {
+                  "type": "int",
+                  "name": "idx"
+                },
+                {
+                  "type": "VRage.Game.MyDefinitionId",
+                  "name": "blueprint"
+                },
+                {
+                  "type": "VRage.MyFixedPoint",
+                  "name": "amount"
+                }
+              ]
+            },
+            {
+              "return_type": "void",
+              "parameters": [
+                {
+                  "type": "int",
+                  "name": "idx"
+                },
+                {
+                  "type": "VRage.Game.MyDefinitionId",
+                  "name": "blueprint"
+                },
+                {
+                  "type": "System.Decimal",
+                  "name": "amount"
+                }
+              ]
+            }
+          ]
+        },
+        "MoveQueueItemRequest": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "System.UInt32",
+              "name": "queueItemId"
+            },
+            {
+              "type": "int",
+              "name": "targetIdx"
+            }
+          ]
+        },
+        "RemoveQueueItem": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "int",
+              "name": "idx"
+            },
+            {
+              "type": "System.Decimal",
+              "name": "amount"
+            }
+          ],
+          "overloads": [
+            {
+              "return_type": "void",
+              "parameters": [
+                {
+                  "type": "int",
+                  "name": "idx"
+                },
+                {
+                  "type": "VRage.MyFixedPoint",
+                  "name": "amount"
+                }
+              ]
+            },
+            {
+              "return_type": "void",
+              "parameters": [
+                {
+                  "type": "int",
+                  "name": "idx"
+                },
+                {
+                  "type": "double",
+                  "name": "amount"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "IMyProgrammableBlock": {
+      "properties": {
+        "IsRunning": {
+          "type": "bool",
+          "can_write": false
+        },
+        "TerminalRunArgument": {
+          "type": "string",
+          "can_write": false
+        }
+      },
+      "methods": {
+        "TryRun": {
+          "return_type": "bool",
+          "parameters": [
+            {
+              "type": "string",
+              "name": "argument"
+            }
+          ]
+        }
+      }
+    },
+    "IMyProjector": {
+      "properties": {
+        "BuildableBlocksCount": {
+          "type": "int",
+          "can_write": false
+        },
+        "IsProjecting": {
+          "type": "bool",
+          "can_write": false
+        },
+        "ProjectionOffset": {
+          "type": "VRageMath.Vector3I",
+          "can_write": true
+        },
+        "ProjectionOffsetX": {
+          "type": "int",
+          "can_write": false
+        },
+        "ProjectionOffsetY": {
+          "type": "int",
+          "can_write": false
+        },
+        "ProjectionOffsetZ": {
+          "type": "int",
+          "can_write": false
+        },
+        "ProjectionRotX": {
+          "type": "int",
+          "can_write": false
+        },
+        "ProjectionRotY": {
+          "type": "int",
+          "can_write": false
+        },
+        "ProjectionRotZ": {
+          "type": "int",
+          "can_write": false
+        },
+        "ProjectionRotation": {
+          "type": "VRageMath.Vector3I",
+          "can_write": true
+        },
+        "RemainingArmorBlocks": {
+          "type": "int",
+          "can_write": false
+        },
+        "RemainingBlocks": {
+          "type": "int",
+          "can_write": false
+        },
+        "RemainingBlocksPerType": {
+          "type": "int>",
+          "can_write": false
+        },
+        "ShowOnlyBuildable": {
+          "type": "bool",
+          "can_write": true
+        },
+        "TotalBlocks": {
+          "type": "int",
+          "can_write": false
+        }
+      },
+      "methods": {
+        "UpdateOffsetAndRotation": {
+          "return_type": "void",
+          "parameters": []
+        }
+      }
+    },
+    "IMyRadioAntenna": {
+      "properties": {
+        "EnableBroadcasting": {
+          "type": "bool",
+          "can_write": true
+        },
+        "HudText": {
+          "type": "string",
+          "can_write": true
+        },
+        "IsBroadcasting": {
+          "type": "bool",
+          "can_write": false
+        },
+        "Radius": {
+          "type": "float",
+          "can_write": true
+        },
+        "ShowShipName": {
+          "type": "bool",
+          "can_write": true
+        }
+      },
+      "methods": {}
+    },
+    "IMyReactor": {
+      "properties": {
+        "UseConveyorSystem": {
+          "type": "bool",
+          "can_write": true
+        }
+      },
+      "methods": {}
+    },
+    "IMyRefinery": {
+      "properties": {},
+      "methods": {}
+    },
+    "IMyReflectorLight": {
+      "properties": {},
+      "methods": {}
+    },
+    "IMyRemoteControl": {
+      "properties": {
+        "CurrentWaypoint": {
+          "type": "Sandbox.ModAPI.Ingame.MyWaypointInfo",
+          "can_write": false
+        },
+        "Direction": {
+          "type": "VRageMath.Base6Directions.Direction",
+          "can_write": true
+        },
+        "FlightMode": {
+          "type": "Sandbox.ModAPI.Ingame.FlightMode",
+          "can_write": true
+        },
+        "IsAutoPilotEnabled": {
+          "type": "bool",
+          "can_write": false
+        },
+        "SpeedLimit": {
+          "type": "float",
+          "can_write": true
+        },
+        "WaitForFreeWay": {
+          "type": "bool",
+          "can_write": true
+        }
+      },
+      "methods": {
+        "AddWaypoint": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "Sandbox.ModAPI.Ingame.MyWaypointInfo",
+              "name": "coords"
+            }
+          ],
+          "overloads": [
+            {
+              "return_type": "void",
+              "parameters": [
+                {
+                  "type": "VRageMath.Vector3D",
+                  "name": "coords"
+                },
+                {
+                  "type": "string",
+                  "name": "name"
+                }
+              ]
+            }
+          ]
+        },
+        "ClearWaypoints": {
+          "return_type": "void",
+          "parameters": []
+        },
+        "GetNearestPlayer": {
+          "return_type": "bool",
+          "parameters": [
+            {
+              "type": "VRageMath.Vector3D",
+              "name": "playerPosition"
+            }
+          ]
+        },
+        "GetWaypointInfo": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "System.Collections.Generic.List`<Sandbox.ModAPI.Ingame.MyWaypointInfo>",
+              "name": "waypoints"
+            }
+          ]
+        },
+        "SetAutoPilotEnabled": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "bool",
+              "name": "enabled"
+            }
+          ]
+        },
+        "SetCollisionAvoidance": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "bool",
+              "name": "enabled"
+            }
+          ]
+        },
+        "SetDockingMode": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "bool",
+              "name": "enabled"
+            }
+          ]
+        }
+      }
+    },
+    "IMyResourceStorageComponent": {
+      "properties": {
+        "FilledRatio": {
+          "type": "double",
+          "can_write": false
+        },
+        "ResourceCapacity": {
+          "type": "float",
+          "can_write": false
+        }
+      },
+      "methods": {
+        "IsResourceStorage": {
+          "return_type": "bool",
+          "parameters": [
+            {
+              "type": "VRage.Game.MyDefinitionId",
+              "name": "resourceDefinition"
+            }
+          ]
+        }
+      }
+    },
+    "IMySearchEnemyComponent": {
+      "properties": {
+        "FoundEnemyId": {
+          "type": "long>",
+          "can_write": false
+        },
+        "SubsystemsToDestroy": {
+          "type": "VRage.Utils.MyStringHash",
+          "can_write": true
+        },
+        "TargetingLockOptions": {
+          "type": "VRage.Game.ModAPI.Ingame.MyGridTargetingRelationFiltering",
+          "can_write": true
+        }
+      },
+      "methods": {}
+    },
+    "IMySearchlight": {
+      "properties": {
+        "AimingRadius": {
+          "type": "float",
+          "can_write": true
+        },
+        "BlinkInterval": {
+          "type": "float",
+          "can_write": true
+        },
+        "BlinkLength": {
+          "type": "float",
+          "can_write": true
+        },
+        "BlinkOffset": {
+          "type": "float",
+          "can_write": true
+        },
+        "Color": {
+          "type": "VRageMath.Color",
+          "can_write": true
+        },
+        "EnableIdleMovement": {
+          "type": "bool",
+          "can_write": true
+        },
+        "Intensity": {
+          "type": "float",
+          "can_write": true
+        },
+        "Offset": {
+          "type": "float",
+          "can_write": true
+        },
+        "Radius": {
+          "type": "float",
+          "can_write": true
+        },
+        "TargetCharacters": {
+          "type": "bool",
+          "can_write": true
+        },
+        "TargetEnemy": {
+          "type": "bool",
+          "can_write": true
+        },
+        "TargetFriends": {
+          "type": "bool",
+          "can_write": true
+        },
+        "TargetLargeShips": {
+          "type": "bool",
+          "can_write": true
+        },
+        "TargetLockEnemy": {
+          "type": "bool",
+          "can_write": true
+        },
+        "TargetMeteors": {
+          "type": "bool",
+          "can_write": true
+        },
+        "TargetNeutrals": {
+          "type": "bool",
+          "can_write": true
+        },
+        "TargetOptions": {
+          "type": "Sandbox.ModAPI.Ingame.TargetingGroupOptions",
+          "can_write": false
+        },
+        "TargetRockets": {
+          "type": "bool",
+          "can_write": true
+        },
+        "TargetSmallShips": {
+          "type": "bool",
+          "can_write": true
+        },
+        "TargetStations": {
+          "type": "bool",
+          "can_write": true
+        }
+      },
+      "methods": {
+        "SetManualAzimuthAndElevation": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "float",
+              "name": "azimuth"
+            },
+            {
+              "type": "float",
+              "name": "elevation"
+            }
+          ]
+        },
+        "SetTargetOptions": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "Sandbox.ModAPI.Ingame.TargetingGroupOptions",
+              "name": "Options"
+            }
+          ]
+        }
+      }
+    },
+    "IMySensorBlock": {
+      "properties": {
+        "BackExtend": {
+          "type": "float",
+          "can_write": true
+        },
+        "BottomExtend": {
+          "type": "float",
+          "can_write": true
+        },
+        "DetectAsteroids": {
+          "type": "bool",
+          "can_write": true
+        },
+        "DetectEnemy": {
+          "type": "bool",
+          "can_write": true
+        },
+        "DetectFloatingObjects": {
+          "type": "bool",
+          "can_write": true
+        },
+        "DetectFriendly": {
+          "type": "bool",
+          "can_write": true
+        },
+        "DetectLargeShips": {
+          "type": "bool",
+          "can_write": true
+        },
+        "DetectNeutral": {
+          "type": "bool",
+          "can_write": true
+        },
+        "DetectOwner": {
+          "type": "bool",
+          "can_write": true
+        },
+        "DetectPlayers": {
+          "type": "bool",
+          "can_write": true
+        },
+        "DetectSmallShips": {
+          "type": "bool",
+          "can_write": true
+        },
+        "DetectStations": {
+          "type": "bool",
+          "can_write": true
+        },
+        "DetectSubgrids": {
+          "type": "bool",
+          "can_write": true
+        },
+        "FrontExtend": {
+          "type": "float",
+          "can_write": true
+        },
+        "IsActive": {
+          "type": "bool",
+          "can_write": false
+        },
+        "LastDetectedEntity": {
+          "type": "Sandbox.ModAPI.Ingame.MyDetectedEntityInfo",
+          "can_write": false
+        },
+        "LeftExtend": {
+          "type": "float",
+          "can_write": true
+        },
+        "MaxRange": {
+          "type": "float",
+          "can_write": false
+        },
+        "PlayProximitySound": {
+          "type": "bool",
+          "can_write": true
+        },
+        "RightExtend": {
+          "type": "float",
+          "can_write": true
+        },
+        "TopExtend": {
+          "type": "float",
+          "can_write": true
+        }
+      },
+      "methods": {
+        "DetectedEntities": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "System.Collections.Generic.List`<Sandbox.ModAPI.Ingame.MyDetectedEntityInfo>",
+              "name": "entities"
+            }
+          ]
+        }
+      }
+    },
+    "IMyShipConnector": {
+      "properties": {
+        "CollectAll": {
+          "type": "bool",
+          "can_write": true
+        },
+        "IsConnected": {
+          "type": "bool",
+          "can_write": false
+        },
+        "IsLocked": {
+          "type": "bool",
+          "can_write": false
+        },
+        "IsParkingEnabled": {
+          "type": "bool",
+          "can_write": true
+        },
+        "OtherConnector": {
+          "type": "Sandbox.ModAPI.Ingame.IMyShipConnector",
+          "can_write": false
+        },
+        "PullStrength": {
+          "type": "float",
+          "can_write": true
+        },
+        "Status": {
+          "type": "Sandbox.ModAPI.Ingame.MyShipConnectorStatus",
+          "can_write": false
+        },
+        "ThrowOut": {
+          "type": "bool",
+          "can_write": true
+        }
+      },
+      "methods": {
+        "Connect": {
+          "return_type": "void",
+          "parameters": []
+        },
+        "Disconnect": {
+          "return_type": "void",
+          "parameters": []
+        },
+        "ToggleConnect": {
+          "return_type": "void",
+          "parameters": []
+        }
+      }
+    },
+    "IMyShipController": {
+      "properties": {
+        "CanControlShip": {
+          "type": "bool",
+          "can_write": false
+        },
+        "CenterOfMass": {
+          "type": "VRageMath.Vector3D",
+          "can_write": false
+        },
+        "ControlThrusters": {
+          "type": "bool",
+          "can_write": true
+        },
+        "ControlWheels": {
+          "type": "bool",
+          "can_write": true
+        },
+        "DampenersOverride": {
+          "type": "bool",
+          "can_write": true
+        },
+        "HandBrake": {
+          "type": "bool",
+          "can_write": true
+        },
+        "HasWheels": {
+          "type": "bool",
+          "can_write": false
+        },
+        "IsMainCockpit": {
+          "type": "bool",
+          "can_write": true
+        },
+        "IsUnderControl": {
+          "type": "bool",
+          "can_write": false
+        },
+        "MoveIndicator": {
+          "type": "VRageMath.Vector3",
+          "can_write": false
+        },
+        "RollIndicator": {
+          "type": "float",
+          "can_write": false
+        },
+        "RotationIndicator": {
+          "type": "VRageMath.Vector2",
+          "can_write": false
+        },
+        "ShowHorizonIndicator": {
+          "type": "bool",
+          "can_write": true
+        }
+      },
+      "methods": {
+        "CalculateShipMass": {
+          "return_type": "Sandbox.ModAPI.Ingame.MyShipMass",
+          "parameters": []
+        },
+        "GetArtificialGravity": {
+          "return_type": "VRageMath.Vector3D",
+          "parameters": []
+        },
+        "GetNaturalGravity": {
+          "return_type": "VRageMath.Vector3D",
+          "parameters": []
+        },
+        "GetShipSpeed": {
+          "return_type": "double",
+          "parameters": []
+        },
+        "GetShipVelocities": {
+          "return_type": "Sandbox.ModAPI.Ingame.MyShipVelocities",
+          "parameters": []
+        },
+        "GetTotalGravity": {
+          "return_type": "VRageMath.Vector3D",
+          "parameters": []
+        },
+        "TryGetPlanetElevation": {
+          "return_type": "bool",
+          "parameters": [
+            {
+              "type": "Sandbox.ModAPI.Ingame.MyPlanetElevation",
+              "name": "detail"
+            },
+            {
+              "type": "double",
+              "name": "elevation"
+            }
+          ]
+        },
+        "TryGetPlanetPosition": {
+          "return_type": "bool",
+          "parameters": [
+            {
+              "type": "VRageMath.Vector3D",
+              "name": "position"
+            }
+          ]
+        }
+      }
+    },
+    "IMyShipDrill": {
+      "properties": {
+        "TerrainClearingMode": {
+          "type": "bool",
+          "can_write": true
+        }
+      },
+      "methods": {}
+    },
+    "IMyShipGrinder": {
+      "properties": {},
+      "methods": {}
+    },
+    "IMyShipToolBase": {
+      "properties": {
+        "IsActivated": {
+          "type": "bool",
+          "can_write": false
+        },
+        "UseConveyorSystem": {
+          "type": "bool",
+          "can_write": true
+        }
+      },
+      "methods": {}
+    },
+    "IMyShipWelder": {
+      "properties": {
+        "HelpOthers": {
+          "type": "bool",
+          "can_write": true
+        }
+      },
+      "methods": {}
+    },
+    "IMySlimBlock": {
+      "properties": {
+        "AccumulatedDamage": {
+          "type": "float",
+          "can_write": false
+        },
+        "BlockDefinition": {
+          "type": "VRage.ObjectBuilders.SerializableDefinitionId",
+          "can_write": false
+        },
+        "BuildIntegrity": {
+          "type": "float",
+          "can_write": false
+        },
+        "BuildLevelRatio": {
+          "type": "float",
+          "can_write": false
+        },
+        "ColorMaskHSV": {
+          "type": "VRageMath.Vector3",
+          "can_write": false
+        },
+        "CubeGrid": {
+          "type": "VRage.Game.ModAPI.Ingame.IMyCubeGrid",
+          "can_write": false
+        },
+        "CurrentDamage": {
+          "type": "float",
+          "can_write": false
+        },
+        "DamageRatio": {
+          "type": "float",
+          "can_write": false
+        },
+        "FatBlock": {
+          "type": "VRage.Game.ModAPI.Ingame.IMyCubeBlock",
+          "can_write": false
+        },
+        "HasDeformation": {
+          "type": "bool",
+          "can_write": false
+        },
+        "IsDestroyed": {
+          "type": "bool",
+          "can_write": false
+        },
+        "IsFullIntegrity": {
+          "type": "bool",
+          "can_write": false
+        },
+        "IsFullyDismounted": {
+          "type": "bool",
+          "can_write": false
+        },
+        "Mass": {
+          "type": "float",
+          "can_write": false
+        },
+        "MaxDeformation": {
+          "type": "float",
+          "can_write": false
+        },
+        "MaxIntegrity": {
+          "type": "float",
+          "can_write": false
+        },
+        "OwnerId": {
+          "type": "long",
+          "can_write": false
+        },
+        "Position": {
+          "type": "VRageMath.Vector3I",
+          "can_write": false
+        },
+        "ShowParts": {
+          "type": "bool",
+          "can_write": false
+        },
+        "SkinSubtypeId": {
+          "type": "VRage.Utils.MyStringHash",
+          "can_write": false
+        },
+        "StockpileAllocated": {
+          "type": "bool",
+          "can_write": false
+        },
+        "StockpileEmpty": {
+          "type": "bool",
+          "can_write": false
+        }
+      },
+      "methods": {
+        "GetMissingComponents": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "System.Collections.Generic.Dictionary`<string, int>",
+              "name": "addToDictionary"
+            }
+          ]
+        }
+      }
+    },
+    "IMySmallGatlingGun": {
+      "properties": {
+        "UseConveyorSystem": {
+          "type": "bool",
+          "can_write": false
+        }
+      },
+      "methods": {}
+    },
+    "IMySmallMissileLauncher": {
+      "properties": {
+        "UseConveyorSystem": {
+          "type": "bool",
+          "can_write": false
+        }
+      },
+      "methods": {}
+    },
+    "IMySmallMissileLauncherReload": {
+      "properties": {},
+      "methods": {}
+    },
+    "IMySolarFoodGenerator": {
+      "properties": {
+        "ItemsPerMinute": {
+          "type": "float",
+          "can_write": false
+        },
+        "TimeRemainingUntilNextBatch": {
+          "type": "float",
+          "can_write": false
+        }
+      },
+      "methods": {}
+    },
+    "IMySolarOccludable": {
+      "properties": {
+        "IsSolarOccluded": {
+          "type": "bool",
+          "can_write": false
+        }
+      },
+      "methods": {
+        "GetEntityId": {
+          "return_type": "long",
+          "parameters": []
+        }
+      }
+    },
+    "IMyStoreBlock": {
+      "properties": {
+        "Searchable": {
+          "type": "bool",
+          "can_write": true
+        }
+      },
+      "methods": {
+        "CancelStoreItem": {
+          "return_type": "bool",
+          "parameters": [
+            {
+              "type": "long",
+              "name": "id"
+            }
+          ]
+        },
+        "GetPlayerStoreItems": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "System.Collections.Generic.List`<Sandbox.ModAPI.Ingame.MyStoreQueryItem>",
+              "name": "storeItems"
+            }
+          ]
+        },
+        "InsertOffer": {
+          "return_type": "Sandbox.ModAPI.Ingame.MyStoreInsertResults",
+          "parameters": [
+            {
+              "type": "VRage.Game.ModAPI.Ingame.MyStoreItemDataSimple",
+              "name": "item"
+            },
+            {
+              "type": "long",
+              "name": "id"
+            }
+          ]
+        },
+        "InsertOrder": {
+          "return_type": "Sandbox.ModAPI.Ingame.MyStoreInsertResults",
+          "parameters": [
+            {
+              "type": "VRage.Game.ModAPI.Ingame.MyStoreItemDataSimple",
+              "name": "item"
+            },
+            {
+              "type": "long",
+              "name": "id"
+            }
+          ]
+        }
+      }
+    },
+    "IMyTargetDummyBlock": {
+      "properties": {},
+      "methods": {}
+    },
+    "IMyTerminalBlock": {
+      "properties": {
+        "CustomData": {
+          "type": "string",
+          "can_write": true
+        },
+        "CustomInfo": {
+          "type": "string",
+          "can_write": false
+        },
+        "CustomName": {
+          "type": "string",
+          "can_write": true
+        },
+        "CustomNameWithFaction": {
+          "type": "string",
+          "can_write": false
+        },
+        "DetailedInfo": {
+          "type": "string",
+          "can_write": false
+        },
+        "ShowInInventory": {
+          "type": "bool",
+          "can_write": true
+        },
+        "ShowInTerminal": {
+          "type": "bool",
+          "can_write": true
+        },
+        "ShowInToolbarConfig": {
+          "type": "bool",
+          "can_write": true
+        },
+        "ShowOnHUD": {
+          "type": "bool",
+          "can_write": true
+        }
+      },
+      "methods": {
+        "GetActionWithName": {
+          "return_type": "Sandbox.ModAPI.Interfaces.ITerminalAction",
+          "parameters": [
+            {
+              "type": "string",
+              "name": "name"
+            }
+          ]
+        },
+        "GetActions": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "System.Collections.Generic.List`<Sandbox.ModAPI.Interfaces.ITerminalAction>",
+              "name": "resultList"
+            },
+            {
+              "type": "System.Func`<Sandbox.ModAPI.Interfaces.ITerminalAction, bool>",
+              "name": "collect"
+            }
+          ]
+        },
+        "GetProperties": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "System.Collections.Generic.List`<Sandbox.ModAPI.Interfaces.ITerminalProperty>",
+              "name": "resultList"
+            },
+            {
+              "type": "System.Func`<Sandbox.ModAPI.Interfaces.ITerminalProperty, bool>",
+              "name": "collect"
+            }
+          ]
+        },
+        "GetProperty": {
+          "return_type": "Sandbox.ModAPI.Interfaces.ITerminalProperty",
+          "parameters": [
+            {
+              "type": "string",
+              "name": "id"
+            }
+          ]
+        },
+        "HasLocalPlayerAccess": {
+          "return_type": "bool",
+          "parameters": []
+        },
+        "HasNobodyPlayerAccessToBlock": {
+          "return_type": "bool",
+          "parameters": []
+        },
+        "HasPlayerAccess": {
+          "return_type": "bool",
+          "parameters": [
+            {
+              "type": "long",
+              "name": "playerId"
+            },
+            {
+              "type": "VRage.Game.MyRelationsBetweenPlayerAndBlock",
+              "name": "defaultNoUser"
+            }
+          ]
+        },
+        "HasPlayerAccessWithNobodyCheck": {
+          "return_type": "bool",
+          "parameters": [
+            {
+              "type": "long",
+              "name": "playerId"
+            },
+            {
+              "type": "bool",
+              "name": "isForPB"
+            }
+          ]
+        },
+        "IsSameConstructAs": {
+          "return_type": "bool",
+          "parameters": [
+            {
+              "type": "Sandbox.ModAPI.Ingame.IMyTerminalBlock",
+              "name": "other"
+            }
+          ]
+        },
+        "SearchActionsOfName": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "string",
+              "name": "name"
+            },
+            {
+              "type": "System.Collections.Generic.List`<Sandbox.ModAPI.Interfaces.ITerminalAction>",
+              "name": "resultList"
+            },
+            {
+              "type": "System.Func`<Sandbox.ModAPI.Interfaces.ITerminalAction, bool>",
+              "name": "collect"
+            }
+          ]
+        },
+        "SetCustomName": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "System.Text.StringBuilder",
+              "name": "text"
+            }
+          ],
+          "overloads": [
+            {
+              "return_type": "void",
+              "parameters": [
+                {
+                  "type": "string",
+                  "name": "text"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "IMyTextPanel": {
+      "properties": {},
+      "methods": {
+        "GetPublicTitle": {
+          "return_type": "string",
+          "parameters": []
+        },
+        "WritePublicTitle": {
+          "return_type": "bool",
+          "parameters": [
+            {
+              "type": "string",
+              "name": "value"
+            },
+            {
+              "type": "bool",
+              "name": "append"
+            }
+          ]
+        }
+      }
+    },
+    "IMyTextSurface": {
+      "properties": {
+        "Alignment": {
+          "type": "VRage.Game.GUI.TextPanel.TextAlignment",
+          "can_write": true
+        },
+        "BackgroundAlpha": {
+          "type": "System.Byte",
+          "can_write": true
+        },
+        "BackgroundColor": {
+          "type": "VRageMath.Color",
+          "can_write": true
+        },
+        "ChangeInterval": {
+          "type": "float",
+          "can_write": true
+        },
+        "ContentType": {
+          "type": "VRage.Game.GUI.TextPanel.ContentType",
+          "can_write": true
+        },
+        "CurrentlyShownImage": {
+          "type": "string",
+          "can_write": false
+        },
+        "DisplayName": {
+          "type": "string",
+          "can_write": false
+        },
+        "Font": {
+          "type": "string",
+          "can_write": true
+        },
+        "FontColor": {
+          "type": "VRageMath.Color",
+          "can_write": true
+        },
+        "FontSize": {
+          "type": "float",
+          "can_write": true
+        },
+        "Name": {
+          "type": "string",
+          "can_write": false
+        },
+        "PreserveAspectRatio": {
+          "type": "bool",
+          "can_write": true
+        },
+        "Script": {
+          "type": "string",
+          "can_write": true
+        },
+        "ScriptBackgroundColor": {
+          "type": "VRageMath.Color",
+          "can_write": true
+        },
+        "ScriptForegroundColor": {
+          "type": "VRageMath.Color",
+          "can_write": true
+        },
+        "SurfaceSize": {
+          "type": "VRageMath.Vector2",
+          "can_write": false
+        },
+        "TextPadding": {
+          "type": "float",
+          "can_write": true
+        },
+        "TextureSize": {
+          "type": "VRageMath.Vector2",
+          "can_write": false
+        }
+      },
+      "methods": {
+        "AddImageToSelection": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "string",
+              "name": "id"
+            },
+            {
+              "type": "bool",
+              "name": "checkExistence"
+            }
+          ]
+        },
+        "AddImagesToSelection": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "System.Collections.Generic.List`<string>",
+              "name": "ids"
+            },
+            {
+              "type": "bool",
+              "name": "checkExistence"
+            }
+          ]
+        },
+        "ClearImagesFromSelection": {
+          "return_type": "void",
+          "parameters": []
+        },
+        "DrawFrame": {
+          "return_type": "VRage.Game.GUI.TextPanel.MySpriteDrawFrame",
+          "parameters": []
+        },
+        "GetFonts": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "System.Collections.Generic.List`<string>",
+              "name": "fonts"
+            }
+          ]
+        },
+        "GetScripts": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "System.Collections.Generic.List`<string>",
+              "name": "scripts"
+            }
+          ]
+        },
+        "GetSelectedImages": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "System.Collections.Generic.List`<string>",
+              "name": "output"
+            }
+          ]
+        },
+        "GetSprites": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "System.Collections.Generic.List`<string>",
+              "name": "sprites"
+            }
+          ]
+        },
+        "GetText": {
+          "return_type": "string",
+          "parameters": []
+        },
+        "MeasureStringInPixels": {
+          "return_type": "VRageMath.Vector2",
+          "parameters": [
+            {
+              "type": "System.Text.StringBuilder",
+              "name": "text"
+            },
+            {
+              "type": "string",
+              "name": "font"
+            },
+            {
+              "type": "float",
+              "name": "scale"
+            }
+          ]
+        },
+        "ReadText": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "System.Text.StringBuilder",
+              "name": "buffer"
+            },
+            {
+              "type": "bool",
+              "name": "append"
+            }
+          ]
+        },
+        "RemoveImageFromSelection": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "string",
+              "name": "id"
+            },
+            {
+              "type": "bool",
+              "name": "removeDuplicates"
+            }
+          ]
+        },
+        "RemoveImagesFromSelection": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "System.Collections.Generic.List`<string>",
+              "name": "ids"
+            },
+            {
+              "type": "bool",
+              "name": "removeDuplicates"
+            }
+          ]
+        },
+        "WriteText": {
+          "return_type": "bool",
+          "parameters": [
+            {
+              "type": "string",
+              "name": "value"
+            },
+            {
+              "type": "bool",
+              "name": "append"
+            }
+          ],
+          "overloads": [
+            {
+              "return_type": "bool",
+              "parameters": [
+                {
+                  "type": "System.Text.StringBuilder",
+                  "name": "value"
+                },
+                {
+                  "type": "bool",
+                  "name": "append"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "IMyTextSurfaceProvider": {
+      "properties": {
+        "SurfaceCount": {
+          "type": "int",
+          "can_write": false
+        },
+        "UseGenericLcd": {
+          "type": "bool",
+          "can_write": false
+        }
+      },
+      "methods": {
+        "GetSurface": {
+          "return_type": "Sandbox.ModAPI.Ingame.IMyTextSurface",
+          "parameters": [
+            {
+              "type": "int",
+              "name": "index"
+            }
+          ]
+        }
+      }
+    },
+    "IMyThrust": {
+      "properties": {
+        "CurrentThrust": {
+          "type": "float",
+          "can_write": false
+        },
+        "CurrentThrustPercentage": {
+          "type": "float",
+          "can_write": false
+        },
+        "GridThrustDirection": {
+          "type": "VRageMath.Vector3I",
+          "can_write": false
+        },
+        "MaxEffectiveThrust": {
+          "type": "float",
+          "can_write": false
+        },
+        "MaxThrust": {
+          "type": "float",
+          "can_write": false
+        },
+        "ThrustOverride": {
+          "type": "float",
+          "can_write": true
+        },
+        "ThrustOverridePercentage": {
+          "type": "float",
+          "can_write": true
+        }
+      },
+      "methods": {}
+    },
+    "IMyTurretControlBlock": {
+      "properties": {
+        "AIEnabled": {
+          "type": "bool",
+          "can_write": true
+        },
+        "AngleDeviation": {
+          "type": "float",
+          "can_write": true
+        },
+        "AzimuthRotor": {
+          "type": "Sandbox.ModAPI.Ingame.IMyMotorStator",
+          "can_write": true
+        },
+        "Camera": {
+          "type": "Sandbox.ModAPI.Ingame.IMyCameraBlock",
+          "can_write": true
+        },
+        "ElevationRotor": {
+          "type": "Sandbox.ModAPI.Ingame.IMyMotorStator",
+          "can_write": true
+        },
+        "HasTarget": {
+          "type": "bool",
+          "can_write": false
+        },
+        "IsAimed": {
+          "type": "bool",
+          "can_write": false
+        },
+        "IsSunTrackerEnabled": {
+          "type": "bool",
+          "can_write": true
+        },
+        "IsUnderControl": {
+          "type": "bool",
+          "can_write": false
+        },
+        "MoveIndicator": {
+          "type": "VRageMath.Vector3",
+          "can_write": false
+        },
+        "Range": {
+          "type": "float",
+          "can_write": true
+        },
+        "RollIndicator": {
+          "type": "float",
+          "can_write": false
+        },
+        "RotationIndicator": {
+          "type": "VRageMath.Vector2",
+          "can_write": false
+        },
+        "TargetCharacters": {
+          "type": "bool",
+          "can_write": true
+        },
+        "TargetFriends": {
+          "type": "bool",
+          "can_write": true
+        },
+        "TargetLargeGrids": {
+          "type": "bool",
+          "can_write": true
+        },
+        "TargetMeteors": {
+          "type": "bool",
+          "can_write": true
+        },
+        "TargetMissiles": {
+          "type": "bool",
+          "can_write": true
+        },
+        "TargetNeutrals": {
+          "type": "bool",
+          "can_write": true
+        },
+        "TargetSmallGrids": {
+          "type": "bool",
+          "can_write": true
+        },
+        "TargetStations": {
+          "type": "bool",
+          "can_write": true
+        },
+        "VelocityMultiplierAzimuthRpm": {
+          "type": "float",
+          "can_write": true
+        },
+        "VelocityMultiplierElevationRpm": {
+          "type": "float",
+          "can_write": true
+        }
+      },
+      "methods": {
+        "AddTool": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "Sandbox.ModAPI.Ingame.IMyFunctionalBlock",
+              "name": "tool"
+            }
+          ]
+        },
+        "AddTools": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "System.Collections.Generic.List`<Sandbox.ModAPI.Ingame.IMyFunctionalBlock>",
+              "name": "tools"
+            }
+          ]
+        },
+        "ClearTools": {
+          "return_type": "void",
+          "parameters": []
+        },
+        "GetDirectionSource": {
+          "return_type": "Sandbox.ModAPI.Ingame.IMyTerminalBlock",
+          "parameters": []
+        },
+        "GetShootDirection": {
+          "return_type": "VRageMath.Vector3",
+          "parameters": []
+        },
+        "GetTargetedEntity": {
+          "return_type": "Sandbox.ModAPI.Ingame.MyDetectedEntityInfo",
+          "parameters": []
+        },
+        "GetTargetingGroup": {
+          "return_type": "string",
+          "parameters": []
+        },
+        "GetTargetingGroups": {
+          "return_type": "string>",
+          "parameters": [],
+          "overloads": [
+            {
+              "return_type": "void",
+              "parameters": [
+                {
+                  "type": "System.Collections.Generic.List`<string>",
+                  "name": "targetingGroups"
+                }
+              ]
+            }
+          ]
+        },
+        "GetTools": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "System.Collections.Generic.List`<Sandbox.ModAPI.Ingame.IMyFunctionalBlock>",
+              "name": "tools"
+            }
+          ]
+        },
+        "RemoveTool": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "Sandbox.ModAPI.Ingame.IMyFunctionalBlock",
+              "name": "tool"
+            }
+          ]
+        },
+        "RemoveTools": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "System.Collections.Generic.List`<Sandbox.ModAPI.Ingame.IMyFunctionalBlock>",
+              "name": "tool"
+            }
+          ]
+        },
+        "SetTargetingGroup": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "string",
+              "name": "groupSubtypeId"
+            }
+          ]
+        }
+      }
+    },
+    "IMyUnicastListener": {
+      "properties": {},
+      "methods": {}
+    },
+    "IMyUpgradableBlock": {
+      "properties": {
+        "UpgradeCount": {
+          "type": "System.UInt32",
+          "can_write": false
+        }
+      },
+      "methods": {
+        "FillUpgradesDictionary": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "System.Collections.Generic.Dictionary`<string, float>",
+              "name": "upgrades"
+            }
+          ]
+        },
+        "GetUpgrades": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "System.Collections.Generic.Dictionary`<string, float>",
+              "name": "upgrades"
+            }
+          ]
+        }
+      }
+    },
+    "IMyUpgradeModule": {
+      "properties": {
+        "Connections": {
+          "type": "System.UInt32",
+          "can_write": false
+        },
+        "UpgradeCount": {
+          "type": "System.UInt32",
+          "can_write": false
+        }
+      },
+      "methods": {
+        "FillUpgradeList": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "System.Collections.Generic.List`<VRage.Game.ObjectBuilders.Definitions.MyUpgradeModuleInfo>",
+              "name": "upgrades"
+            }
+          ]
+        },
+        "GetUpgradeList": {
+          "return_type": "void",
+          "parameters": [
+            {
+              "type": "System.Collections.Generic.List`<VRage.Game.ObjectBuilders.Definitions.MyUpgradeModuleInfo>",
+              "name": "upgrades"
+            }
+          ]
+        }
+      }
+    },
+    "IMyUserControllableGun": {
+      "properties": {
+        "IsShooting": {
+          "type": "bool",
+          "can_write": false
+        },
+        "Shoot": {
+          "type": "bool",
+          "can_write": true
+        }
+      },
+      "methods": {
+        "ShootOnce": {
+          "return_type": "void",
+          "parameters": []
+        }
+      }
+    },
+    "IMyWarhead": {
+      "properties": {
+        "DetonationTime": {
+          "type": "float",
+          "can_write": true
+        },
+        "IsArmed": {
+          "type": "bool",
+          "can_write": true
+        },
+        "IsCountingDown": {
+          "type": "bool",
+          "can_write": false
+        }
+      },
+      "methods": {
+        "Detonate": {
+          "return_type": "void",
+          "parameters": []
+        },
+        "StartCountdown": {
+          "return_type": "bool",
+          "parameters": []
+        },
+        "StopCountdown": {
+          "return_type": "bool",
+          "parameters": []
+        }
+      }
+    },
+    "IMyWheel": {
+      "properties": {},
+      "methods": {}
+    },
+    "IMyWindTurbine": {
+      "properties": {
+        "Effectivity": {
+          "type": "float",
+          "can_write": false
+        },
+        "PlacementEffectivity": {
+          "type": "float",
+          "can_write": false
+        },
+        "WindEffectivity": {
+          "type": "float",
+          "can_write": false
+        }
+      },
+      "methods": {}
+    }
+  },
+  "enums": {
+    "BroadcastTarget": [
+      "Owner",
+      "Faction",
+      "Everyone"
+    ],
+    "ChargeMode": [
+      "Auto",
+      "Recharge",
+      "Discharge"
+    ],
+    "DoorStatus": [
+      "Opening",
+      "Open",
+      "Closing",
+      "Closed"
+    ],
+    "FleeMode": [
+      "AwayFromTarget",
+      "ToGpsOrBeacon"
+    ],
+    "FleeTrigger": [
+      "Never",
+      "Always",
+      "WhenTargetLocked",
+      "WhenTakingDamage"
+    ],
+    "FlightMode": [
+      "Patrol",
+      "Circle",
+      "OneWay",
+      "Track",
+      "WorkArea"
+    ],
+    "GuidanceType": [
+      "Basic",
+      "TargetPrediction"
+    ],
+    "MyAssemblerMode": [
+      "Assembly",
+      "Disassembly"
+    ],
+    "MyConveyorSorterMode": [
+      "Whitelist",
+      "Blacklist"
+    ],
+    "MyDetectedEntityType": [
+      "None",
+      "Unknown",
+      "SmallGrid",
+      "LargeGrid",
+      "CharacterHuman",
+      "CharacterOther",
+      "FloatingObject",
+      "Asteroid",
+      "Planet",
+      "Meteor",
+      "Missile",
+      "Tree",
+      "Forageable"
+    ],
+    "MyGridTargetingRelationFiltering": [
+      "None",
+      "Enemy",
+      "Neutral",
+      "Friend",
+      "All"
+    ],
+    "MyJumpDriveStatus": [
+      "Charging",
+      "Ready",
+      "Jumping"
+    ],
+    "MyLaserAntennaStatus": [
+      "Idle",
+      "RotatingToTarget",
+      "SearchingTargetForAntenna",
+      "Connecting",
+      "Connected",
+      "OutOfRange"
+    ],
+    "MyPlanetElevation": [
+      "Sealevel",
+      "Surface"
+    ],
+    "MyRotationDirection": [
+      "AUTO",
+      "CW",
+      "CCW"
+    ],
+    "MyShipConnectorStatus": [
+      "Unconnected",
+      "Connectable",
+      "Connected"
+    ],
+    "MyStoreInsertResults": [
+      "Success",
+      "Fail_StoreLimitReached",
+      "Fail_PricePerUnitIsLessThanMinimum",
+      "Error"
+    ],
+    "MyTerminalAccessScope": [
+      "All",
+      "Construct",
+      "Grid"
+    ],
+    "MyTransmitTarget": [
+      "None",
+      "Owned",
+      "Ally",
+      "Default",
+      "Neutral",
+      "Enemy",
+      "Everyone"
+    ],
+    "MyTransponderRelationFilter": [
+      "Owner",
+      "Faction",
+      "Everyone"
+    ],
+    "OffensiveCombatTargetPriority": [
+      "Closest",
+      "Largest",
+      "Smallest"
+    ],
+    "PistonStatus": [
+      "Stopped",
+      "Extending",
+      "Extended",
+      "Retracting",
+      "Retracted"
+    ],
+    "TargetingGroupOptions": [
+      "Default",
+      "Weapons",
+      "Propulsion",
+      "Power"
+    ],
+    "TransmissionDistance": [
+      "CurrentConstruct",
+      "ConnectedConstructs",
+      "AntennaRelay",
+      "TransmissionDistanceMax"
+    ],
+    "UpdateFrequency": [
+      "None",
+      "Update1",
+      "Update10",
+      "Update100",
+      "Once"
+    ],
+    "UpdateType": [
+      "None",
+      "Terminal",
+      "Trigger",
+      "Mod",
+      "Script",
+      "Update1",
+      "Update10",
+      "Update100",
+      "Once",
+      "IGC"
+    ]
+  }
+}

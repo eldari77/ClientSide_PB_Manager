@@ -35,10 +35,10 @@ For `workshop_1216126863_adapter`, keep the PB config at:
 
 ```text
 snapshot_mode=minimal
-max_apply_commands_per_tick=1
+max_apply_commands_per_tick=8
 dynamic_apply_commands=true
 dynamic_min_apply_commands_per_tick=1
-dynamic_max_apply_commands_per_tick=4
+dynamic_max_apply_commands_per_tick=8
 apply_worker_commands=true
 allow_connected_grid_commands=false
 ```
@@ -171,7 +171,7 @@ The manager's Limits tab edits the default profile. For this client-side bridge
 path, start with:
 
 ```text
-runtime_ms_limit=0.3
+runtime_ms_limit=0.25
 runtime_ms_soft_ratio=0.75
 cooldown_seconds=10
 ```
@@ -185,11 +185,11 @@ The PB shim now treats the runtime cap as the primary throughput driver. Start
 with:
 
 ```text
-runtime_ms_limit=0.3
+runtime_ms_limit=0.25
 runtime_ms_soft_ratio=0.75
 dynamic_apply_commands=true
 dynamic_min_apply_commands_per_tick=1
-dynamic_max_apply_commands_per_tick=4
+dynamic_max_apply_commands_per_tick=8
 ```
 
 and keep the worker config at:
@@ -206,7 +206,7 @@ After changing throughput, watch the newest processed request for
 `runtime_telemetry.last_runtime_ms`, `runtime_telemetry.dynamic_apply_budget`,
 `limiter_state`, and `state.last_apply.skipped`. Lower
 `dynamic_max_apply_commands_per_tick` or disable `dynamic_apply_commands` if
-samples approach `0.3`, if the limiter enters `soft_limited`/`cooldown`, or if
+samples approach `0.25`, if the limiter enters `soft_limited`/`cooldown`, or if
 budget skips appear.
 
 ## Build and Hand Off Plugin
@@ -267,9 +267,9 @@ see the current rendered grid" from "the Docker worker has processed a fresh PB
 request."
 
 If the PB shows `NOVALI bridge limiter: cooldown` during a local first test,
-compare `last_ms` to `runtime_ms_limit`. The default bridge profile is `0.3`;
+compare `last_ms` to `runtime_ms_limit`. The default bridge profile is `0.25`;
 the shim migrates the old exact `runtime_ms_limit=0.03` default to
-`runtime_ms_limit=0.3` when it sees an existing NOVALI config section.
+`runtime_ms_limit=0.25` when it sees an existing NOVALI config section.
 
 Result-consuming PB ticks clear the worker result and continue to the normal
 limiter/request path. This lets a single automatic tick apply one command and

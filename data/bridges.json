@@ -1,0 +1,42 @@
+{
+  "schema": "novali.client_side_pb.bridges.v1",
+  "bridges": {
+    "pb-bridge-001": {
+      "bridge_id": "pb-bridge-001",
+      "display_name": "Primary PB Bridge",
+      "status": "verified",
+      "shim": {
+        "mailbox_mode": "both",
+        "text_panel_name": "NOVALI PB Bridge",
+        "snapshot_mode": "minimal",
+        "setup_script_id": "sample_status_adapter",
+        "verification_nonce": "0d500cfa4e704fd4",
+        "max_commands_per_minute": 60,
+        "max_apply_commands_per_tick": 8,
+        "apply_worker_commands": true,
+        "allow_connected_grid_commands": false,
+        "runtime_ms_limit": 0.25,
+        "runtime_ms_soft_ratio": 0.75,
+        "cooldown_seconds": 3,
+        "fail_closed": true
+      },
+      "verification": {
+        "verified": true,
+        "verification_nonce": "0d500cfa4e704fd4",
+        "shim_version": "2026-05-20-iim-action-parity-v13-customdata",
+        "last_sequence": 39,
+        "last_result_status": "ok",
+        "last_error": "none",
+        "checked_at": "2026-08-08T00:52:26.7645249Z"
+      },
+      "selected_script_instance_id": "pb-bridge-001-orchestrator",
+      "allowed_script_instance_ids": [
+        "pb-bridge-001-orchestrator",
+        "pb-bridge-001-virtual_whip_auto_door",
+        "pb-bridge-001-workshop_1216126863_adapter"
+      ],
+      "created_at": "2026-08-07T00:00:00Z",
+      "updated_at": "2026-08-21T00:44:55.4499470Z"
+    }
+  }
+}

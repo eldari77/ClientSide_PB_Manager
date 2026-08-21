@@ -1,0 +1,925 @@
+{
+  "schema": "novali.client_side_pb.harness_update_plan.v1",
+  "generated_at": "2026-08-20T21:12:18.735474+00:00",
+  "api_hash": "af821a418a81a4c84e63dd92e018188cf10bcab7ff217d21d15185a860a4164a",
+  "harness_capability_version": "dynamic-harness-v12",
+  "operator_status": "read_only_stubs_ready",
+  "next_recommended_action": "add_read_only_stubs",
+  "summary": {
+    "read_only_stub_queue": 25,
+    "mapping_review_queue": 25,
+    "blocked_for_safety_queue": 7
+  },
+  "read_only_stub_queue": [
+    {
+      "member": "IMyTerminalBlock.SearchActionsOfName",
+      "interface": "IMyTerminalBlock",
+      "member_name": "SearchActionsOfName",
+      "member_kind": "method",
+      "priority": 10,
+      "risk": "read_only",
+      "review_required": false,
+      "reason": "read-only endpoint can be modeled with snapshot field plus virtual PB getter",
+      "return_type": "void",
+      "parameters": [
+        {
+          "type": "string",
+          "name": "name"
+        },
+        {
+          "type": "System.Collections.Generic.List`<Sandbox.ModAPI.Interfaces.ITerminalAction>",
+          "name": "resultList"
+        },
+        {
+          "type": "System.Func`<Sandbox.ModAPI.Interfaces.ITerminalAction, bool>",
+          "name": "collect"
+        }
+      ],
+      "suggested_command_kind": "review_terminal_block_search_actions_of_name"
+    },
+    {
+      "member": "IMyTextSurface.CurrentlyShownImage",
+      "interface": "IMyTextSurface",
+      "member_name": "CurrentlyShownImage",
+      "member_kind": "property",
+      "priority": 11,
+      "risk": "read_only",
+      "review_required": false,
+      "reason": "read-only endpoint can be modeled with snapshot field plus virtual PB getter",
+      "value_type": "string",
+      "snapshot_field": "grid_snapshot.blocks[].currently_shown_image",
+      "can_write": false
+    },
+    {
+      "member": "IMyTextSurface.DisplayName",
+      "interface": "IMyTextSurface",
+      "member_name": "DisplayName",
+      "member_kind": "property",
+      "priority": 11,
+      "risk": "read_only",
+      "review_required": false,
+      "reason": "read-only endpoint can be modeled with snapshot field plus virtual PB getter",
+      "value_type": "string",
+      "snapshot_field": "grid_snapshot.blocks[].display_name",
+      "can_write": false
+    },
+    {
+      "member": "IMyTextSurface.GetFonts",
+      "interface": "IMyTextSurface",
+      "member_name": "GetFonts",
+      "member_kind": "method",
+      "priority": 11,
+      "risk": "read_only",
+      "review_required": false,
+      "reason": "read-only endpoint can be modeled with snapshot field plus virtual PB getter",
+      "return_type": "void",
+      "parameters": [
+        {
+          "type": "System.Collections.Generic.List`<string>",
+          "name": "fonts"
+        }
+      ],
+      "suggested_command_kind": "review_text_surface_get_fonts"
+    },
+    {
+      "member": "IMyTextSurface.GetScripts",
+      "interface": "IMyTextSurface",
+      "member_name": "GetScripts",
+      "member_kind": "method",
+      "priority": 11,
+      "risk": "read_only",
+      "review_required": false,
+      "reason": "read-only endpoint can be modeled with snapshot field plus virtual PB getter",
+      "return_type": "void",
+      "parameters": [
+        {
+          "type": "System.Collections.Generic.List`<string>",
+          "name": "scripts"
+        }
+      ],
+      "suggested_command_kind": "review_text_surface_get_scripts"
+    },
+    {
+      "member": "IMyTextSurface.GetSelectedImages",
+      "interface": "IMyTextSurface",
+      "member_name": "GetSelectedImages",
+      "member_kind": "method",
+      "priority": 11,
+      "risk": "read_only",
+      "review_required": false,
+      "reason": "read-only endpoint can be modeled with snapshot field plus virtual PB getter",
+      "return_type": "void",
+      "parameters": [
+        {
+          "type": "System.Collections.Generic.List`<string>",
+          "name": "output"
+        }
+      ],
+      "suggested_command_kind": "review_text_surface_get_selected_images"
+    },
+    {
+      "member": "IMyTextSurface.GetSprites",
+      "interface": "IMyTextSurface",
+      "member_name": "GetSprites",
+      "member_kind": "method",
+      "priority": 11,
+      "risk": "read_only",
+      "review_required": false,
+      "reason": "read-only endpoint can be modeled with snapshot field plus virtual PB getter",
+      "return_type": "void",
+      "parameters": [
+        {
+          "type": "System.Collections.Generic.List`<string>",
+          "name": "sprites"
+        }
+      ],
+      "suggested_command_kind": "review_text_surface_get_sprites"
+    },
+    {
+      "member": "IMyTextSurface.GetText",
+      "interface": "IMyTextSurface",
+      "member_name": "GetText",
+      "member_kind": "method",
+      "priority": 11,
+      "risk": "read_only",
+      "review_required": false,
+      "reason": "read-only endpoint can be modeled with snapshot field plus virtual PB getter",
+      "return_type": "string",
+      "parameters": [],
+      "suggested_command_kind": "review_text_surface_get_text"
+    },
+    {
+      "member": "IMyTextSurface.MeasureStringInPixels",
+      "interface": "IMyTextSurface",
+      "member_name": "MeasureStringInPixels",
+      "member_kind": "method",
+      "priority": 11,
+      "risk": "read_only",
+      "review_required": false,
+      "reason": "read-only endpoint can be modeled with snapshot field plus virtual PB getter",
+      "return_type": "VRageMath.Vector2",
+      "parameters": [
+        {
+          "type": "System.Text.StringBuilder",
+          "name": "text"
+        },
+        {
+          "type": "string",
+          "name": "font"
+        },
+        {
+          "type": "float",
+          "name": "scale"
+        }
+      ],
+      "suggested_command_kind": "review_text_surface_measure_string_in_pixels"
+    },
+    {
+      "member": "IMyTextSurface.ReadText",
+      "interface": "IMyTextSurface",
+      "member_name": "ReadText",
+      "member_kind": "method",
+      "priority": 11,
+      "risk": "read_only",
+      "review_required": false,
+      "reason": "read-only endpoint can be modeled with snapshot field plus virtual PB getter",
+      "return_type": "void",
+      "parameters": [
+        {
+          "type": "System.Text.StringBuilder",
+          "name": "buffer"
+        },
+        {
+          "type": "bool",
+          "name": "append"
+        }
+      ],
+      "suggested_command_kind": "review_text_surface_read_text"
+    },
+    {
+      "member": "IMyTextSurfaceProvider.GetSurface",
+      "interface": "IMyTextSurfaceProvider",
+      "member_name": "GetSurface",
+      "member_kind": "method",
+      "priority": 12,
+      "risk": "read_only",
+      "review_required": false,
+      "reason": "read-only endpoint can be modeled with snapshot field plus virtual PB getter",
+      "return_type": "Sandbox.ModAPI.Ingame.IMyTextSurface",
+      "parameters": [
+        {
+          "type": "int",
+          "name": "index"
+        }
+      ],
+      "suggested_command_kind": "review_text_surface_provider_get_surface"
+    },
+    {
+      "member": "IMyTextSurfaceProvider.UseGenericLcd",
+      "interface": "IMyTextSurfaceProvider",
+      "member_name": "UseGenericLcd",
+      "member_kind": "property",
+      "priority": 12,
+      "risk": "read_only",
+      "review_required": false,
+      "reason": "read-only endpoint can be modeled with snapshot field plus virtual PB getter",
+      "value_type": "bool",
+      "snapshot_field": "grid_snapshot.blocks[].use_generic_lcd",
+      "can_write": false
+    },
+    {
+      "member": "IMyDoor.Open",
+      "interface": "IMyDoor",
+      "member_name": "Open",
+      "member_kind": "property",
+      "priority": 13,
+      "risk": "read_only",
+      "review_required": false,
+      "reason": "read-only endpoint can be modeled with snapshot field plus virtual PB getter",
+      "value_type": "bool",
+      "snapshot_field": "grid_snapshot.blocks[].door_open",
+      "can_write": false
+    },
+    {
+      "member": "IMyDoor.OpenRatio",
+      "interface": "IMyDoor",
+      "member_name": "OpenRatio",
+      "member_kind": "property",
+      "priority": 13,
+      "risk": "read_only",
+      "review_required": false,
+      "reason": "read-only endpoint can be modeled with snapshot field plus virtual PB getter",
+      "value_type": "float",
+      "snapshot_field": "grid_snapshot.blocks[].door_open_ratio",
+      "can_write": false
+    },
+    {
+      "member": "IMyDoor.Status",
+      "interface": "IMyDoor",
+      "member_name": "Status",
+      "member_kind": "property",
+      "priority": 13,
+      "risk": "read_only",
+      "review_required": false,
+      "reason": "read-only endpoint can be modeled with snapshot field plus virtual PB getter",
+      "value_type": "Sandbox.ModAPI.Ingame.DoorStatus",
+      "snapshot_field": "grid_snapshot.blocks[].door_status",
+      "can_write": false
+    },
+    {
+      "member": "IMyInventory.CanItemsBeAdded",
+      "interface": "IMyInventory",
+      "member_name": "CanItemsBeAdded",
+      "member_kind": "method",
+      "priority": 14,
+      "risk": "read_only",
+      "review_required": false,
+      "reason": "read-only endpoint can be modeled with snapshot field plus virtual PB getter",
+      "return_type": "bool",
+      "parameters": [
+        {
+          "type": "VRage.MyFixedPoint",
+          "name": "amount"
+        },
+        {
+          "type": "VRage.Game.ModAPI.Ingame.MyItemType",
+          "name": "itemType"
+        }
+      ],
+      "suggested_command_kind": "review_inventory_can_items_be_added"
+    },
+    {
+      "member": "IMyInventory.CanPutItems",
+      "interface": "IMyInventory",
+      "member_name": "CanPutItems",
+      "member_kind": "property",
+      "priority": 14,
+      "risk": "read_only",
+      "review_required": false,
+      "reason": "read-only endpoint can be modeled with snapshot field plus virtual PB getter",
+      "value_type": "bool",
+      "snapshot_field": "grid_snapshot.blocks[].can_put_items",
+      "can_write": false
+    },
+    {
+      "member": "IMyInventory.CanTransferItemTo",
+      "interface": "IMyInventory",
+      "member_name": "CanTransferItemTo",
+      "member_kind": "method",
+      "priority": 14,
+      "risk": "read_only",
+      "review_required": false,
+      "reason": "read-only endpoint can be modeled with snapshot field plus virtual PB getter",
+      "return_type": "bool",
+      "parameters": [
+        {
+          "type": "VRage.Game.ModAPI.Ingame.IMyInventory",
+          "name": "otherInventory"
+        },
+        {
+          "type": "VRage.Game.ModAPI.Ingame.MyItemType",
+          "name": "itemType"
+        }
+      ],
+      "suggested_command_kind": "review_inventory_can_transfer_item_to"
+    },
+    {
+      "member": "IMyInventory.ContainItems",
+      "interface": "IMyInventory",
+      "member_name": "ContainItems",
+      "member_kind": "method",
+      "priority": 14,
+      "risk": "read_only",
+      "review_required": false,
+      "reason": "read-only endpoint can be modeled with snapshot field plus virtual PB getter",
+      "return_type": "bool",
+      "parameters": [
+        {
+          "type": "VRage.MyFixedPoint",
+          "name": "amount"
+        },
+        {
+          "type": "VRage.Game.ModAPI.Ingame.MyItemType",
+          "name": "itemType"
+        }
+      ],
+      "suggested_command_kind": "review_inventory_contain_items"
+    },
+    {
+      "member": "IMyInventory.CurrentMass",
+      "interface": "IMyInventory",
+      "member_name": "CurrentMass",
+      "member_kind": "property",
+      "priority": 14,
+      "risk": "read_only",
+      "review_required": false,
+      "reason": "read-only endpoint can be modeled with snapshot field plus virtual PB getter",
+      "value_type": "VRage.MyFixedPoint",
+      "snapshot_field": "grid_snapshot.blocks[].current_mass",
+      "can_write": false
+    },
+    {
+      "member": "IMyInventory.CurrentVolume",
+      "interface": "IMyInventory",
+      "member_name": "CurrentVolume",
+      "member_kind": "property",
+      "priority": 14,
+      "risk": "read_only",
+      "review_required": false,
+      "reason": "read-only endpoint can be modeled with snapshot field plus virtual PB getter",
+      "value_type": "VRage.MyFixedPoint",
+      "snapshot_field": "grid_snapshot.blocks[].current_volume",
+      "can_write": false
+    },
+    {
+      "member": "IMyInventory.FindItem",
+      "interface": "IMyInventory",
+      "member_name": "FindItem",
+      "member_kind": "method",
+      "priority": 14,
+      "risk": "read_only",
+      "review_required": false,
+      "reason": "read-only endpoint can be modeled with snapshot field plus virtual PB getter",
+      "return_type": "VRage.Game.ModAPI.Ingame.MyInventoryItem>",
+      "parameters": [
+        {
+          "type": "VRage.Game.ModAPI.Ingame.MyItemType",
+          "name": "itemType"
+        }
+      ],
+      "suggested_command_kind": "review_inventory_find_item"
+    },
+    {
+      "member": "IMyInventory.GetAcceptedItems",
+      "interface": "IMyInventory",
+      "member_name": "GetAcceptedItems",
+      "member_kind": "method",
+      "priority": 14,
+      "risk": "read_only",
+      "review_required": false,
+      "reason": "read-only endpoint can be modeled with snapshot field plus virtual PB getter",
+      "return_type": "void",
+      "parameters": [
+        {
+          "type": "System.Collections.Generic.List`<VRage.Game.ModAPI.Ingame.MyItemType>",
+          "name": "itemsTypes"
+        },
+        {
+          "type": "System.Func`<VRage.Game.ModAPI.Ingame.MyItemType, bool>",
+          "name": "filter"
+        }
+      ],
+      "suggested_command_kind": "review_inventory_get_accepted_items"
+    },
+    {
+      "member": "IMyInventory.GetItemAmount",
+      "interface": "IMyInventory",
+      "member_name": "GetItemAmount",
+      "member_kind": "method",
+      "priority": 14,
+      "risk": "read_only",
+      "review_required": false,
+      "reason": "read-only endpoint can be modeled with snapshot field plus virtual PB getter",
+      "return_type": "VRage.MyFixedPoint",
+      "parameters": [
+        {
+          "type": "VRage.Game.ModAPI.Ingame.MyItemType",
+          "name": "itemType"
+        }
+      ],
+      "suggested_command_kind": "review_inventory_get_item_amount"
+    },
+    {
+      "member": "IMyInventory.GetItemAt",
+      "interface": "IMyInventory",
+      "member_name": "GetItemAt",
+      "member_kind": "method",
+      "priority": 14,
+      "risk": "read_only",
+      "review_required": false,
+      "reason": "read-only endpoint can be modeled with snapshot field plus virtual PB getter",
+      "return_type": "VRage.Game.ModAPI.Ingame.MyInventoryItem>",
+      "parameters": [
+        {
+          "type": "int",
+          "name": "index"
+        }
+      ],
+      "suggested_command_kind": "review_inventory_get_item_at"
+    }
+  ],
+  "mapping_review_queue": [
+    {
+      "member": "IMyTerminalBlock.CustomName",
+      "interface": "IMyTerminalBlock",
+      "member_name": "CustomName",
+      "member_kind": "property",
+      "priority": 50,
+      "risk": "standard_review",
+      "review_required": true,
+      "reason": "mutating endpoint needs an explicit reviewed bridge command mapping",
+      "value_type": "string",
+      "snapshot_field": "grid_snapshot.blocks[].custom_name",
+      "can_write": true
+    },
+    {
+      "member": "IMyTerminalBlock.SetCustomName",
+      "interface": "IMyTerminalBlock",
+      "member_name": "SetCustomName",
+      "member_kind": "method",
+      "priority": 50,
+      "risk": "standard_review",
+      "review_required": true,
+      "reason": "mutating endpoint needs an explicit reviewed bridge command mapping",
+      "return_type": "void",
+      "parameters": [
+        {
+          "type": "System.Text.StringBuilder",
+          "name": "text"
+        }
+      ],
+      "suggested_command_kind": "review_terminal_block_set_custom_name"
+    },
+    {
+      "member": "IMyTerminalBlock.ShowInInventory",
+      "interface": "IMyTerminalBlock",
+      "member_name": "ShowInInventory",
+      "member_kind": "property",
+      "priority": 50,
+      "risk": "high_risk_requires_review",
+      "review_required": true,
+      "reason": "mutating endpoint needs an explicit reviewed bridge command mapping",
+      "value_type": "bool",
+      "snapshot_field": "grid_snapshot.blocks[].show_in_inventory",
+      "can_write": true
+    },
+    {
+      "member": "IMyTerminalBlock.ShowInTerminal",
+      "interface": "IMyTerminalBlock",
+      "member_name": "ShowInTerminal",
+      "member_kind": "property",
+      "priority": 50,
+      "risk": "standard_review",
+      "review_required": true,
+      "reason": "mutating endpoint needs an explicit reviewed bridge command mapping",
+      "value_type": "bool",
+      "snapshot_field": "grid_snapshot.blocks[].show_in_terminal",
+      "can_write": true
+    },
+    {
+      "member": "IMyTerminalBlock.ShowInToolbarConfig",
+      "interface": "IMyTerminalBlock",
+      "member_name": "ShowInToolbarConfig",
+      "member_kind": "property",
+      "priority": 50,
+      "risk": "standard_review",
+      "review_required": true,
+      "reason": "mutating endpoint needs an explicit reviewed bridge command mapping",
+      "value_type": "bool",
+      "snapshot_field": "grid_snapshot.blocks[].show_in_toolbar_config",
+      "can_write": true
+    },
+    {
+      "member": "IMyTerminalBlock.ShowOnHUD",
+      "interface": "IMyTerminalBlock",
+      "member_name": "ShowOnHUD",
+      "member_kind": "property",
+      "priority": 50,
+      "risk": "standard_review",
+      "review_required": true,
+      "reason": "mutating endpoint needs an explicit reviewed bridge command mapping",
+      "value_type": "bool",
+      "snapshot_field": "grid_snapshot.blocks[].show_on_hud",
+      "can_write": true
+    },
+    {
+      "member": "IMyTextSurface.AddImageToSelection",
+      "interface": "IMyTextSurface",
+      "member_name": "AddImageToSelection",
+      "member_kind": "method",
+      "priority": 51,
+      "risk": "standard_review",
+      "review_required": true,
+      "reason": "mutating endpoint needs an explicit reviewed bridge command mapping",
+      "return_type": "void",
+      "parameters": [
+        {
+          "type": "string",
+          "name": "id"
+        },
+        {
+          "type": "bool",
+          "name": "checkExistence"
+        }
+      ],
+      "suggested_command_kind": "review_text_surface_add_image_to_selection"
+    },
+    {
+      "member": "IMyTextSurface.AddImagesToSelection",
+      "interface": "IMyTextSurface",
+      "member_name": "AddImagesToSelection",
+      "member_kind": "method",
+      "priority": 51,
+      "risk": "standard_review",
+      "review_required": true,
+      "reason": "mutating endpoint needs an explicit reviewed bridge command mapping",
+      "return_type": "void",
+      "parameters": [
+        {
+          "type": "System.Collections.Generic.List`<string>",
+          "name": "ids"
+        },
+        {
+          "type": "bool",
+          "name": "checkExistence"
+        }
+      ],
+      "suggested_command_kind": "review_text_surface_add_images_to_selection"
+    },
+    {
+      "member": "IMyTextSurface.Alignment",
+      "interface": "IMyTextSurface",
+      "member_name": "Alignment",
+      "member_kind": "property",
+      "priority": 51,
+      "risk": "standard_review",
+      "review_required": true,
+      "reason": "mutating endpoint needs an explicit reviewed bridge command mapping",
+      "value_type": "VRage.Game.GUI.TextPanel.TextAlignment",
+      "snapshot_field": "grid_snapshot.blocks[].alignment",
+      "can_write": true
+    },
+    {
+      "member": "IMyTextSurface.BackgroundAlpha",
+      "interface": "IMyTextSurface",
+      "member_name": "BackgroundAlpha",
+      "member_kind": "property",
+      "priority": 51,
+      "risk": "standard_review",
+      "review_required": true,
+      "reason": "mutating endpoint needs an explicit reviewed bridge command mapping",
+      "value_type": "System.Byte",
+      "snapshot_field": "grid_snapshot.blocks[].background_alpha",
+      "can_write": true
+    },
+    {
+      "member": "IMyTextSurface.BackgroundColor",
+      "interface": "IMyTextSurface",
+      "member_name": "BackgroundColor",
+      "member_kind": "property",
+      "priority": 51,
+      "risk": "standard_review",
+      "review_required": true,
+      "reason": "mutating endpoint needs an explicit reviewed bridge command mapping",
+      "value_type": "VRageMath.Color",
+      "snapshot_field": "grid_snapshot.blocks[].background_color",
+      "can_write": true
+    },
+    {
+      "member": "IMyTextSurface.ChangeInterval",
+      "interface": "IMyTextSurface",
+      "member_name": "ChangeInterval",
+      "member_kind": "property",
+      "priority": 51,
+      "risk": "standard_review",
+      "review_required": true,
+      "reason": "mutating endpoint needs an explicit reviewed bridge command mapping",
+      "value_type": "float",
+      "snapshot_field": "grid_snapshot.blocks[].change_interval",
+      "can_write": true
+    },
+    {
+      "member": "IMyTextSurface.ClearImagesFromSelection",
+      "interface": "IMyTextSurface",
+      "member_name": "ClearImagesFromSelection",
+      "member_kind": "method",
+      "priority": 51,
+      "risk": "standard_review",
+      "review_required": true,
+      "reason": "mutating endpoint needs an explicit reviewed bridge command mapping",
+      "return_type": "void",
+      "parameters": [],
+      "suggested_command_kind": "review_text_surface_clear_images_from_selection"
+    },
+    {
+      "member": "IMyTextSurface.ContentType",
+      "interface": "IMyTextSurface",
+      "member_name": "ContentType",
+      "member_kind": "property",
+      "priority": 51,
+      "risk": "standard_review",
+      "review_required": true,
+      "reason": "mutating endpoint needs an explicit reviewed bridge command mapping",
+      "value_type": "VRage.Game.GUI.TextPanel.ContentType",
+      "snapshot_field": "grid_snapshot.blocks[].content_type",
+      "can_write": true
+    },
+    {
+      "member": "IMyTextSurface.Font",
+      "interface": "IMyTextSurface",
+      "member_name": "Font",
+      "member_kind": "property",
+      "priority": 51,
+      "risk": "standard_review",
+      "review_required": true,
+      "reason": "mutating endpoint needs an explicit reviewed bridge command mapping",
+      "value_type": "string",
+      "snapshot_field": "grid_snapshot.blocks[].font",
+      "can_write": true
+    },
+    {
+      "member": "IMyTextSurface.FontColor",
+      "interface": "IMyTextSurface",
+      "member_name": "FontColor",
+      "member_kind": "property",
+      "priority": 51,
+      "risk": "standard_review",
+      "review_required": true,
+      "reason": "mutating endpoint needs an explicit reviewed bridge command mapping",
+      "value_type": "VRageMath.Color",
+      "snapshot_field": "grid_snapshot.blocks[].font_color",
+      "can_write": true
+    },
+    {
+      "member": "IMyTextSurface.FontSize",
+      "interface": "IMyTextSurface",
+      "member_name": "FontSize",
+      "member_kind": "property",
+      "priority": 51,
+      "risk": "standard_review",
+      "review_required": true,
+      "reason": "mutating endpoint needs an explicit reviewed bridge command mapping",
+      "value_type": "float",
+      "snapshot_field": "grid_snapshot.blocks[].font_size",
+      "can_write": true
+    },
+    {
+      "member": "IMyTextSurface.PreserveAspectRatio",
+      "interface": "IMyTextSurface",
+      "member_name": "PreserveAspectRatio",
+      "member_kind": "property",
+      "priority": 51,
+      "risk": "standard_review",
+      "review_required": true,
+      "reason": "mutating endpoint needs an explicit reviewed bridge command mapping",
+      "value_type": "bool",
+      "snapshot_field": "grid_snapshot.blocks[].preserve_aspect_ratio",
+      "can_write": true
+    },
+    {
+      "member": "IMyTextSurface.RemoveImageFromSelection",
+      "interface": "IMyTextSurface",
+      "member_name": "RemoveImageFromSelection",
+      "member_kind": "method",
+      "priority": 51,
+      "risk": "standard_review",
+      "review_required": true,
+      "reason": "mutating endpoint needs an explicit reviewed bridge command mapping",
+      "return_type": "void",
+      "parameters": [
+        {
+          "type": "string",
+          "name": "id"
+        },
+        {
+          "type": "bool",
+          "name": "removeDuplicates"
+        }
+      ],
+      "suggested_command_kind": "review_text_surface_remove_image_from_selection"
+    },
+    {
+      "member": "IMyTextSurface.RemoveImagesFromSelection",
+      "interface": "IMyTextSurface",
+      "member_name": "RemoveImagesFromSelection",
+      "member_kind": "method",
+      "priority": 51,
+      "risk": "standard_review",
+      "review_required": true,
+      "reason": "mutating endpoint needs an explicit reviewed bridge command mapping",
+      "return_type": "void",
+      "parameters": [
+        {
+          "type": "System.Collections.Generic.List`<string>",
+          "name": "ids"
+        },
+        {
+          "type": "bool",
+          "name": "removeDuplicates"
+        }
+      ],
+      "suggested_command_kind": "review_text_surface_remove_images_from_selection"
+    },
+    {
+      "member": "IMyTextSurface.Script",
+      "interface": "IMyTextSurface",
+      "member_name": "Script",
+      "member_kind": "property",
+      "priority": 51,
+      "risk": "standard_review",
+      "review_required": true,
+      "reason": "mutating endpoint needs an explicit reviewed bridge command mapping",
+      "value_type": "string",
+      "snapshot_field": "grid_snapshot.blocks[].script",
+      "can_write": true
+    },
+    {
+      "member": "IMyTextSurface.ScriptBackgroundColor",
+      "interface": "IMyTextSurface",
+      "member_name": "ScriptBackgroundColor",
+      "member_kind": "property",
+      "priority": 51,
+      "risk": "standard_review",
+      "review_required": true,
+      "reason": "mutating endpoint needs an explicit reviewed bridge command mapping",
+      "value_type": "VRageMath.Color",
+      "snapshot_field": "grid_snapshot.blocks[].script_background_color",
+      "can_write": true
+    },
+    {
+      "member": "IMyTextSurface.ScriptForegroundColor",
+      "interface": "IMyTextSurface",
+      "member_name": "ScriptForegroundColor",
+      "member_kind": "property",
+      "priority": 51,
+      "risk": "standard_review",
+      "review_required": true,
+      "reason": "mutating endpoint needs an explicit reviewed bridge command mapping",
+      "value_type": "VRageMath.Color",
+      "snapshot_field": "grid_snapshot.blocks[].script_foreground_color",
+      "can_write": true
+    },
+    {
+      "member": "IMyTextSurface.TextPadding",
+      "interface": "IMyTextSurface",
+      "member_name": "TextPadding",
+      "member_kind": "property",
+      "priority": 51,
+      "risk": "standard_review",
+      "review_required": true,
+      "reason": "mutating endpoint needs an explicit reviewed bridge command mapping",
+      "value_type": "float",
+      "snapshot_field": "grid_snapshot.blocks[].text_padding",
+      "can_write": true
+    },
+    {
+      "member": "IMyDoor.CloseDoor",
+      "interface": "IMyDoor",
+      "member_name": "CloseDoor",
+      "member_kind": "method",
+      "priority": 53,
+      "risk": "standard_review",
+      "review_required": true,
+      "reason": "mutating endpoint needs an explicit reviewed bridge command mapping",
+      "return_type": "void",
+      "parameters": [],
+      "suggested_command_kind": "review_door_close_door"
+    }
+  ],
+  "blocked_for_safety_queue": [
+    {
+      "member": "IMyInventory.TransferItemTo",
+      "interface": "IMyInventory",
+      "member_name": "TransferItemTo",
+      "member_kind": "method",
+      "priority": 84,
+      "risk": "high_risk_requires_review",
+      "review_required": true,
+      "reason": "endpoint is intentionally blocked until design review",
+      "return_type": "bool",
+      "parameters": [
+        {
+          "type": "VRage.Game.ModAPI.Ingame.IMyInventory",
+          "name": "dstInventory"
+        },
+        {
+          "type": "VRage.Game.ModAPI.Ingame.MyInventoryItem",
+          "name": "item"
+        },
+        {
+          "type": "System.Nullable`<VRage.MyFixedPoint>",
+          "name": "amount"
+        }
+      ],
+      "suggested_command_kind": "review_inventory_transfer_item_to"
+    },
+    {
+      "member": "IMyAssembler.Repeating",
+      "interface": "IMyAssembler",
+      "member_name": "Repeating",
+      "member_kind": "property",
+      "priority": 86,
+      "risk": "high_risk_requires_review",
+      "review_required": true,
+      "reason": "endpoint is intentionally blocked until design review",
+      "value_type": "bool",
+      "snapshot_field": "grid_snapshot.blocks[].repeating",
+      "can_write": true
+    },
+    {
+      "member": "IMyShipController.DampenersOverride",
+      "interface": "IMyShipController",
+      "member_name": "DampenersOverride",
+      "member_kind": "property",
+      "priority": 91,
+      "risk": "high_risk_requires_review",
+      "review_required": true,
+      "reason": "endpoint is intentionally blocked until design review",
+      "value_type": "bool",
+      "snapshot_field": "grid_snapshot.blocks[].dampeners_override",
+      "can_write": true
+    },
+    {
+      "member": "IMyThrust.ThrustOverride",
+      "interface": "IMyThrust",
+      "member_name": "ThrustOverride",
+      "member_kind": "property",
+      "priority": 92,
+      "risk": "high_risk_requires_review",
+      "review_required": true,
+      "reason": "endpoint is intentionally blocked until design review",
+      "value_type": "float",
+      "snapshot_field": "grid_snapshot.blocks[].thrust_override",
+      "can_write": true
+    },
+    {
+      "member": "IMyThrust.ThrustOverridePercentage",
+      "interface": "IMyThrust",
+      "member_name": "ThrustOverridePercentage",
+      "member_kind": "property",
+      "priority": 92,
+      "risk": "high_risk_requires_review",
+      "review_required": true,
+      "reason": "endpoint is intentionally blocked until design review",
+      "value_type": "float",
+      "snapshot_field": "grid_snapshot.blocks[].thrust_override_percentage",
+      "can_write": true
+    },
+    {
+      "member": "IMyMotorStator.RotorLock",
+      "interface": "IMyMotorStator",
+      "member_name": "RotorLock",
+      "member_kind": "property",
+      "priority": 110,
+      "risk": "high_risk_requires_review",
+      "review_required": true,
+      "reason": "endpoint is intentionally blocked until design review",
+      "value_type": "bool",
+      "snapshot_field": "grid_snapshot.blocks[].rotor_lock",
+      "can_write": true
+    },
+    {
+      "member": "IMyMotorStator.TargetVelocityRad",
+      "interface": "IMyMotorStator",
+      "member_name": "TargetVelocityRad",
+      "member_kind": "property",
+      "priority": 110,
+      "risk": "high_risk_requires_review",
+      "review_required": true,
+      "reason": "endpoint is intentionally blocked until design review",
+      "value_type": "float",
+      "snapshot_field": "grid_snapshot.blocks[].target_velocity_rad",
+      "can_write": true
+    }
+  ]
+}

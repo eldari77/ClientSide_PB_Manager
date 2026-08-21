@@ -1,10 +1,10 @@
 {
   "schema": "novali.client_side_pb.bridge_limits.v1",
   "default": {
-    "runtime_ms_limit": 0.3,
+    "runtime_ms_limit": 0.25,
     "runtime_ms_soft_ratio": 0.75,
-    "cooldown_seconds": 10,
-    "max_commands_per_minute": 30,
+    "cooldown_seconds": 3,
+    "max_commands_per_minute": 60,
     "fail_closed": true
   },
   "per_bridge": {}

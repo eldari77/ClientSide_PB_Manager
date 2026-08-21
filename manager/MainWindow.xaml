@@ -22,6 +22,40 @@
         </Border>
 
         <TabControl x:Name="MainTabs" Margin="12" Background="#F5F7FA">
+            <TabItem Header="Guided Setup">
+                <DockPanel Margin="8">
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+                        <Button Content="Run Guided Setup" Width="132" Margin="0,0,8,0" Click="RunGuidedSetup_Click" />
+                        <Button Content="Run Discovery" Width="112" Margin="0,0,8,0" Click="RunActiveDiscovery_Click" />
+                        <Button Content="Open Worker UI" Width="118" Margin="0,0,8,0" Click="OpenWorkerUi_Click" />
+                        <Button Content="Open Data" Width="92" Click="OpenData_Click" />
+                    </StackPanel>
+                    <Grid DockPanel.Dock="Top" Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" BorderBrush="#CBD5E1" BorderThickness="1" Background="#FFFFFF" Padding="10" Margin="0,0,8,0">
+                            <StackPanel>
+                                <TextBlock Text="Current Readiness" FontWeight="SemiBold" Foreground="#0F172A" Margin="0,0,0,6" />
+                                <TextBlock x:Name="GuidedSetupSummaryText" Foreground="#334155" TextWrapping="Wrap"
+                                           Text="Run discovery to inspect Docker, plugin status, bridge files, saves, and Workshop scripts." />
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Column="1" BorderBrush="#CBD5E1" BorderThickness="1" Background="#FFFFFF" Padding="10">
+                            <StackPanel>
+                                <TextBlock Text="Repair Actions" FontWeight="SemiBold" Foreground="#0F172A" Margin="0,0,0,6" />
+                                <TextBlock x:Name="GuidedSetupActionsText" Foreground="#334155" TextWrapping="Wrap"
+                                           Text="No discovery report loaded." />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                    <TextBox x:Name="GuidedSetupOutput" IsReadOnly="True" AcceptsReturn="True"
+                             VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+                             FontFamily="Consolas" TextWrapping="NoWrap" />
+                </DockPanel>
+            </TabItem>
+
             <TabItem Header="Workshop Scripts">
                 <DockPanel Margin="8">
                     <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
@@ -63,9 +97,54 @@
                 <DockPanel Margin="8">
                     <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
                         <Button Content="Refresh" Width="92" Margin="0,0,8,0" Click="RefreshFiles_Click" />
+                        <Button Content="New Bridge" Width="98" Margin="0,0,8,0" Click="NewBridge_Click" />
+                        <Button Content="Save Bridge" Width="98" Margin="0,0,8,0" Click="SaveBridge_Click" />
+                        <Button Content="Copy PB Shim Script" Width="148" Margin="0,0,8,0" Click="CopyBridgeShimScript_Click" />
+                        <Button Content="Copy PB CustomData" Width="148" Margin="0,0,8,0" Click="CopyBridgeCustomData_Click" />
+                        <Button Content="Verify Bridge" Width="112" Margin="0,0,16,0" Click="VerifySelectedBridge_Click" />
                         <Button Content="Open Data" Width="92" Margin="0,0,8,0" Click="OpenData_Click" />
                         <Button Content="Open Worker UI" Width="118" Click="OpenWorkerUi_Click" />
                     </StackPanel>
+                    <Grid DockPanel.Dock="Top" Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Bridge Id" Margin="0,0,8,2" Foreground="#334155" />
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="Display Name" Margin="0,0,8,2" Foreground="#334155" />
+                        <TextBlock Grid.Row="0" Grid.Column="2" Text="Mailbox Mode" Margin="0,0,8,2" Foreground="#334155" />
+                        <TextBlock Grid.Row="0" Grid.Column="3" Text="Text Panel" Margin="0,0,8,2" Foreground="#334155" />
+                        <TextBox x:Name="BridgeIdBox" Grid.Row="1" Grid.Column="0" Margin="0,0,8,8" />
+                        <TextBox x:Name="BridgeDisplayNameBox" Grid.Row="1" Grid.Column="1" Margin="0,0,8,8" />
+                        <ComboBox x:Name="BridgeMailboxModeBox" Grid.Row="1" Grid.Column="2" Margin="0,0,8,8">
+                            <ComboBoxItem Content="both" IsSelected="True" />
+                            <ComboBoxItem Content="customdata" />
+                            <ComboBoxItem Content="text_panel" />
+                        </ComboBox>
+                        <TextBox x:Name="BridgeTextPanelNameBox" Grid.Row="1" Grid.Column="3" Margin="0,0,8,8" Text="NOVALI PB Bridge" />
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Snapshot Mode" Margin="0,0,8,2" Foreground="#334155" />
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="Setup Script" Margin="0,0,8,2" Foreground="#334155" />
+                        <TextBlock Grid.Row="2" Grid.Column="2" Text="Selected Instance" Margin="0,0,8,2" Foreground="#334155" />
+                        <TextBlock Grid.Row="2" Grid.Column="3" Text="Verification Nonce" Margin="0,0,8,2" Foreground="#334155" />
+                        <ComboBox x:Name="BridgeSnapshotModeBox" Grid.Row="3" Grid.Column="0" Margin="0,0,8,0">
+                            <ComboBoxItem Content="minimal" IsSelected="True" />
+                            <ComboBoxItem Content="grid_summary" />
+                            <ComboBoxItem Content="plugin" />
+                        </ComboBox>
+                        <ComboBox x:Name="BridgeSetupScriptBox" Grid.Row="3" Grid.Column="1" Margin="0,0,8,0"
+                                  DisplayMemberPath="DisplayName" SelectedValuePath="ScriptId" />
+                        <ComboBox x:Name="BridgeSelectedInstanceBox" Grid.Row="3" Grid.Column="2" Margin="0,0,8,0"
+                                  DisplayMemberPath="DisplayName" SelectedValuePath="InstanceId" />
+                        <TextBox x:Name="BridgeVerificationNonceBox" Grid.Row="3" Grid.Column="3" Margin="0,0,8,0" />
+                    </Grid>
                     <Border x:Name="BridgePbConfigPrompt" DockPanel.Dock="Bottom" Visibility="Collapsed"
                             BorderBrush="#38BDF8" BorderThickness="1" Background="#E0F2FE"
                             Padding="10" Margin="0,8,0,0">
@@ -81,15 +160,80 @@
                                      VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" />
                         </DockPanel>
                     </Border>
-                    <DataGrid x:Name="BridgeGrid" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
-                              SelectionMode="Single" SelectionChanged="BridgeGrid_SelectionChanged">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="File" Binding="{Binding Name}" Width="220" />
-                            <DataGridTextColumn Header="Updated" Binding="{Binding Updated}" Width="180" />
-                            <DataGridTextColumn Header="Size" Binding="{Binding Size}" Width="100" />
-                            <DataGridTextColumn Header="Path" Binding="{Binding FullPath}" Width="*" />
-                        </DataGrid.Columns>
-                    </DataGrid>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="1.2*" />
+                            <RowDefinition Height="8" />
+                            <RowDefinition Height="1.1*" />
+                            <RowDefinition Height="8" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <DataGrid x:Name="BridgeRegistryGrid" Grid.Row="0" AutoGenerateColumns="False" IsReadOnly="True"
+                                  CanUserAddRows="False" SelectionMode="Single" SelectionChanged="BridgeRegistryGrid_SelectionChanged">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Bridge" Binding="{Binding BridgeId}" Width="150" />
+                                <DataGridTextColumn Header="Name" Binding="{Binding DisplayName}" Width="210" />
+                                <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="100" />
+                                <DataGridTextColumn Header="Selected Instance" Binding="{Binding SelectedScriptInstanceId}" Width="180" />
+                                <DataGridTextColumn Header="Allowed Instances" Binding="{Binding AllowedScriptInstanceIdsText}" Width="220" />
+                                <DataGridTextColumn Header="Verification" Binding="{Binding VerificationSummary}" Width="260" />
+                                <DataGridTextColumn Header="Updated" Binding="{Binding UpdatedAt}" Width="*" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <GridSplitter Grid.Row="1" Height="8" HorizontalAlignment="Stretch" VerticalAlignment="Center" />
+
+                        <DockPanel Grid.Row="2" Margin="0,6,0,0">
+                            <TextBlock x:Name="RunningInstancesText" DockPanel.Dock="Top"
+                                       Text="Currently running on this bridge: select a bridge to view runtime and child instances."
+                                       Foreground="#0F172A" FontWeight="SemiBold" Margin="0,0,0,8"
+                                       TextWrapping="Wrap" />
+                            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+                                <TextBlock Text="Instance Id" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                <TextBox x:Name="ScriptInstanceIdBox" Width="170" Margin="0,0,8,0" />
+                                <TextBlock Text="Base Script" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                <ComboBox x:Name="ScriptInstanceBaseScriptBox" Width="240" Margin="0,0,8,0"
+                                          DisplayMemberPath="DisplayName" SelectedValuePath="ScriptId" />
+                                <TextBlock Text="Label" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                <TextBox x:Name="ScriptInstanceDisplayNameBox" Width="210" Margin="0,0,8,0" />
+                                <CheckBox x:Name="ScriptInstanceEnabledBox" Content="Enabled" IsChecked="True" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                <Button x:Name="CreateScriptInstanceButton" Content="Create Selected Instance" Width="150" Margin="0,0,8,0" Click="CreateSelectedScriptInstance_Click" />
+                                <Button x:Name="BuildMultiScriptBridgeButton" Content="Build Multi-Script Bridge" Width="160" Margin="0,0,8,0" Click="BuildMultiScriptBridge_Click" />
+                                <Button x:Name="AssignScriptInstanceButton" Content="Assign Script Instance" Width="142" Margin="0,0,8,0" Click="AssignScriptInstance_Click" />
+                                <Button x:Name="RemoveScriptInstanceButton" Content="Remove From Bridge" Width="138" Click="RemoveScriptInstanceFromBridge_Click" />
+                            </StackPanel>
+                            <TextBlock DockPanel.Dock="Top" Text="Allowed scripts become child instances for this bridge; Build Multi-Script Bridge selects an orchestrator instance for the in-game PB."
+                                       Foreground="#475569" Margin="0,0,0,8" TextWrapping="Wrap" />
+                            <DataGrid x:Name="ScriptInstanceGrid" AutoGenerateColumns="False" IsReadOnly="True"
+                                      CanUserAddRows="False" SelectionMode="Single" SelectionChanged="ScriptInstanceGrid_SelectionChanged">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Instance" Binding="{Binding InstanceId}" Width="180" />
+                                    <DataGridTextColumn Header="Display Name" Binding="{Binding DisplayName}" Width="240" />
+                                    <DataGridTextColumn Header="Base Script" Binding="{Binding BaseScriptId}" Width="210" />
+                                    <DataGridTextColumn Header="Bridge" Binding="{Binding BridgeId}" Width="160" />
+                                    <DataGridCheckBoxColumn Header="Enabled" Binding="{Binding Enabled}" Width="80" />
+                                    <DataGridTextColumn Header="Config Id" Binding="{Binding ConfigId}" Width="180" />
+                                    <DataGridTextColumn Header="Updated" Binding="{Binding UpdatedAt}" Width="*" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </DockPanel>
+
+                        <GridSplitter Grid.Row="3" Height="8" HorizontalAlignment="Stretch" VerticalAlignment="Center" />
+
+                        <DockPanel Grid.Row="4" Margin="0,6,0,0">
+                            <TextBlock DockPanel.Dock="Top" Text="Diagnostics: latest request/result files remain visible here for troubleshooting." Foreground="#475569" Margin="0,0,0,6" />
+                            <TextBlock x:Name="BridgeDiagnosticsText" DockPanel.Dock="Top" Text="Select a bridge to load diagnostics." Foreground="#334155" Margin="0,0,0,6" TextWrapping="Wrap" />
+                            <DataGrid x:Name="BridgeGrid" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
+                                      SelectionMode="Single" SelectionChanged="BridgeGrid_SelectionChanged">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="File" Binding="{Binding Name}" Width="220" />
+                                    <DataGridTextColumn Header="Updated" Binding="{Binding Updated}" Width="180" />
+                                    <DataGridTextColumn Header="Size" Binding="{Binding Size}" Width="100" />
+                                    <DataGridTextColumn Header="Path" Binding="{Binding FullPath}" Width="*" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </DockPanel>
+                    </Grid>
                 </DockPanel>
             </TabItem>
 
@@ -97,7 +241,8 @@
                 <DockPanel Margin="8">
                     <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
                         <Button Content="Refresh" Width="92" Margin="0,0,8,0" Click="RefreshWorkerScripts_Click" />
-                        <Button Content="Save Manifest" Width="112" Margin="0,0,16,0" Click="SaveWorkerManifest_Click" />
+                        <Button Content="Save Manifest" Width="112" Margin="0,0,8,0" Click="SaveWorkerManifest_Click" />
+                        <Button Content="Remove Prepared Script" Width="148" Margin="0,0,16,0" Click="RemovePreparedWorkerScript_Click" />
                         <TextBlock Text="Bridge" VerticalAlignment="Center" Margin="0,0,6,0" />
                         <TextBox x:Name="WorkerBridgeIdBox" Width="150" Text="pb-bridge-001" Margin="0,0,8,0" TextChanged="WorkerBridgeIdBox_TextChanged" />
                         <TextBlock Text="Selected Script" VerticalAlignment="Center" Margin="0,0,6,0" />
@@ -178,11 +323,11 @@
                                             <CheckBox x:Name="AllowConnectedGridsBox" Grid.Row="1" Grid.Column="2" Content="Connected grids" VerticalAlignment="Center" Margin="0,0,12,0" />
                                             <StackPanel Grid.Row="1" Grid.Column="3" Orientation="Horizontal" Margin="0,0,12,0">
                                                 <TextBlock Text="Apply/tick" VerticalAlignment="Center" Margin="0,0,6,0" />
-                                                <TextBox x:Name="MaxApplyCommandsBox" Width="48" Text="1" />
+                                                <TextBox x:Name="MaxApplyCommandsBox" Width="48" Text="8" />
                                             </StackPanel>
                                             <StackPanel Grid.Row="1" Grid.Column="4" Orientation="Horizontal" Margin="0,0,12,0">
                                                 <TextBlock Text="Plan/tick" VerticalAlignment="Center" Margin="0,0,6,0" />
-                                                <TextBox x:Name="MaxPlannedTransfersBox" Width="48" Text="8" />
+                                                <TextBox x:Name="MaxPlannedTransfersBox" Width="48" Text="16" />
                                             </StackPanel>
                                             <TextBlock Grid.Row="1" Grid.Column="5" Foreground="#475569" Text="These write to the selected worker config." VerticalAlignment="Center" />
                                         </Grid>
@@ -195,6 +340,20 @@
                                             <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="*" IsReadOnly="True" />
                                         </DataGrid.Columns>
                                     </DataGrid>
+                                </DockPanel>
+                            </TabItem>
+                            <TabItem Header="Custom Data">
+                                <DockPanel Margin="0,8,0,0">
+                                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+                                        <Button Content="Load From Config" Width="124" Margin="0,0,8,0" Click="VirtualPbCustomDataLoad_Click" />
+                                        <Button Content="Paste From Clipboard" Width="142" Margin="0,0,8,0" Click="VirtualPbCustomDataPaste_Click" />
+                                        <Button Content="Save CustomData" Width="124" Margin="0,0,8,0" Click="SaveVirtualPbCustomData_Click" />
+                                        <Button Content="Clear CustomData" Width="124" Click="VirtualPbCustomDataClear_Click" />
+                                    </StackPanel>
+                                    <TextBlock DockPanel.Dock="Top" Text="Virtual PB CustomData" FontWeight="SemiBold" Foreground="#0F172A" Margin="0,0,0,6" />
+                                    <TextBox x:Name="VirtualPbCustomDataBox" AcceptsReturn="True" AcceptsTab="True"
+                                             VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+                                             TextWrapping="NoWrap" FontFamily="Consolas" />
                                 </DockPanel>
                             </TabItem>
                         </TabControl>

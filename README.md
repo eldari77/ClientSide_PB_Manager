@@ -136,7 +136,7 @@ Sorting is controlled from the Worker Scripts tab, Config sub-tab:
 
 - `inventorySortingEnabled`: plan sorting work for this adapter.
 - `inventorySortingDryRun`: report proposed commands without applying them.
-- `maxApplyCommands`: worker-side apply budget, default `1`.
+- `maxApplyCommands`: worker-side apply budget, default `8`.
 - `maxPlannedTransfers`: maximum planned transfer/rename commands per tick.
 - `maxPlannedMachineCommands`: maximum planned LCD/machine commands per tick.
 - `dynamicCommandQueueDrain`: let the Docker worker drain queued commands from
@@ -158,8 +158,8 @@ Sorting is controlled from the Worker Scripts tab, Config sub-tab:
 The PB shim only applies allowlisted command kinds and keeps same-construct
 sorting as the default. Its command apply rate is dynamic by default:
 `dynamic_apply_commands=true`, `dynamic_min_apply_commands_per_tick=1`, and
-`dynamic_max_apply_commands_per_tick=4`. The configured
-`runtime_ms_limit=0.3` profile is the primary driver: the shim steps the apply
+`dynamic_max_apply_commands_per_tick=8`. The configured
+`runtime_ms_limit=0.25` profile is the primary driver: the shim steps the apply
 budget up while the last PB runtime is comfortably below the cap and steps it
 down as the soft threshold approaches. The older `max_apply_commands_per_tick`
 is still available as the fixed cap when dynamic apply is disabled.
@@ -200,10 +200,10 @@ to cargo.
 ## Runtime Limiter
 
 The companion manager has a Limits tab backed by `data/bridge_limits.json`.
-The default profile treats `0.3` as the PB runtime-ms ceiling for this
+The default profile treats `0.25` as the PB runtime-ms ceiling for this
 client-side bridge:
 
-- hard limit: `runtime_ms_limit=0.3`
+- hard limit: `runtime_ms_limit=0.25`
 - soft skip threshold: `runtime_ms_limit * runtime_ms_soft_ratio`
 - dynamic apply budget: `dynamic_apply_budget`, clamped by
   `dynamic_min_apply_commands_per_tick` and

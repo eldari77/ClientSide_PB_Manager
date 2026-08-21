@@ -1,49 +1,43 @@
 {
   "schema": "novali.client_side_pb.worker_config.v1",
   "script_id": "workshop_1216126863_adapter",
-  "display_name": "Isy\u0027s Inventory Manager",
+  "display_name": "Isy's Inventory Manager",
   "entries": [
     {
-      "key": "inventorySortingEnabled",
-      "value": true,
-      "value_type": "bool",
-      "description": "NOVALI adapter switch for the first IIM behavior slice. When true, the worker plans inventory sorting commands from plugin-enriched snapshots."
-    },
-    {
-      "key": "inventorySortingDryRun",
-      "value": false,
-      "value_type": "bool",
-      "description": "When true, the worker reports proposed inventory sorting commands without asking the PB shim to apply them."
-    },
-    {
-      "key": "maxApplyCommands",
-      "value": 5,
-      "value_type": "int",
-      "description": "Maximum worker commands the PB shim may apply from one result. Keep this low to protect server PB runtime."
-    },
-    {
-      "key": "dynamicCommandQueueDrain",
-      "value": true,
-      "value_type": "bool",
-      "description": "When true, the worker drains queued commands according to the PB shim's runtime-derived dynamic_apply_budget instead of a fixed commandQueueDrainPerResult value."
-    },
-    {
-      "key": "maxPlannedTransfers",
-      "value": 8,
-      "value_type": "int",
-      "description": "Maximum transfer/rename commands planned per worker tick before PB-side apply budgeting is applied."
-    },
-    {
-      "key": "maxPlannedMachineCommands",
-      "value": 8,
-      "value_type": "int",
-      "description": "Maximum LCD and machine foundation commands planned per worker tick before PB-side apply budgeting is applied."
+      "key": "virtualPbCustomData",
+      "value": "station_mode;\r\nitemID;blueprintID\r\nMyObjectBuilder_Component/SteelPlate;MyObjectBuilder_BlueprintDefinition/sdx_itemsBlueprintT0SteelPlate\r\nMyObjectBuilder_Component/SmallTube;MyObjectBuilder_BlueprintDefinition/sdx_itemsBlueprintT0SmallTube\r\nMyObjectBuilder_Ingot/Iron;noBP\r\nMyObjectBuilder_Ingot/Silicon;noBP\r\nMyObjectBuilder_Ingot/Gold;noBP\r\nMyObjectBuilder_Component/LargeTube;MyObjectBuilder_BlueprintDefinition/sdx_itemsBlueprintT0LargeTube\r\nMyObjectBuilder_Component/Superconductor;MyObjectBuilder_BlueprintDefinition/sdx_itemsBlueprintT0Superconductor\r\nMyObjectBuilder_Component/Motor;MyObjectBuilder_BlueprintDefinition/sdx_itemsBlueprintT0Motor\r\nMyObjectBuilder_Component/Construction;MyObjectBuilder_BlueprintDefinition/sdx_itemsBlueprintT0Construction\r\nMyObjectBuilder_Ore/Ice;noBP\r\nMyObjectBuilder_Ore/Silicon;noBP\r\nMyObjectBuilder_Ingot/Uranium;noBP\r\nMyObjectBuilder_Ingot/Lead;noBP\r\nMyObjectBuilder_Ore/Cobalt;noBP\r\nMyObjectBuilder_Ingot/Nickel;noBP\r\nMyObjectBuilder_Ingot/Copper;noBP\r\nMyObjectBuilder_Ingot/sdx_itemReactorFuel;MyObjectBuilder_BlueprintDefinition/sdx_itemsBlueprintT0ReactorFuel\r\nMyObjectBuilder_Component/Computer;MyObjectBuilder_BlueprintDefinition/sdx_itemsBlueprintsT0Computer\r\nMyObjectBuilder_Component/InteriorPlate;MyObjectBuilder_BlueprintDefinition/sdx_itemsBlueprintT0InteriorPlate\r\nMyObjectBuilder_Component/GravityGenerator;MyObjectBuilder_BlueprintDefinition/sdx_itemsBlueprintT0GravityGenerator\r\nMyObjectBuilder_Component/MetalGrid;MyObjectBuilder_BlueprintDefinition/sdx_itemsBlueprintT0MetalGrid\r\nMyObjectBuilder_Component/Medical;MyObjectBuilder_BlueprintDefinition/sdx_itemsBlueprintT0Medical\r\nMyObjectBuilder_Component/PowerCell;MyObjectBuilder_BlueprintDefinition/sdx_itemsBlueprintT0PowerCell\r\nMyObjectBuilder_Component/Thrust;MyObjectBuilder_BlueprintDefinition/sdx_itemsBlueprintT0Thruster\r\nMyObjectBuilder_Component/RadioCommunication;MyObjectBuilder_BlueprintDefinition/sdx_itemsBlueprintT0RadioCommunication\r\nMyObjectBuilder_Component/Detector;MyObjectBuilder_BlueprintDefinition/sdx_itemsBlueprintT0Detector\r\nMyObjectBuilder_Ore/Copper;noBP\r\nMyObjectBuilder_Ingot/Tungsten;noBP\r\nMyObjectBuilder_Ingot/Stone;noBP\r\nMyObjectBuilder_Ingot/Cobalt;noBP\r\nMyObjectBuilder_Component/Girder;MyObjectBuilder_BlueprintDefinition/sdx_itemsBlueprintT0Girder\r\nMyObjectBuilder_Component/Reactor;MyObjectBuilder_BlueprintDefinition/sdx_itemsBlueprintT0Reactor\r\nMyObjectBuilder_Component/BulletproofGlass;MyObjectBuilder_BlueprintDefinition/sdx_itemsBlueprintsT0BulletproofGlass\r\nMyObjectBuilder_Component/SolarCell;MyObjectBuilder_BlueprintDefinition/sdx_itemsBlueprintT0SolarCell\r\nMyObjectBuilder_Component/Explosives;MyObjectBuilder_BlueprintDefinition/sdx_itemsBlueprintT0Explosive\r\nMyObjectBuilder_Component/Display;MyObjectBuilder_BlueprintDefinition/sdx_itemsBlueprintsT0Display\r\nMyObjectBuilder_Component/sdx_componentIndustrial;noBP\r\nMyObjectBuilder_AmmoMagazine/sdx_ammomagazinePdc40mmImprovised;MyObjectBuilder_BlueprintDefinition/sdx_ammoBlueprintPdc40mmImprovised\r\nMyObjectBuilder_AmmoMagazine/sdx_ammomagazineSabot80mmImprovised;MyObjectBuilder_BlueprintDefinition/sdx_ammoBlueprintSabot80mmImprovised\r\nMyObjectBuilder_Ore/Titanium;noBP\r\nMyObjectBuilder_Ingot/Titanium;noBP\r\nMyObjectBuilder_Component/sdx_componentTitaniumPlate;MyObjectBuilder_BlueprintDefinition/sdx_itemsBlueprintT0TitaniumPlate\r\nMyObjectBuilder_Ore/Magnesium;noBP\r\nMyObjectBuilder_Ingot/Magnesium;noBP\r\nMyObjectBuilder_Ore/Gold;noBP\r\nMyObjectBuilder_Ore/Iron;noBP\r\nMyObjectBuilder_Ore/Lead;noBP\r\nMyObjectBuilder_Ore/Nickel;noBP\r\nMyObjectBuilder_Ore/Platinum;noBP\r\nMyObjectBuilder_Ore/Scrap;noBP\r\nMyObjectBuilder_Ore/Silver;noBP\r\nMyObjectBuilder_Ore/Stone;noBP\r\nMyObjectBuilder_Ore/Tungsten;noBP\r\nMyObjectBuilder_Ore/Uranium;noBP\r\nMyObjectBuilder_Ingot/Platinum;noBP\r\nMyObjectBuilder_Ingot/Silver;noBP\r\nMyObjectBuilder_OxygenContainerObject/OxygenBottle;noBP\r\nMyObjectBuilder_GasContainerObject/HydrogenBottle;noBP\r\nMyObjectBuilder_PhysicalGunObject/AngleGrinder2Item;noBP\r\nMyObjectBuilder_PhysicalGunObject/AngleGrinder3Item;noBP\r\nMyObjectBuilder_PhysicalGunObject/AngleGrinder4Item;noBP\r\nMyObjectBuilder_PhysicalGunObject/AngleGrinderItem;noBP\r\nMyObjectBuilder_PhysicalGunObject/HandDrill2Item;noBP\r\nMyObjectBuilder_PhysicalGunObject/HandDrill3Item;noBP\r\nMyObjectBuilder_PhysicalGunObject/HandDrill4Item;noBP\r\nMyObjectBuilder_PhysicalGunObject/HandDrillItem;noBP\r\nMyObjectBuilder_PhysicalGunObject/Welder2Item;noBP\r\nMyObjectBuilder_PhysicalGunObject/Welder3Item;noBP\r\nMyObjectBuilder_PhysicalGunObject/Welder4Item;noBP\r\nMyObjectBuilder_PhysicalGunObject/WelderItem;noBP",
+      "value_type": "multiline_text",
+      "description": "Virtual PB CustomData, including Isy-style itemID;blueprintID mappings used by scripts that read Me.CustomData."
     },
     {
       "key": "allowConnectedGrids",
       "value": false,
       "value_type": "bool",
-      "description": "When false, sorting commands are planned only for blocks reported on the same construct as the bridge PB."
+      "description": "Allow planning and applying commands across connected grids."
+    },
+    {
+      "key": "maxPlannedTransfers",
+      "value": 16,
+      "value_type": "int",
+      "description": "Maximum transfer or rename commands the worker plans per tick."
+    },
+    {
+      "key": "maxApplyCommands",
+      "value": 8,
+      "value_type": "int",
+      "description": "Maximum commands the PB shim may apply from one result when runtime budget allows."
+    },
+    {
+      "key": "inventorySortingDryRun",
+      "value": false,
+      "value_type": "bool",
+      "description": "Report planned sorting commands without applying them."
+    },
+    {
+      "key": "inventorySortingEnabled",
+      "value": true,
+      "value_type": "bool",
+      "description": "Enable Isy inventory sorting command planning for this worker."
     },
     {
       "key": "oreContainerKeyword",
@@ -90,7 +84,7 @@
         "Safe Zone"
       ],
       "value_type": "string_list",
-      "description": "Keyword a block name has to contain to be excluded from sorting (does mostly apply for cargo containers). This list is expandable - just separate the entries with a \u0022,\u0022. But it\u0027s also language specific, so adjust it if needed. Default: string[] lockedContainerKeywords = { \u0022Locked\u0022, \u0022Control Station\u0022, \u0022Control Seat\u0022, \u0022Safe Zone\u0022 };"
+      "description": "Keyword a block name has to contain to be excluded from sorting (does mostly apply for cargo containers). This list is expandable - just separate the entries with a \",\". But it's also language specific, so adjust it if needed. Default: string[] lockedContainerKeywords = { \"Locked\", \"Control Station\", \"Control Seat\", \"Safe Zone\" };"
     },
     {
       "key": "hiddenContainerKeywords",
@@ -98,13 +92,13 @@
         "Hidden"
       ],
       "value_type": "string_list",
-      "description": "Keyword a block name has to contain to be excluded from item counting (used by autocrafting and inventory panels) This list is expandable - just separate the entries with a \u0022,\u0022. But it\u0027s also language specific, so adjust it if needed. Default: string[] hiddenContainerKeywords = { \u0022Hidden\u0022 };"
+      "description": "Keyword a block name has to contain to be excluded from item counting (used by autocrafting and inventory panels) This list is expandable - just separate the entries with a \",\". But it's also language specific, so adjust it if needed. Default: string[] hiddenContainerKeywords = { \"Hidden\" };"
     },
     {
       "key": "treatNotShownAsHidden",
       "value": false,
       "value_type": "bool",
-      "description": "Treat inventories that are hidden via disabling the terminal option \u0022Show block in Inventory Screen\u0022 as hidden containers just like adding the \u0027Hidden\u0027 keyword (see above)? (Note: It\u0027s not recommended to hide your main type containers!)"
+      "description": "Treat inventories that are hidden via disabling the terminal option \"Show block in Inventory Screen\" as hidden containers just like adding the 'Hidden' keyword (see above)? (Note: It's not recommended to hide your main type containers!)"
     },
     {
       "key": "noSortingKeyword",
@@ -120,7 +114,7 @@
     },
     {
       "key": "balanceTypeContainers",
-      "value": true,
+      "value": false,
       "value_type": "bool",
       "description": "Balance items between containers of the same type? This will result in an equal amount of all items in all containers of that type."
     },
@@ -128,7 +122,7 @@
       "key": "showFillLevel",
       "value": true,
       "value_type": "bool",
-      "description": "Show a fill level in the container\u0027s name?"
+      "description": "Show a fill level in the container's name?"
     },
     {
       "key": "fillBottles",
@@ -144,7 +138,7 @@
     },
     {
       "key": "assignNewContainers",
-      "value": false,
+      "value": true,
       "value_type": "bool",
       "description": "Assign switch. Assign new containers if a type is full or not present?"
     },
@@ -188,7 +182,7 @@
       "key": "unassignEmptyContainers",
       "value": true,
       "value_type": "bool",
-      "description": "Unassign switch. Unassign empty type containers that aren\u0027t needed anymore (at least one of each type always remains). This doesn\u0027t touch containers with manual priority tokens, like [P1]."
+      "description": "Unassign switch. Unassign empty type containers that aren't needed anymore (at least one of each type always remains). This doesn't touch containers with manual priority tokens, like [P1]."
     },
     {
       "key": "unassignOres",
@@ -228,7 +222,7 @@
     },
     {
       "key": "oresIngotsInOne",
-      "value": false,
+      "value": true,
       "value_type": "bool",
       "description": "Assign ores and ingots containers as one? (complies with type switches)"
     },
@@ -242,13 +236,7 @@
       "key": "enableAutocrafting",
       "value": true,
       "value_type": "bool",
-      "description": "Enable autocrafting or autodisassembling (disassembling will disassemble everything above the wanted amounts) All assemblers will be used. To use one manually, add the manualMachineKeyword to it (by default: \u0022!manual\u0022)"
-    },
-    {
-      "key": "industryInputMode",
-      "value": "hybrid_conveyors",
-      "value_type": "string",
-      "description": "Controls refinery, assembler, and food processor input stocking. hybrid_conveyors leaves their conveyor pull enabled and lets the worker handle queue goals, output cleanup, and priority input nudges. plugin_only restores explicit worker-managed input stocking and conveyor-off setup for those industry blocks."
+      "description": "Enable autocrafting or autodisassembling (disassembling will disassemble everything above the wanted amounts) All assemblers will be used. To use one manually, add the manualMachineKeyword to it (by default: \"!manual\")"
     },
     {
       "key": "enableAutodisassembling",
@@ -260,7 +248,7 @@
       "key": "autocraftingKeyword",
       "value": "Autocrafting",
       "value_type": "string",
-      "description": "A LCD with the keyword \u0022Autocrafting\u0022 is required where you can set the wanted amount! This has multi LCD support. Just append numbers after the keyword, like: \u0022LCD Autocrafting 1\u0022, \u0022LCD Autocrafting 2\u0022, .."
+      "description": "A LCD with the keyword \"Autocrafting\" is required where you can set the wanted amount! This has multi LCD support. Just append numbers after the keyword, like: \"LCD Autocrafting 1\", \"LCD Autocrafting 2\", .."
     },
     {
       "key": "assembleKeyword",
@@ -278,7 +266,7 @@
       "key": "learnKeyword",
       "value": "!learn",
       "value_type": "string",
-      "description": "!learn will learn one item and then remove the tag so that the assembler is part of the autocrafting again. !learnMany will learn everything you queue in it and will never be part of the autorafting again until you remove the tag. To learn an item, queue it up about 100 times (Shift\u002BClick) and wait until the script removes it from the queue."
+      "description": "!learn will learn one item and then remove the tag so that the assembler is part of the autocrafting again. !learnMany will learn everything you queue in it and will never be part of the autorafting again until you remove the tag. To learn an item, queue it up about 100 times (Shift+Click) and wait until the script removes it from the queue."
     },
     {
       "key": "learnManyKeyword",
@@ -290,7 +278,7 @@
       "key": "defaultModifier",
       "value": "",
       "value_type": "string",
-      "description": "Default modifier that gets applied, when a new item is found. Modifiers can be one or more of these: \u0027A\u0027 (Assemble only), \u0027D\u0027 (Disassemble only), \u0027P\u0027 (Always queue first (priority)), \u0027H\u0027 (Hide and manage in background), \u0027I\u0027 (Hide and ignore)"
+      "description": "Default modifier that gets applied, when a new item is found. Modifiers can be one or more of these: 'A' (Assemble only), 'D' (Disassemble only), 'P' (Always queue first (priority)), 'H' (Hide and manage in background), 'I' (Hide and ignore)"
     },
     {
       "key": "assembleMargin",
@@ -356,19 +344,19 @@
       "key": "specialContainerKeyword",
       "value": "Special",
       "value_type": "string",
-      "description": "Keyword an inventory has to contain to be filled with a special loadout (see in it\u0027s custom data after you renamed it!) Special containers will be filled with your wanted amount of items and never be drained by the auto sorting!"
+      "description": "Keyword an inventory has to contain to be filled with a special loadout (see in it's custom data after you renamed it!) Special containers will be filled with your wanted amount of items and never be drained by the auto sorting!"
     },
     {
       "key": "allowSpecialSteal",
       "value": true,
       "value_type": "bool",
-      "description": "Are special containers allowed to \u0027steal\u0027 items from other special containers with a lower priority?"
+      "description": "Are special containers allowed to 'steal' items from other special containers with a lower priority?"
     },
     {
       "key": "enableOreBalancing",
       "value": true,
       "value_type": "bool",
-      "description": "By enabling ore balancing, the script will balance the ores between all refinieres so that every refinery has the same amount of ore in it. To still use a refinery manually, add the manualMachineKeyword to it (by default: \u0022!manual\u0022)"
+      "description": "By enabling ore balancing, the script will balance the ores between all refinieres so that every refinery has the same amount of ore in it. To still use a refinery manually, add the manualMachineKeyword to it (by default: \"!manual\")"
     },
     {
       "key": "enableScriptRefineryFilling",
@@ -394,13 +382,13 @@
         "Stone"
       ],
       "value_type": "string_list",
-      "description": "Enabled ores are refined in order from top to bottom so if you removed several // you can change the order by copying and pasting them inside the list. Just be careful to keep the syntax correct: \u0022OreName\u0022, By default stone is enabled and will always be refined first."
+      "description": "Enabled ores are refined in order from top to bottom so if you removed several // you can change the order by copying and pasting them inside the list. Just be careful to keep the syntax correct: \"OreName\", By default stone is enabled and will always be refined first."
     },
     {
       "key": "enableIceBalancing",
       "value": true,
       "value_type": "bool",
-      "description": "Enable balancing of ice in O2/H2 generators? All O2/H2 generators will be used. To use one manually, add the manualMachineKeyword to it (by default: \u0022!manual\u0022)"
+      "description": "Enable balancing of ice in O2/H2 generators? All O2/H2 generators will be used. To use one manually, add the manualMachineKeyword to it (by default: \"!manual\")"
     },
     {
       "key": "fillOfflineGenerators",
@@ -412,13 +400,13 @@
       "key": "spaceForBottles",
       "value": 1,
       "value_type": "int",
-      "description": "How much space should be left to fill bottles (aka how many bottles should fit in after it\u0027s filled with ice)? WARNING! O2/H2 generators automatically pull ice and bottles if their inventory volume drops below 30%. To avoid this, turn off \u0022Use Conveyor\u0022 in the generator\u0027s terminal settings."
+      "description": "How much space should be left to fill bottles (aka how many bottles should fit in after it's filled with ice)? WARNING! O2/H2 generators automatically pull ice and bottles if their inventory volume drops below 30%. To avoid this, turn off \"Use Conveyor\" in the generator's terminal settings."
     },
     {
       "key": "enableUraniumBalancing",
       "value": true,
       "value_type": "bool",
-      "description": "Enable balancing of uranium in reactors? (Note: conveyors of reactors are turned off to stop them from pulling more) All reactors will be used. To use one manually, add the manualMachineKeyword to it (by default: \u0022!manual\u0022)"
+      "description": "Enable balancing of uranium in reactors? (Note: conveyors of reactors are turned off to stop them from pulling more) All reactors will be used. To use one manually, add the manualMachineKeyword to it (by default: \"!manual\")"
     },
     {
       "key": "fillOfflineReactors",
@@ -448,7 +436,7 @@
       "key": "enableInternalSorting",
       "value": false,
       "value_type": "bool",
-      "description": "Sort the items inside all containers? Note, that this could cause inventory desync issues in multiplayer, so that items are invisible or can\u0027t be taken out. Use at your own risk!"
+      "description": "Sort the items inside all containers? Note, that this could cause inventory desync issues in multiplayer, so that items are invisible or can't be taken out. Use at your own risk!"
     },
     {
       "key": "sortingPattern",
@@ -508,7 +496,7 @@
       "key": "defaultFont",
       "value": "Debug",
       "value_type": "string",
-      "description": "Default screen font, fontsize and padding, when a screen is first initialized. Fonts: \u0022Debug\u0022 or \u0022Monospace\u0022"
+      "description": "Default screen font, fontsize and padding, when a screen is first initialized. Fonts: \"Debug\" or \"Monospace\""
     },
     {
       "key": "extraScriptTicks",
@@ -543,7 +531,7 @@
         "VendingMachine"
       ],
       "value_type": "string_list",
-      "description": "List of always excluded block types (not NAMES!). Mostly because they don\u0027t have conveyors or IIM shouldn\u0027t tinker with them."
+      "description": "List of always excluded block types (not NAMES!). Mostly because they don't have conveyors or IIM shouldn't tinker with them."
     },
     {
       "key": "excludeWelders",
@@ -585,7 +573,7 @@
       "key": "scriptMode",
       "value": "",
       "value_type": "string",
-      "description": "Script mode: \u0022ship\u0022, \u0022station\u0022 or blank for autodetect"
+      "description": "Script mode: \"ship\", \"station\" or blank for autodetect"
     },
     {
       "key": "protectTypeContainers",
@@ -597,13 +585,13 @@
       "key": "enableNameCorrection",
       "value": true,
       "value_type": "bool",
-      "description": "Enable name correction? This option will automtically correct capitalization, e.g.: iim-main -\u003E IIM-main"
+      "description": "Enable name correction? This option will automtically correct capitalization, e.g.: iim-main -> IIM-main"
     },
     {
       "key": "inventoryFullBuffer",
       "value": 500,
       "value_type": "float",
-      "description": "IIM considers an inventory with 98% fill level as full. For very large containers, this value would waste a lot of space. Large containers use the following static value as space left in liters (default: 500L). Calculation: IF maxVolume - maxVolume * 0.98 \u003E inventoryFullBuffer USE inventoryFullBuffer (by default if max volume \u003E 25000L)."
+      "description": "IIM considers an inventory with 98% fill level as full. For very large containers, this value would waste a lot of space. Large containers use the following static value as space left in liters (default: 500L). Calculation: IF maxVolume - maxVolume * 0.98 > inventoryFullBuffer USE inventoryFullBuffer (by default if max volume > 25000L)."
     },
     {
       "key": "timeFormat",
@@ -615,7 +603,31 @@
       "key": "S",
       "value": 0,
       "value_type": "int",
-      "description": "Don\u0027t change anything beyond this point!"
+      "description": "Don't change anything beyond this point!"
+    },
+    {
+      "key": "maxPlannedMachineCommands",
+      "value": 12,
+      "value_type": "int",
+      "description": "Maximum machine, LCD, and setup commands planned per tick."
+    },
+    {
+      "key": "commandQueueDrainPerResult",
+      "value": 8,
+      "value_type": "int",
+      "description": "Fallback queued-command drain when dynamic PB telemetry is unavailable."
+    },
+    {
+      "key": "lcdCommandQueueCooldownSequences",
+      "value": 1,
+      "value_type": "int",
+      "description": "Minimum bridge sequences between duplicate LCD writes for the same text surface."
+    },
+    {
+      "key": "lcdCommandQueueMaxWaitSequences",
+      "value": 2,
+      "value_type": "int",
+      "description": "Maximum bridge sequences an LCD write may wait behind operational commands before being lifted."
     }
   ]
 }

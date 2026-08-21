@@ -18,8 +18,13 @@ from typing import Any
 SCHEMA = "novali.client_side_pb_bridge.v1"
 COMMAND_QUEUE_SCHEMA = "novali.client_side_pb.command_queue.v1"
 AUTOCRAFTING_BLUEPRINT_SCHEMA = "novali.client_side_pb.autocrafting_blueprints.v1"
+SCRIPT_INSTANCES_SCHEMA = "novali.client_side_pb.script_instances.v1"
+BRIDGE_HEALTH_SCHEMA = "novali.client_side_pb.bridge_health.v1"
 VOLATILE_COMMAND_KINDS = {"transfer_item", "write_text_surface"}
-DEFAULT_LCD_QUEUE_COOLDOWN_SEQUENCES = 6
+DEFAULT_LCD_QUEUE_COOLDOWN_SEQUENCES = 1
+DEFAULT_BRIDGE_STALE_SECONDS = 120
+DEFAULT_PROCESSED_REQUEST_RETENTION_SECONDS = 300
+DEFAULT_PROCESSED_REQUEST_CLEANUP_MAX_FILES = 250
 
 
 @dataclass
@@ -34,6 +39,9 @@ class WorkerScript:
     enabled: bool
     runtime: str = "python"
     source_path: str = ""
+    base_script_id: str = ""
+    config_id: str = ""
+    instance_bridge_id: str = ""
 
 
 @dataclass
@@ -45,6 +53,58 @@ class BridgeScriptConfig:
 
 def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def parse_utc_timestamp(value: Any) -> datetime | None:
+    if not isinstance(value, str) or not value.strip():
+        return None
+    text = value.strip()
+    if text.endswith("Z"):
+        text = text[:-1] + "+00:00"
+    try:
+        parsed = datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def stale_seconds_from_env() -> int:
+    try:
+        return max(1, int(os.environ.get("NOVALI_CLIENT_SIDE_PB_STALE_SECONDS", str(DEFAULT_BRIDGE_STALE_SECONDS))))
+    except ValueError:
+        return DEFAULT_BRIDGE_STALE_SECONDS
+
+
+def processed_request_retention_seconds_from_env() -> int:
+    try:
+        return max(
+            0,
+            int(
+                os.environ.get(
+                    "NOVALI_CLIENT_SIDE_PB_PROCESSED_REQUEST_RETENTION_SECONDS",
+                    str(DEFAULT_PROCESSED_REQUEST_RETENTION_SECONDS),
+                )
+            ),
+        )
+    except ValueError:
+        return DEFAULT_PROCESSED_REQUEST_RETENTION_SECONDS
+
+
+def processed_request_cleanup_max_files_from_env() -> int:
+    try:
+        return max(
+            1,
+            int(
+                os.environ.get(
+                    "NOVALI_CLIENT_SIDE_PB_PROCESSED_REQUEST_CLEANUP_MAX_FILES",
+                    str(DEFAULT_PROCESSED_REQUEST_CLEANUP_MAX_FILES),
+                )
+            ),
+        )
+    except ValueError:
+        return DEFAULT_PROCESSED_REQUEST_CLEANUP_MAX_FILES
 
 
 def load_manifest(root: Path) -> dict[str, WorkerScript]:
@@ -65,6 +125,49 @@ def load_manifest(root: Path) -> dict[str, WorkerScript]:
             source_path=str(item.get("source_path", "")),
         )
         scripts[script.script_id] = script
+    scripts.update(load_script_instances(root, scripts))
+    return scripts
+
+
+def load_script_instances(root: Path, base_scripts: dict[str, WorkerScript]) -> dict[str, WorkerScript]:
+    path = root / "data" / "script_instances.json"
+    if not path.exists():
+        return {}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8-sig"))
+    except (json.JSONDecodeError, OSError):
+        return {}
+    if payload.get("schema") != SCRIPT_INSTANCES_SCHEMA:
+        return {}
+    instances = payload.get("instances")
+    if not isinstance(instances, dict):
+        return {}
+    scripts: dict[str, WorkerScript] = {}
+    for key, item in instances.items():
+        if not isinstance(item, dict):
+            continue
+        instance_id = str(item.get("instance_id", key)).strip()
+        base_script_id = str(item.get("base_script_id", "")).strip()
+        if not instance_id or not base_script_id:
+            continue
+        base = base_scripts.get(base_script_id)
+        if base is None:
+            continue
+        scripts[instance_id] = WorkerScript(
+            script_id=instance_id,
+            source="script_instance",
+            display_name=str(item.get("display_name", instance_id)),
+            module=base.module,
+            input_schema=base.input_schema,
+            output_schema=base.output_schema,
+            timeout_ms=base.timeout_ms,
+            enabled=bool(item.get("enabled", True)) and base.enabled,
+            runtime=base.runtime,
+            source_path=base.source_path,
+            base_script_id=base_script_id,
+            config_id=str(item.get("config_id", instance_id) or instance_id),
+            instance_bridge_id=str(item.get("bridge_id", "") or ""),
+        )
     return scripts
 
 
@@ -114,6 +217,29 @@ def load_worker_config(root: Path, script_id: str) -> dict[str, Any]:
         if isinstance(entry, dict) and entry.get("key"):
             config[str(entry["key"])] = entry.get("value")
     return config
+
+
+def load_effective_worker_config(root: Path, script: WorkerScript) -> dict[str, Any]:
+    config_id = script.config_id or script.script_id
+    config = load_worker_config(root, config_id)
+    if config or not script.base_script_id:
+        return config
+    return load_worker_config(root, script.base_script_id)
+
+
+def attach_virtual_pb_custom_data(request: dict[str, Any]) -> None:
+    config = request.get("worker_config") if isinstance(request.get("worker_config"), dict) else {}
+    configured = str(config.get("virtualPbCustomData", "") or "")
+    virtual_pb = request.get("virtual_pb") if isinstance(request.get("virtual_pb"), dict) else {}
+    if configured:
+        virtual_pb = dict(virtual_pb)
+        virtual_pb["custom_data"] = configured
+        virtual_pb["custom_data_source"] = "worker_config.virtualPbCustomData"
+        request["virtual_pb"] = virtual_pb
+    elif virtual_pb.get("custom_data"):
+        virtual_pb = dict(virtual_pb)
+        virtual_pb.setdefault("custom_data_source", "request.virtual_pb.custom_data")
+        request["virtual_pb"] = virtual_pb
 
 
 def autocrafting_blueprint_dir(root: Path) -> Path:
@@ -221,6 +347,36 @@ def result_for(request: dict[str, Any], status: str, result: Any = None, error_b
     return payload
 
 
+def request_requested_at(request: dict[str, Any]) -> datetime | None:
+    state = request.get("state") if isinstance(request.get("state"), dict) else {}
+    return parse_utc_timestamp(state.get("requested_at_utc"))
+
+
+def request_is_stale(request: dict[str, Any], stale_seconds: int | None = None) -> bool:
+    requested_at = request_requested_at(request)
+    if requested_at is None:
+        return False
+    max_age = stale_seconds if stale_seconds is not None else stale_seconds_from_env()
+    age = datetime.now(timezone.utc) - requested_at
+    return age.total_seconds() > max_age
+
+
+def stale_request_result(request: dict[str, Any]) -> dict[str, Any]:
+    return result_for(
+        request,
+        "stale_held",
+        {
+            "summary": "Bridge request was held because its PB snapshot is stale. Commands will resume after a fresh heartbeat.",
+            "commands": [],
+            "bridge_health": {
+                "status": "concealed_suspected",
+                "queue_policy": "hold_until_fresh_heartbeat",
+            },
+        },
+        "stale_request_held",
+    )
+
+
 def command_queue_dir(root: Path) -> Path:
     return root / "data" / "command_queues"
 
@@ -290,11 +446,13 @@ def apply_command_queue(root: Path, request: dict[str, Any], adapter_output: dic
     planned = [command for command in commands if isinstance(command, dict) and command.get("kind") != "echo"]
     enqueue_planned_commands(queue, planned, sequence, lcd_command_queue_cooldown(request))
     prune_stale_commands(queue, sequence)
-    sort_command_queue(queue)
+    sort_command_queue(queue, sequence, lcd_command_queue_max_wait(request))
 
     drain_count = command_queue_drain_count(request, adapter_output)
-    drained_entries = queue.get("entries", [])[:drain_count]
+    entries = queue.get("entries", []) if isinstance(queue.get("entries"), list) else []
+    drained_entries = reserve_text_surface_refresh_in_drain(entries, drain_count)
     drained_commands = [command_for_sequence(entry.get("command", {}), request, index + 1) for index, entry in enumerate(drained_entries)]
+    by_source = command_queue_stats_by_source(entries, drained_entries, script_id)
 
     queue["in_flight"] = [{"key": entry.get("key"), "command": command} for entry, command in zip(drained_entries, drained_commands)]
     queue["last_emitted_sequence"] = sequence
@@ -310,8 +468,56 @@ def apply_command_queue(root: Path, request: dict[str, Any], adapter_output: dic
         "queued": len(queue.get("entries", [])),
         "drained": len(drained_commands),
         "remaining": adapter_output["remaining_commands"],
+        "by_source": by_source,
     }
     return adapter_output
+
+
+def reserve_text_surface_refresh_in_drain(entries: list[dict[str, Any]], drain_count: int) -> list[dict[str, Any]]:
+    selected = entries[:drain_count]
+    if drain_count <= 1 or not selected:
+        return selected
+    if any(entry_command_kind(entry) == "write_text_surface" for entry in selected):
+        return selected
+    refresh = next((entry for entry in entries[drain_count:] if entry_command_kind(entry) == "write_text_surface"), None)
+    if refresh is None:
+        return selected
+    return [*selected[:-1], refresh]
+
+
+def entry_command_kind(entry: dict[str, Any]) -> str:
+    command = entry.get("command") if isinstance(entry.get("command"), dict) else {}
+    return str(command.get("kind", ""))
+
+
+def command_source_id(entry: dict[str, Any], fallback_script_id: str) -> str:
+    command = entry.get("command") if isinstance(entry.get("command"), dict) else {}
+    source_id = str(command.get("source_script_id", "") or "").strip()
+    return source_id or fallback_script_id
+
+
+def command_queue_stats_by_source(
+    entries: list[dict[str, Any]],
+    drained_entries: list[dict[str, Any]],
+    fallback_script_id: str,
+) -> dict[str, dict[str, int]]:
+    stats: dict[str, dict[str, int]] = {}
+
+    def ensure(source_id: str) -> dict[str, int]:
+        return stats.setdefault(source_id, {"queued": 0, "drained": 0, "remaining": 0})
+
+    drained_keys = {str(entry.get("key", "")) for entry in drained_entries if isinstance(entry, dict)}
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        source_id = command_source_id(entry, fallback_script_id)
+        row = ensure(source_id)
+        row["queued"] += 1
+        if str(entry.get("key", "")) in drained_keys:
+            row["drained"] += 1
+        else:
+            row["remaining"] += 1
+    return stats
 
 
 def acknowledge_command_queue(queue: dict[str, Any], request: dict[str, Any]) -> None:
@@ -509,6 +715,15 @@ def lcd_command_queue_cooldown(request: dict[str, Any]) -> int:
         return DEFAULT_LCD_QUEUE_COOLDOWN_SEQUENCES
 
 
+def lcd_command_queue_max_wait(request: dict[str, Any]) -> int:
+    config = request.get("worker_config") if isinstance(request.get("worker_config"), dict) else {}
+    configured = config.get("lcdCommandQueueMaxWaitSequences", 8)
+    try:
+        return max(0, int(configured))
+    except (TypeError, ValueError):
+        return 8
+
+
 def normalize_command_queue(queue: dict[str, Any]) -> None:
     normalized: dict[str, dict[str, Any]] = {}
     for entry in queue.get("entries", []) if isinstance(queue.get("entries"), list) else []:
@@ -533,17 +748,32 @@ def normalize_command_queue(queue: dict[str, Any]) -> None:
     sort_command_queue(queue)
 
 
-def sort_command_queue(queue: dict[str, Any]) -> None:
+def sort_command_queue(queue: dict[str, Any], sequence: int | None = None, lcd_max_wait_sequences: int | None = None) -> None:
     entries = queue.get("entries") if isinstance(queue.get("entries"), list) else []
     queue["entries"] = sorted(
         entries,
         key=lambda entry: (
             source_priority(entry.get("command") if isinstance(entry.get("command"), dict) else {}),
-            command_priority(entry.get("command") if isinstance(entry.get("command"), dict) else {}),
+            effective_command_priority(entry, sequence, lcd_max_wait_sequences),
             int(entry.get("first_seen_sequence", 0) or 0),
             str(entry.get("key", "")),
         ),
     )
+
+
+def effective_command_priority(entry: dict[str, Any], sequence: int | None = None, lcd_max_wait_sequences: int | None = None) -> int:
+    command = entry.get("command") if isinstance(entry.get("command"), dict) else {}
+    priority = command_priority(command)
+    if (
+        str(command.get("kind", "")) == "write_text_surface"
+        and sequence is not None
+        and lcd_max_wait_sequences is not None
+        and lcd_max_wait_sequences > 0
+    ):
+        first_seen = int(entry.get("first_seen_sequence", sequence) or sequence)
+        if sequence - first_seen >= lcd_max_wait_sequences:
+            return min(priority, 5)
+    return priority
 
 
 def source_priority(command: dict[str, Any]) -> int:
@@ -571,34 +801,34 @@ def command_priority(command: dict[str, Any]) -> int:
         return 9
     if kind == "transfer_item" and str(command.get("reason", "")) == "autocrafting_ore_refining":
         return 10
-    if kind == "write_text_surface":
-        return 11
     if kind == "transfer_item" and str(command.get("reason", "")) == "refinery_output_cleanup":
-        return 12
+        return 11
     if kind == "transfer_item" and str(command.get("reason", "")) == "assembler_output_cleanup":
-        return 13
+        return 12
     if kind == "transfer_item" and str(command.get("reason", "")) == "refinery_input_unload":
-        return 14
+        return 13
     if kind == "transfer_item" and str(command.get("reason", "")) == "inventory_sorting":
-        return 15
+        return 14
     if kind == "write_block_custom_data":
-        return 16
+        return 26
     if kind in {"set_use_conveyor", "set_block_enabled", "set_light_color", "set_assembler_cooperative_mode", "set_gas_auto_refill"}:
-        return 20
+        return 15
     if kind == "transfer_item":
         subtype = str(command.get("item_subtype_id", "")).lower()
         type_id = str(command.get("item_type_id", "")).lower()
         if subtype == "uranium" and "ingot" in type_id:
-            return 18
+            return 16
         if subtype == "ice" and str(command.get("reason", "")) == "gas_generator_topup":
-            return 18
+            return 16
         if "ore" in type_id and str(command.get("reason", "")) in {"refinery_ore_input", "autocrafting_ore_refining"}:
-            return 18
+            return 16
         if subtype == "ice":
             return 60
         if "ingot" in type_id:
-            return 19
+            return 17
         return 45
+    if kind == "write_text_surface":
+        return 25
     if kind in {"enqueue_assembler_blueprint", "move_assembler_queue_item", "remove_assembler_queue_item", "clear_assembler_queue"}:
         return 30
     if kind == "rename_block":
@@ -624,6 +854,57 @@ def command_queue_key(command: dict[str, Any]) -> str:
     return json.dumps(key_payload, sort_keys=True, separators=(",", ":"))
 
 
+def orchestrator_conflict_target(command: dict[str, Any]) -> str:
+    kind = str(command.get("kind", ""))
+    if not kind or kind == "echo":
+        return ""
+    if "block_entity_id" in command:
+        block_id = str(command.get("block_entity_id", ""))
+        if kind == "write_text_surface":
+            return f"{kind}:{block_id}:{command.get('surface_index', 0)}"
+        return f"{kind}:{block_id}"
+    if kind in {"transfer_item"}:
+        return (
+            f"{kind}:{command.get('source_entity_id', '')}:{command.get('source_inventory_index', 0)}:"
+            f"{command.get('destination_entity_id', '')}:{command.get('destination_inventory_index', 0)}:"
+            f"{command.get('item_type_id', '')}:{command.get('item_subtype_id', '')}"
+        )
+    if kind in {"enqueue_assembler_blueprint", "move_assembler_queue_item", "remove_assembler_queue_item", "clear_assembler_queue"}:
+        return f"{kind}:{command.get('assembler_entity_id', command.get('block_entity_id', ''))}"
+    return command_queue_key(command)
+
+
+def resolve_orchestrator_conflicts(commands: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    kept: list[dict[str, Any]] = []
+    kept_by_target: dict[str, dict[str, Any]] = {}
+    conflicts_by_target: dict[str, dict[str, Any]] = {}
+    for command in commands:
+        target = orchestrator_conflict_target(command)
+        if not target:
+            kept.append(command)
+            continue
+        existing = kept_by_target.get(target)
+        if existing is None:
+            kept_by_target[target] = command
+            kept.append(command)
+            continue
+        if command_queue_key(existing) == command_queue_key(command) and existing == command:
+            continue
+        conflict = conflicts_by_target.setdefault(
+            target,
+            {
+                "target": target,
+                "kind": str(command.get("kind", "")),
+                "kept_source_script_id": str(existing.get("source_script_id", "")),
+                "suppressed_source_script_ids": [],
+            },
+        )
+        source_id = str(command.get("source_script_id", ""))
+        if source_id and source_id not in conflict["suppressed_source_script_ids"]:
+            conflict["suppressed_source_script_ids"].append(source_id)
+    return kept, list(conflicts_by_target.values())
+
+
 def command_for_sequence(command: dict[str, Any], request: dict[str, Any], index: int) -> dict[str, Any]:
     emitted = dict(command)
     emitted["command_id"] = f"{request.get('bridge_id', 'bridge')}:{request.get('sequence', 0)}:queue:{index}:{emitted.get('kind', 'command')}"
@@ -633,6 +914,10 @@ def command_for_sequence(command: dict[str, Any], request: dict[str, Any], index
 def safe_file_name(value: str) -> str:
     safe = "".join(c if c.isalnum() or c in {"-", "_"} else "_" for c in value)
     return safe or "bridge"
+
+
+def string_equals(left: str, right: str) -> bool:
+    return left.casefold() == right.casefold()
 
 
 def validate_request(request: dict[str, Any]) -> str:
@@ -654,10 +939,13 @@ def execute_request(
     scripts: dict[str, WorkerScript],
     bridge_configs: dict[str, BridgeScriptConfig] | None = None,
     root: Path | None = None,
+    apply_queue: bool = True,
 ) -> dict[str, Any]:
     validation = validate_request(request)
     if validation != "none":
         return result_for(request, "rejected", {}, validation)
+    if request_is_stale(request):
+        return stale_request_result(request)
 
     script_id = str(request["script_id"])
     bridge_config = (bridge_configs or {}).get(str(request["bridge_id"]))
@@ -669,12 +957,18 @@ def execute_request(
         return result_for(request, "rejected", {}, "script_not_found")
     if not script.enabled:
         return result_for(request, "rejected", {}, "script_disabled")
-    if script_id == "bridge_orchestrator":
+    if script.instance_bridge_id and not string_equals(script.instance_bridge_id, str(request["bridge_id"])):
+        return result_for(request, "rejected", {}, "script_instance_bridge_mismatch")
+    if script_id == "bridge_orchestrator" or script.base_script_id == "bridge_orchestrator":
         return execute_orchestrator_request(request, scripts, bridge_configs or {}, bridge_config, root)
 
     try:
         active_root = root or Path(os.environ.get("NOVALI_CLIENT_SIDE_PB_ROOT", "."))
-        request["worker_config"] = load_worker_config(active_root, script_id)
+        request["worker_config"] = load_effective_worker_config(active_root, script)
+        attach_virtual_pb_custom_data(request)
+        if script.base_script_id:
+            request["script_instance_id"] = script.script_id
+            request["base_script_id"] = script.base_script_id
         if root is not None:
             request["autocrafting_blueprints"] = learn_autocrafting_blueprints(active_root, request)
         if script.runtime == "virtual_pb_csharp":
@@ -698,7 +992,7 @@ def execute_request(
         if isinstance(output, dict):
             status = str(output.pop("adapter_status", output.pop("status_override", status)) or status)
             error_bucket = str(output.get("error_bucket", error_bucket) or error_bucket)
-            if root is not None and status == "ok" and error_bucket == "none":
+            if root is not None and apply_queue and status == "ok" and error_bucket == "none":
                 output = apply_command_queue(root, request, output)
         return result_for(request, status, output, error_bucket)
     except TimeoutError:
@@ -730,6 +1024,7 @@ def execute_orchestrator_request(
 
     merged_commands: list[dict[str, Any]] = []
     child_results: list[dict[str, Any]] = []
+    scheduler_fairness: list[dict[str, Any]] = []
     allowed = set(bridge_config.allowed_worker_scripts if bridge_config is not None else ())
     for index, child_config in enumerate(child_configs):
         child_id = str(child_config.get("script_id", "")).strip()
@@ -741,7 +1036,7 @@ def execute_orchestrator_request(
         child_request = dict(request)
         child_request["script_id"] = child_id
         child_request["parent_script_id"] = "bridge_orchestrator"
-        child_result = execute_request(child_request, scripts, bridge_configs, root=None)
+        child_result = execute_request(child_request, scripts, bridge_configs, root=root, apply_queue=False)
         result_payload = child_result.get("result") if isinstance(child_result.get("result"), dict) else {}
         child_results.append(
             {
@@ -761,15 +1056,45 @@ def execute_orchestrator_request(
             priority = int(child_config.get("priority", 50) or 50)
         except (TypeError, ValueError):
             priority = 50
+        try:
+            fairness_weight = max(1, int(child_config.get("fairness_weight", 1) or 1))
+        except (TypeError, ValueError):
+            fairness_weight = 1
+        try:
+            expires_after = max(0, int(child_config.get("expires_after_sequences", 0) or 0))
+        except (TypeError, ValueError):
+            expires_after = 0
+        role = str(child_config.get("role", "") or "")
+        reactive = bool(child_config.get("reactive", False))
+        operator_status = str(child_config.get("operator_status", "ok") or "ok")
+        child_results[-1]["operator_status"] = operator_status
+        scheduler_fairness.append(
+            {
+                "script_id": child_id,
+                "role": role,
+                "reactive": reactive,
+                "budget": budget,
+                "priority": priority,
+                "fairness_weight": fairness_weight,
+                "operator_status": operator_status,
+                "emitted": 0,
+            }
+        )
         child_commands = [command for command in result_payload.get("commands", []) if isinstance(command, dict)]
         for command in child_commands[:budget]:
             tagged = dict(command)
             tagged.setdefault("source_script_id", child_id)
             tagged.setdefault("source_priority", priority)
             tagged.setdefault("source_order", index)
+            if role:
+                tagged.setdefault("source_role", role)
+            if reactive and expires_after > 0:
+                tagged.setdefault("expires_after_sequences", expires_after)
             merged_commands.append(tagged)
+            scheduler_fairness[-1]["emitted"] += 1
 
     merged_commands.sort(key=lambda command: (int(command.get("source_priority", 50) or 50), int(command.get("source_order", 0) or 0)))
+    merged_commands, conflicts = resolve_orchestrator_conflicts(merged_commands)
     output = {
         "summary": f"bridge_orchestrator processed {len(child_results)} child script(s)",
         "commands": merged_commands,
@@ -781,11 +1106,50 @@ def execute_orchestrator_request(
             "child_count": len(child_results),
             "command_count": len(merged_commands),
         },
+        "scheduler": {
+            "policy": "priority_fairness_v1",
+            "child_count": len(child_results),
+            "eligible_child_count": len(scheduler_fairness),
+            "emitted_child_count": sum(1 for item in scheduler_fairness if int(item.get("emitted", 0) or 0) > 0),
+            "fairness": scheduler_fairness,
+        },
+        "conflicts": conflicts,
         "child_results": child_results,
     }
     if root is not None:
         output = apply_command_queue(root, request, output)
+    output["queue_pressure"] = queue_pressure_summary(output)
+    attach_child_queue_stats(output)
     return result_for(request, "ok", output, "none")
+
+
+def queue_pressure_summary(output: dict[str, Any]) -> dict[str, Any]:
+    command_queue = output.get("command_queue") if isinstance(output.get("command_queue"), dict) else {}
+    return {
+        "queued": int(command_queue.get("queued", output.get("queued_commands", 0)) or 0),
+        "drained": int(command_queue.get("drained", len(output.get("commands", []) if isinstance(output.get("commands"), list) else [])) or 0),
+        "remaining": int(command_queue.get("remaining", output.get("remaining_commands", 0)) or 0),
+        "by_source": command_queue.get("by_source", {}) if isinstance(command_queue.get("by_source"), dict) else {},
+    }
+
+
+def attach_child_queue_stats(output: dict[str, Any]) -> None:
+    command_queue = output.get("command_queue") if isinstance(output.get("command_queue"), dict) else {}
+    by_source = command_queue.get("by_source") if isinstance(command_queue.get("by_source"), dict) else {}
+    child_results = output.get("child_results") if isinstance(output.get("child_results"), list) else []
+    for child in child_results:
+        if not isinstance(child, dict):
+            continue
+        child_id = str(child.get("script_id", "") or "")
+        stats = by_source.get(child_id)
+        if isinstance(stats, dict):
+            child["command_queue"] = {
+                "queued": int(stats.get("queued", 0) or 0),
+                "drained": int(stats.get("drained", 0) or 0),
+                "remaining": int(stats.get("remaining", 0) or 0),
+            }
+        else:
+            child["command_queue"] = {"queued": 0, "drained": 0, "remaining": 0}
 
 
 def save_virtual_pb_compatibility_report(
@@ -818,11 +1182,18 @@ def save_virtual_pb_compatibility_report(
         "unsupported_apis": compatibility.get("unsupported_apis", []),
         "unsupported_interfaces": compatibility.get("unsupported_interfaces", []),
         "unsupported_members": compatibility.get("unsupported_members", []),
+        "blocked_members": compatibility.get("blocked_members", []),
+        "blocked_command_mappings": compatibility.get("blocked_command_mappings", []),
+        "missing_types": compatibility.get("missing_types", []),
+        "missing_members": compatibility.get("missing_members", []),
+        "compile_errors": compatibility.get("compile_errors", []),
         "required_interfaces": compatibility.get("required_interfaces", []),
         "implemented_interfaces": compatibility.get("implemented_interfaces", []),
         "available_command_kinds": compatibility.get("available_command_kinds", []),
         "snapshot_requirements": compatibility.get("snapshot_requirements", []),
         "supported_block_types": compatibility.get("supported_block_types", []),
+        "client_overlay_writes": compatibility.get("client_overlay_writes", []),
+        "capability_categories": compatibility.get("capability_categories", {}),
         "emitted_command_kinds": emitted_kinds,
         "last_run_status": str(output.get("adapter_status", output.get("status", "ok")) or "ok"),
         "capability_version": compatibility.get("capability_version", ""),
@@ -840,6 +1211,172 @@ def save_virtual_pb_compatibility_report(
 
 def request_key(path: Path) -> str:
     return path.stem
+
+
+def load_bridge_health(root: Path) -> dict[str, Any]:
+    path = root / "data" / "bridge_health.json"
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8-sig"))
+    except (json.JSONDecodeError, OSError):
+        return {"schema": BRIDGE_HEALTH_SCHEMA, "bridges": {}}
+    if payload.get("schema") != BRIDGE_HEALTH_SCHEMA:
+        return {"schema": BRIDGE_HEALTH_SCHEMA, "bridges": {}}
+    if not isinstance(payload.get("bridges"), dict):
+        payload["bridges"] = {}
+    return payload
+
+
+def discover_bridge_ids(root: Path) -> set[str]:
+    bridge_ids: set[str] = set()
+    bridges = load_status_json(root, "bridges.json").get("bridges")
+    if isinstance(bridges, dict):
+        bridge_ids.update(str(bridge_id) for bridge_id in bridges.keys() if str(bridge_id))
+    assignments = load_status_json(root, "bridge_scripts.json").get("bridges")
+    if isinstance(assignments, dict):
+        bridge_ids.update(str(bridge_id) for bridge_id in assignments.keys() if str(bridge_id))
+    for directory in (root / "data" / "bridge_requests", root / "data" / "bridge_results"):
+        if directory.exists():
+            bridge_ids.update(path.stem for path in directory.glob("*.json"))
+    processed = root / "data" / "bridge_requests" / "processed"
+    if processed.exists():
+        for path in processed.glob("*.json"):
+            name = path.stem
+            bridge_ids.add(name.rsplit("-", 1)[0] if "-" in name else name)
+    return bridge_ids
+
+
+def latest_request_path(root: Path, bridge_id: str) -> Path | None:
+    active = root / "data" / "bridge_requests" / f"{bridge_id}.json"
+    if active.exists():
+        return active
+    processed = root / "data" / "bridge_requests" / "processed"
+    if not processed.exists():
+        return None
+    candidates = list(processed.glob(f"{bridge_id}-*.json"))
+    if not candidates:
+        return None
+    return max(candidates, key=lambda path: archived_request_order_key(path, bridge_id))
+
+
+def archived_request_order_key(path: Path, bridge_id: str) -> tuple[int, str]:
+    prefix = f"{bridge_id}-"
+    stem = path.stem
+    suffix = stem[len(prefix) :] if stem.startswith(prefix) else ""
+    try:
+        archive_timestamp = int(suffix)
+    except ValueError:
+        archive_timestamp = -1
+    return (archive_timestamp, path.name)
+
+
+def read_json_file(path: Path | None) -> dict[str, Any]:
+    if path is None or not path.exists():
+        return {}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8-sig"))
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def update_bridge_health(root: Path, stale_seconds: int | None = None) -> dict[str, Any]:
+    max_age = stale_seconds if stale_seconds is not None else stale_seconds_from_env()
+    previous = load_bridge_health(root)
+    previous_bridges = previous.get("bridges") if isinstance(previous.get("bridges"), dict) else {}
+    now_ts = time.time()
+    rows: dict[str, Any] = {}
+    for bridge_id in sorted(discover_bridge_ids(root)):
+        request_path = latest_request_path(root, bridge_id)
+        result_path = root / "data" / "bridge_results" / f"{bridge_id}.json"
+        request = read_json_file(request_path)
+        result = read_json_file(result_path)
+        request_age = (now_ts - request_path.stat().st_mtime) if request_path is not None and request_path.exists() else None
+        result_age = (now_ts - result_path.stat().st_mtime) if result_path.exists() else None
+        request_sequence = int(request.get("sequence", 0) or 0)
+        result_sequence = int(result.get("sequence", 0) or 0)
+        result_status = str(result.get("status", "")) if result else ""
+        fresh_request = request_age is not None and request_age <= max_age
+        fresh_result = result_age is not None and result_age <= max_age
+        previous_status = ""
+        previous_row = previous_bridges.get(bridge_id) if isinstance(previous_bridges, dict) else {}
+        if isinstance(previous_row, dict):
+            previous_status = str(previous_row.get("status", ""))
+        if not fresh_request:
+            status = "concealed_suspected"
+            queue_policy = "hold_until_fresh_heartbeat"
+        elif not fresh_result or request_sequence <= 0 or result_sequence != request_sequence:
+            status = "stale"
+            queue_policy = "hold_until_fresh_heartbeat"
+        elif result_status == "stale_held":
+            status = "concealed_suspected"
+            queue_policy = "hold_until_fresh_heartbeat"
+        elif previous_status in {"concealed_suspected", "stale"}:
+            status = "recovered"
+            queue_policy = "drain"
+        else:
+            status = "active"
+            queue_policy = "drain"
+        rows[bridge_id] = {
+            "bridge_id": bridge_id,
+            "status": status,
+            "queue_policy": queue_policy,
+            "last_request_path": str(request_path) if request_path is not None else "",
+            "last_result_path": str(result_path) if result_path.exists() else "",
+            "last_request_age_seconds": None if request_age is None else round(request_age, 3),
+            "last_result_age_seconds": None if result_age is None else round(result_age, 3),
+            "last_sequence": result_sequence,
+            "last_result_status": result_status,
+            "updated_at": utc_now(),
+        }
+    payload = {"schema": BRIDGE_HEALTH_SCHEMA, "updated_at": utc_now(), "stale_seconds": max_age, "bridges": rows}
+    path = root / "data" / "bridge_health.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    return payload
+
+
+def cleanup_processed_requests(
+    root: Path,
+    retention_seconds: int | None = None,
+    now: float | None = None,
+    max_files_per_pass: int | None = None,
+) -> dict[str, int]:
+    retention = (
+        processed_request_retention_seconds_from_env()
+        if retention_seconds is None
+        else max(0, int(retention_seconds))
+    )
+    max_files = (
+        processed_request_cleanup_max_files_from_env()
+        if max_files_per_pass is None
+        else max(1, int(max_files_per_pass))
+    )
+    cutoff = (time.time() if now is None else now) - retention
+    processed_dir = root / "data" / "bridge_requests" / "processed"
+    stats = {
+        "retention_seconds": retention,
+        "max_files_per_pass": max_files,
+        "scanned": 0,
+        "removed": 0,
+        "failed": 0,
+        "limit_reached": 0,
+    }
+    if not processed_dir.exists():
+        return stats
+    for path in processed_dir.glob("*.json"):
+        if not path.is_file():
+            continue
+        stats["scanned"] += 1
+        try:
+            if path.stat().st_mtime <= cutoff:
+                path.unlink()
+                stats["removed"] += 1
+                if stats["removed"] >= max_files:
+                    stats["limit_reached"] = 1
+                    break
+        except OSError:
+            stats["failed"] += 1
+    return stats
 
 
 def process_pending(root: Path, scripts: dict[str, WorkerScript]) -> int:
@@ -866,6 +1403,8 @@ def process_pending(root: Path, scripts: dict[str, WorkerScript]) -> int:
         archived = processed_dir / f"{request_path.stem}-{int(time.time() * 1000)}.json"
         request_path.replace(archived)
         count += 1
+    bridge_health = update_bridge_health(root)
+    processed_cleanup = cleanup_processed_requests(root)
     status_path = root / "data" / "worker_status.json"
     status_path.write_text(
         json.dumps(
@@ -874,6 +1413,8 @@ def process_pending(root: Path, scripts: dict[str, WorkerScript]) -> int:
                 "updated_at": utc_now(),
                 "processed": count,
                 "limiter_states": limiter_states,
+                "bridge_health": bridge_health.get("bridges", {}),
+                "processed_request_cleanup": processed_cleanup,
             },
             indent=2,
         ),
@@ -901,17 +1442,72 @@ def summarize_report_list(report: dict[str, Any], key: str, limit: int = 6) -> s
     return ", ".join(text_values)
 
 
+def latest_child_statuses(root: Path, bridge_id: str) -> dict[str, str]:
+    payload = load_status_json(root, f"bridge_results/{bridge_id}.json")
+    result = payload.get("result") if isinstance(payload.get("result"), dict) else {}
+    child_results = result.get("child_results") if isinstance(result.get("child_results"), list) else []
+    statuses: dict[str, str] = {}
+    for child in child_results:
+        if not isinstance(child, dict):
+            continue
+        script_id = str(child.get("script_id", "")).strip()
+        if not script_id:
+            continue
+        status = str(child.get("status", "unknown") or "unknown")
+        error_bucket = str(child.get("error_bucket", "none") or "none")
+        statuses[script_id] = status if error_bucket == "none" else f"{status}: {error_bucket}"
+    return statuses
+
+
 def render_status_page(root: Path) -> str:
     worker_status = load_status_json(root, "worker_status.json")
     plugin_status = load_status_json(root, "plugin_status.json")
     virtual_pb = load_status_json(root, "virtual_pb_compatibility.json")
     bridge_scripts = load_status_json(root, "bridge_scripts.json")
+    bridge_health = load_status_json(root, "bridge_health.json")
     limiter_states = worker_status.get("limiter_states") if isinstance(worker_status.get("limiter_states"), dict) else {}
+    health_rows_payload = bridge_health.get("bridges") if isinstance(bridge_health.get("bridges"), dict) else {}
     virtual_scripts = virtual_pb.get("scripts") if isinstance(virtual_pb.get("scripts"), dict) else {}
+    bridges = bridge_scripts.get("bridges") if isinstance(bridge_scripts.get("bridges"), dict) else {}
     bridge_rows = "".join(
         f"<tr><td>{html.escape(str(bridge_id))}</td><td>{html.escape(str(state))}</td></tr>"
         for bridge_id, state in sorted(limiter_states.items())
     ) or "<tr><td colspan=\"2\">No bridge requests processed yet.</td></tr>"
+    health_rows = "".join(
+        "<tr>"
+        f"<td>{html.escape(str(bridge_id))}</td>"
+        f"<td>{html.escape(str(row.get('status', 'unknown')))}</td>"
+        f"<td>{html.escape(str(row.get('queue_policy', 'unknown')))}</td>"
+        f"<td>{html.escape(str(row.get('last_request_age_seconds', '')))}</td>"
+        f"<td>{html.escape(str(row.get('last_result_status', '')))}</td>"
+        "</tr>"
+        for bridge_id, row in sorted(health_rows_payload.items())
+        if isinstance(row, dict)
+    ) or "<tr><td colspan=\"5\">No bridge heartbeat health recorded yet.</td></tr>"
+    active_row_parts = []
+    for bridge_id, bridge_config in sorted(bridges.items()):
+        if not isinstance(bridge_config, dict):
+            continue
+        child_ids = [
+            str(child.get("script_id", ""))
+            for child in bridge_config.get("child_worker_scripts", [])
+            if isinstance(child, dict) and str(child.get("script_id", ""))
+        ]
+        latest_statuses = latest_child_statuses(root, str(bridge_id))
+        child_status_text = ", ".join(
+            f"{child_id}={latest_statuses.get(child_id, 'no recent result')}"
+            for child_id in child_ids
+        )
+        active_row_parts.append(
+            "<tr>"
+            f"<td>{html.escape(str(bridge_id))}</td>"
+            f"<td>{html.escape(str(bridge_config.get('selected_script_id', '')))}</td>"
+            f"<td>{html.escape(', '.join(child_ids))}</td>"
+            f"<td>{html.escape(child_status_text)}</td>"
+            f"<td>{html.escape(str(bridge_config.get('updated_at', '')))}</td>"
+            "</tr>"
+        )
+    active_rows = "".join(active_row_parts) or "<tr><td colspan=\"5\">No active bridge script assignments.</td></tr>"
     virtual_rows = "".join(
         "<tr>"
         f"<td>{html.escape(str(script_id))}</td>"
@@ -920,7 +1516,7 @@ def render_status_page(root: Path) -> str:
         f"<td>{html.escape(summarize_report_list(report, 'required_interfaces'))}</td>"
         f"<td>{html.escape(summarize_report_list(report, 'emitted_command_kinds'))}</td>"
         f"<td>{html.escape(summarize_report_list(report, 'available_command_kinds'))}</td>"
-        f"<td>{html.escape(summarize_report_list(report, 'unsupported_members'))}</td>"
+        f"<td>{html.escape(summarize_report_list(report, 'blocked_command_mappings') or summarize_report_list(report, 'missing_members') or summarize_report_list(report, 'unsupported_members'))}</td>"
         f"<td>{html.escape(summarize_report_list(report, 'snapshot_requirements', 4))}</td>"
         f"<td>{html.escape(str(report.get('last_run_status', 'unknown')))}</td>"
         "</tr>"
@@ -928,7 +1524,6 @@ def render_status_page(root: Path) -> str:
         if isinstance(report, dict)
     ) or "<tr><td colspan=\"9\">No virtual PB compatibility report yet.</td></tr>"
     selected_scripts = []
-    bridges = bridge_scripts.get("bridges") if isinstance(bridge_scripts.get("bridges"), dict) else {}
     for bridge_id, bridge_config in sorted(bridges.items()):
         if isinstance(bridge_config, dict):
             selected_scripts.append(f"{bridge_id}: {bridge_config.get('selected_script_id', '')}")
@@ -964,6 +1559,7 @@ def render_status_page(root: Path) -> str:
   <section class="actions">
     <a class="button" href="novali-client-side-pb-manager://open">Open Configuration UI</a>
     <a class="button secondary" href="/status.json">Status JSON</a>
+    <a class="button secondary" href="/manager-launch.log">Launch Diagnostics</a>
   </section>
   <section class="grid">
     <div class="metric"><div class="label">Processed requests</div><div class="value">{html.escape(str(worker_status.get('processed', 0)))}</div></div>
@@ -972,9 +1568,14 @@ def render_status_page(root: Path) -> str:
   </section>
   <h2>Bridge Assignments</h2>
   <p><code>{html.escape(selected_text)}</code></p>
+  <h2>Active Bridge Scripts</h2>
+  <table><thead><tr><th>Bridge</th><th>Selected Runtime</th><th>Child Instances</th><th>Latest Child Status</th><th>Updated</th></tr></thead><tbody>{active_rows}</tbody></table>
+  <h2>Bridge Heartbeat Health</h2>
+  <table><thead><tr><th>Bridge</th><th>Status</th><th>Queue Policy</th><th>Request Age Seconds</th><th>Last Result</th></tr></thead><tbody>{health_rows}</tbody></table>
   <h2>Limiter States</h2>
   <table><thead><tr><th>Bridge</th><th>State</th></tr></thead><tbody>{bridge_rows}</tbody></table>
-  <h2>Virtual PB Compatibility</h2>
+  <h2>Virtual PB Compatibility Inventory</h2>
+  <p class="label">Import compatibility reports are not active bridge failures unless the script is assigned above.</p>
   <table><thead><tr><th>Script</th><th>Status</th><th>Compiled</th><th>Required Interfaces</th><th>Emitted</th><th>Available Commands</th><th>Unsupported</th><th>Snapshots</th><th>Last Run</th></tr></thead><tbody>{virtual_rows}</tbody></table>
 </main>
 </body>
@@ -998,10 +1599,21 @@ def start_status_server(root: Path, host: str, port: int) -> ThreadingHTTPServer
                     "worker_status": load_status_json(root, "worker_status.json"),
                     "plugin_status": load_status_json(root, "plugin_status.json"),
                     "virtual_pb_compatibility": load_status_json(root, "virtual_pb_compatibility.json"),
+                    "bridge_health": load_status_json(root, "bridge_health.json"),
                 }
                 body = json.dumps(payload, indent=2).encode("utf-8")
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+                return
+            if self.path == "/manager-launch.log":
+                path = root / "data" / "manager_launch.log"
+                text = path.read_text(encoding="utf-8", errors="replace") if path.exists() else "No manager launch log has been written yet.\n"
+                body = text.encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type", "text/plain; charset=utf-8")
                 self.send_header("Content-Length", str(len(body)))
                 self.end_headers()
                 self.wfile.write(body)

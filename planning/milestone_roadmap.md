@@ -10,7 +10,7 @@
 
 - Validate PB CustomData and text-panel mailbox behavior in singleplayer.
 - Confirm plugin can discover the PB and return matching worker results.
-- Validate the runtime limiter at the `0.3` client-side bridge profile before trying
+- Validate the runtime limiter at the `0.25` client-side bridge profile before trying
   a multiplayer server with PB offlining rules.
 - Record exact live setup notes in this planning folder.
 

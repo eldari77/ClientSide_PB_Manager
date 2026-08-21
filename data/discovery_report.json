@@ -1,0 +1,607 @@
+{
+  "schema": "novali.client_side_pb.discovery_report.v1",
+  "generated_at": "2026-08-20T21:12:18.914941+00:00",
+  "root": "C:\\Users\\eLDARi\\Documents\\VScode\\.venv\\ClientSide_PB_Script",
+  "plugin": {
+    "status": "ok",
+    "marked_mailboxes": 1,
+    "updated_at": "2026-08-20T21:12:17.6743810Z"
+  },
+  "docker": {
+    "status": "worker_status_seen",
+    "updated_at": "2026-08-20T21:12:05.553512+00:00"
+  },
+  "space_engineers": {
+    "active_save_status": "found",
+    "active_save_hints": [
+      {
+        "name": "(Workshop) Sigma Draconis Expanse 2 Creative World 2026-07-31 23-16",
+        "config_path": "C:\\Users\\eLDARi\\AppData\\Roaming\\SpaceEngineers\\Saves\\76561198036293935\\(Workshop) Sigma Draconis Expanse 2 Creative World 2026-07-31 23-16\\Sandbox_config.sbc",
+        "updated_at": "2026-08-20T21:07:13.996420+00:00"
+      },
+      {
+        "name": "2026-08-20 160714",
+        "config_path": "C:\\Users\\eLDARi\\AppData\\Roaming\\SpaceEngineers\\Saves\\76561198036293935\\(Workshop) Sigma Draconis Expanse 2 Creative World 2026-07-31 23-16\\Backup\\2026-08-20 160714\\Sandbox_config.sbc",
+        "updated_at": "2026-08-20T21:07:13.996420+00:00"
+      },
+      {
+        "name": "2026-08-20 160248",
+        "config_path": "C:\\Users\\eLDARi\\AppData\\Roaming\\SpaceEngineers\\Saves\\76561198036293935\\(Workshop) Sigma Draconis Expanse 2 Creative World 2026-07-31 23-16\\Backup\\2026-08-20 160248\\Sandbox_config.sbc",
+        "updated_at": "2026-08-20T21:02:48.254243+00:00"
+      },
+      {
+        "name": "2026-08-20 155748",
+        "config_path": "C:\\Users\\eLDARi\\AppData\\Roaming\\SpaceEngineers\\Saves\\76561198036293935\\(Workshop) Sigma Draconis Expanse 2 Creative World 2026-07-31 23-16\\Backup\\2026-08-20 155748\\Sandbox_config.sbc",
+        "updated_at": "2026-08-20T20:57:48.211577+00:00"
+      },
+      {
+        "name": "2026-08-20 155248",
+        "config_path": "C:\\Users\\eLDARi\\AppData\\Roaming\\SpaceEngineers\\Saves\\76561198036293935\\(Workshop) Sigma Draconis Expanse 2 Creative World 2026-07-31 23-16\\Backup\\2026-08-20 155248\\Sandbox_config.sbc",
+        "updated_at": "2026-08-20T20:52:48.228838+00:00"
+      },
+      {
+        "name": "2026-08-20 154748",
+        "config_path": "C:\\Users\\eLDARi\\AppData\\Roaming\\SpaceEngineers\\Saves\\76561198036293935\\(Workshop) Sigma Draconis Expanse 2 Creative World 2026-07-31 23-16\\Backup\\2026-08-20 154748\\Sandbox_config.sbc",
+        "updated_at": "2026-08-20T20:47:48.236410+00:00"
+      },
+      {
+        "name": "Sigma Draconis Expanse 2 Creative World 2026-07-31 23-16",
+        "config_path": "C:\\Users\\eLDARi\\AppData\\Roaming\\SpaceEngineers\\Saves\\76561198036293935\\Sigma Draconis Expanse 2 Creative World 2026-07-31 23-16\\Sandbox_config.sbc",
+        "updated_at": "2026-08-01T04:16:55.085607+00:00"
+      },
+      {
+        "name": "Star System 2026-05-16 09-49",
+        "config_path": "C:\\Users\\eLDARi\\AppData\\Roaming\\SpaceEngineers\\Saves\\76561198036293935\\Star System 2026-05-16 09-49\\Sandbox_config.sbc",
+        "updated_at": "2026-05-27T02:21:45.504881+00:00"
+      }
+    ]
+  },
+  "api_probe": {
+    "status": "needs_mapping_review",
+    "surface_status": "seen",
+    "alignment_status": "seen",
+    "stale": false,
+    "api_hash": "af821a418a81a4c84e63dd92e018188cf10bcab7ff217d21d15185a860a4164a",
+    "alignment_api_hash": "af821a418a81a4c84e63dd92e018188cf10bcab7ff217d21d15185a860a4164a",
+    "harness_capability_version": "dynamic-harness-v12",
+    "generated_at": "2026-08-20T21:12:18.724482+00:00",
+    "aligned_at": "2026-08-20T21:12:18.733356+00:00",
+    "summary": {
+      "supported": 20,
+      "missing_read_stub": 250,
+      "mutation_requires_command_mapping": 151,
+      "blocked_for_safety": 7,
+      "partial_traversal": 1
+    }
+  },
+  "harness_update_plan": {
+    "status": "read_only_stubs_ready",
+    "next_recommended_action": "add_read_only_stubs",
+    "summary": {
+      "read_only_stub_queue": 25,
+      "mapping_review_queue": 25,
+      "blocked_for_safety_queue": 7
+    },
+    "top_read_only_stubs": [
+      "IMyTerminalBlock.SearchActionsOfName",
+      "IMyTextSurface.CurrentlyShownImage",
+      "IMyTextSurface.DisplayName",
+      "IMyTextSurface.GetFonts",
+      "IMyTextSurface.GetScripts"
+    ],
+    "top_mapping_reviews": [
+      "IMyTerminalBlock.CustomName",
+      "IMyTerminalBlock.SetCustomName",
+      "IMyTerminalBlock.ShowInInventory",
+      "IMyTerminalBlock.ShowInTerminal",
+      "IMyTerminalBlock.ShowInToolbarConfig"
+    ],
+    "top_blocked_for_safety": [
+      "IMyInventory.TransferItemTo",
+      "IMyAssembler.Repeating",
+      "IMyShipController.DampenersOverride",
+      "IMyThrust.ThrustOverride",
+      "IMyThrust.ThrustOverridePercentage"
+    ]
+  },
+  "bridges": [
+    {
+      "bridge_id": "codex-terminal-stub-smoke-20260820-2106",
+      "operator_status": "stale_mailbox",
+      "health_status": "concealed_suspected",
+      "last_request_sequence": 0,
+      "last_result_sequence": 0,
+      "marked_mailboxes": 1
+    },
+    {
+      "bridge_id": "codex-terminal-stub-smoke-20260820-2110",
+      "operator_status": "ready",
+      "health_status": "active",
+      "last_request_sequence": 0,
+      "last_result_sequence": 0,
+      "marked_mailboxes": 1
+    },
+    {
+      "bridge_id": "docker-smoke-20260802020500",
+      "operator_status": "stale_mailbox",
+      "health_status": "concealed_suspected",
+      "last_request_sequence": 0,
+      "last_result_sequence": 0,
+      "marked_mailboxes": 1
+    },
+    {
+      "bridge_id": "pb-bridge-001",
+      "operator_status": "ready",
+      "health_status": "active",
+      "last_request_sequence": 0,
+      "last_result_sequence": 0,
+      "marked_mailboxes": 1
+    },
+    {
+      "bridge_id": "smoke-bridge",
+      "operator_status": "stale_mailbox",
+      "health_status": "concealed_suspected",
+      "last_request_sequence": 0,
+      "last_result_sequence": 0,
+      "marked_mailboxes": 1
+    }
+  ],
+  "workshop_scripts": [
+    {
+      "workshop_id": "416932930",
+      "display_name": "Whip's Auto Door and Airlock Script",
+      "script_id": "virtual_whip_auto_door",
+      "compatibility": "virtual_pb_ready",
+      "operator_status": "ready_virtual_pb",
+      "operator_label": "Virtual PB ready",
+      "safe_default_enabled": true,
+      "role": "reactive",
+      "blocked_command_mappings": [],
+      "missing_snapshot_fields": []
+    },
+    {
+      "workshop_id": "496467375",
+      "display_name": "Cruise Control",
+      "script_id": "workshop_496467375_adapter",
+      "compatibility": "manual_adapter_required",
+      "operator_status": "manual_adapter_required",
+      "operator_label": "Manual adapter required",
+      "safe_default_enabled": false,
+      "role": "",
+      "blocked_command_mappings": [],
+      "missing_snapshot_fields": []
+    },
+    {
+      "workshop_id": "543765745",
+      "display_name": "(THYA) Shield HUD Script",
+      "script_id": "workshop_543765745_adapter",
+      "compatibility": "manual_adapter_required",
+      "operator_status": "manual_adapter_required",
+      "operator_label": "Manual adapter required",
+      "safe_default_enabled": false,
+      "role": "",
+      "blocked_command_mappings": [],
+      "missing_snapshot_fields": []
+    },
+    {
+      "workshop_id": "616627882",
+      "display_name": "Whip's Planetary Compass Script",
+      "script_id": "workshop_616627882_adapter",
+      "compatibility": "manual_adapter_required",
+      "operator_status": "manual_adapter_required",
+      "operator_label": "Manual adapter required",
+      "safe_default_enabled": false,
+      "role": "",
+      "blocked_command_mappings": [],
+      "missing_snapshot_fields": []
+    },
+    {
+      "workshop_id": "672678005",
+      "display_name": "Whip's Turret AI Slaving Script",
+      "script_id": "workshop_672678005_adapter",
+      "compatibility": "manual_adapter_required",
+      "operator_status": "manual_adapter_required",
+      "operator_label": "Manual adapter required",
+      "safe_default_enabled": false,
+      "role": "",
+      "blocked_command_mappings": [],
+      "missing_snapshot_fields": []
+    },
+    {
+      "workshop_id": "691441036",
+      "display_name": "Launch Control Script",
+      "script_id": "workshop_691441036_adapter",
+      "compatibility": "manual_adapter_required",
+      "operator_status": "manual_adapter_required",
+      "operator_label": "Manual adapter required",
+      "safe_default_enabled": false,
+      "role": "",
+      "blocked_command_mappings": [],
+      "missing_snapshot_fields": []
+    },
+    {
+      "workshop_id": "699142028",
+      "display_name": "Isy's Solar Alignment Script",
+      "script_id": "workshop_699142028_adapter",
+      "compatibility": "manual_adapter_required",
+      "operator_status": "manual_adapter_required",
+      "operator_label": "Manual adapter required",
+      "safe_default_enabled": false,
+      "role": "",
+      "blocked_command_mappings": [],
+      "missing_snapshot_fields": []
+    },
+    {
+      "workshop_id": "757123653",
+      "display_name": "Whip's Subgrid Thruster Manager",
+      "script_id": "workshop_757123653_adapter",
+      "compatibility": "manual_adapter_required",
+      "operator_status": "manual_adapter_required",
+      "operator_label": "Manual adapter required",
+      "safe_default_enabled": false,
+      "role": "",
+      "blocked_command_mappings": [],
+      "missing_snapshot_fields": []
+    },
+    {
+      "workshop_id": "807454034",
+      "display_name": "Easy Lidar Homing Script",
+      "script_id": "workshop_807454034_adapter",
+      "compatibility": "manual_adapter_required",
+      "operator_status": "manual_adapter_required",
+      "operator_label": "Manual adapter required",
+      "safe_default_enabled": false,
+      "role": "",
+      "blocked_command_mappings": [],
+      "missing_snapshot_fields": []
+    },
+    {
+      "workshop_id": "822950976",
+      "display_name": "Automatic LCDs 2",
+      "script_id": "virtual_workshop_822950976",
+      "compatibility": "virtual_pb_ready",
+      "operator_status": "ready_virtual_pb",
+      "operator_label": "Virtual PB ready",
+      "safe_default_enabled": true,
+      "role": "display",
+      "blocked_command_mappings": [],
+      "missing_snapshot_fields": []
+    },
+    {
+      "workshop_id": "931117257",
+      "display_name": "Whip's Automatic Drop Pod Script",
+      "script_id": "workshop_931117257_adapter",
+      "compatibility": "manual_adapter_required",
+      "operator_status": "manual_adapter_required",
+      "operator_label": "Manual adapter required",
+      "safe_default_enabled": false,
+      "role": "",
+      "blocked_command_mappings": [],
+      "missing_snapshot_fields": []
+    },
+    {
+      "workshop_id": "944915802",
+      "display_name": "MART | Whip's Mouse Aimed Rotor Turret Script",
+      "script_id": "workshop_944915802_adapter",
+      "compatibility": "manual_adapter_required",
+      "operator_status": "manual_adapter_required",
+      "operator_label": "Manual adapter required",
+      "safe_default_enabled": false,
+      "role": "",
+      "blocked_command_mappings": [],
+      "missing_snapshot_fields": []
+    },
+    {
+      "workshop_id": "1109204252",
+      "display_name": "Whip's Speed Matcher Script",
+      "script_id": "workshop_1109204252_adapter",
+      "compatibility": "manual_adapter_required",
+      "operator_status": "manual_adapter_required",
+      "operator_label": "Manual adapter required",
+      "safe_default_enabled": false,
+      "role": "",
+      "blocked_command_mappings": [],
+      "missing_snapshot_fields": []
+    },
+    {
+      "workshop_id": "1212193649",
+      "display_name": "LiDAR Mapping Script",
+      "script_id": "workshop_1212193649_adapter",
+      "compatibility": "manual_adapter_required",
+      "operator_status": "manual_adapter_required",
+      "operator_label": "Manual adapter required",
+      "safe_default_enabled": false,
+      "role": "",
+      "blocked_command_mappings": [],
+      "missing_snapshot_fields": []
+    },
+    {
+      "workshop_id": "1216126863",
+      "display_name": "Isy's Inventory Manager",
+      "script_id": "workshop_1216126863_adapter",
+      "compatibility": "profile_adapter_ready",
+      "operator_status": "ready_profile",
+      "operator_label": "Known profile ready",
+      "safe_default_enabled": true,
+      "role": "maintenance",
+      "blocked_command_mappings": [],
+      "missing_snapshot_fields": []
+    },
+    {
+      "workshop_id": "1221921128",
+      "display_name": "Whip's Weapon Salvo Script",
+      "script_id": "workshop_1221921128_adapter",
+      "compatibility": "manual_adapter_required",
+      "operator_status": "manual_adapter_required",
+      "operator_label": "Manual adapter required",
+      "safe_default_enabled": false,
+      "role": "",
+      "blocked_command_mappings": [],
+      "missing_snapshot_fields": []
+    },
+    {
+      "workshop_id": "1236681958",
+      "display_name": "LiDAR Guided Missile Script",
+      "script_id": "workshop_1236681958_adapter",
+      "compatibility": "manual_adapter_required",
+      "operator_status": "manual_adapter_required",
+      "operator_label": "Manual adapter required",
+      "safe_default_enabled": false,
+      "role": "",
+      "blocked_command_mappings": [],
+      "missing_snapshot_fields": []
+    },
+    {
+      "workshop_id": "1464234667",
+      "display_name": "[Archive] Rdav's Guided Missile Script",
+      "script_id": "workshop_1464234667_adapter",
+      "compatibility": "manual_adapter_required",
+      "operator_status": "manual_adapter_required",
+      "operator_label": "Manual adapter required",
+      "safe_default_enabled": false,
+      "role": "",
+      "blocked_command_mappings": [],
+      "missing_snapshot_fields": []
+    },
+    {
+      "workshop_id": "1481314096",
+      "display_name": "SMS v1.3",
+      "script_id": "workshop_1481314096_adapter",
+      "compatibility": "manual_adapter_required",
+      "operator_status": "manual_adapter_required",
+      "operator_label": "Manual adapter required",
+      "safe_default_enabled": false,
+      "role": "",
+      "blocked_command_mappings": [],
+      "missing_snapshot_fields": []
+    },
+    {
+      "workshop_id": "1507646929",
+      "display_name": "[PAM] Path Auto Miner | Automated Mining, Grinding and Transportation | by Keks",
+      "script_id": "workshop_1507646929_adapter",
+      "compatibility": "manual_adapter_required",
+      "operator_status": "manual_adapter_required",
+      "operator_label": "Manual adapter required",
+      "safe_default_enabled": false,
+      "role": "",
+      "blocked_command_mappings": [],
+      "missing_snapshot_fields": []
+    },
+    {
+      "workshop_id": "1707280190",
+      "display_name": "Whip's Turret Based Radar",
+      "script_id": "workshop_1707280190_adapter",
+      "compatibility": "manual_adapter_required",
+      "operator_status": "manual_adapter_required",
+      "operator_label": "Manual adapter required",
+      "safe_default_enabled": false,
+      "role": "",
+      "blocked_command_mappings": [],
+      "missing_snapshot_fields": []
+    },
+    {
+      "workshop_id": "1721247350",
+      "display_name": "Whip's Artificial Horizon Redux",
+      "script_id": "workshop_1721247350_adapter",
+      "compatibility": "manual_adapter_required",
+      "operator_status": "manual_adapter_required",
+      "operator_label": "Manual adapter required",
+      "safe_default_enabled": false,
+      "role": "",
+      "blocked_command_mappings": [],
+      "missing_snapshot_fields": []
+    },
+    {
+      "workshop_id": "2080547657",
+      "display_name": "PIM 1.1c",
+      "script_id": "workshop_2080547657_adapter",
+      "compatibility": "manual_adapter_required",
+      "operator_status": "manual_adapter_required",
+      "operator_label": "Manual adapter required",
+      "safe_default_enabled": false,
+      "role": "",
+      "blocked_command_mappings": [],
+      "missing_snapshot_fields": []
+    },
+    {
+      "workshop_id": "2108743626",
+      "display_name": "WHAM | Whip's Homing Advanced Missile Script",
+      "script_id": "workshop_2108743626_adapter",
+      "compatibility": "manual_adapter_required",
+      "operator_status": "manual_adapter_required",
+      "operator_label": "Manual adapter required",
+      "safe_default_enabled": false,
+      "role": "",
+      "blocked_command_mappings": [],
+      "missing_snapshot_fields": []
+    },
+    {
+      "workshop_id": "2108744940",
+      "display_name": "LAMP | Launch A Missile Program (for WHAM)",
+      "script_id": "workshop_2108744940_adapter",
+      "compatibility": "manual_adapter_required",
+      "operator_status": "manual_adapter_required",
+      "operator_label": "Manual adapter required",
+      "safe_default_enabled": false,
+      "role": "",
+      "blocked_command_mappings": [],
+      "missing_snapshot_fields": []
+    },
+    {
+      "workshop_id": "2286117398",
+      "display_name": "Planet Map 3D",
+      "script_id": "workshop_2286117398_adapter",
+      "compatibility": "manual_adapter_required",
+      "operator_status": "manual_adapter_required",
+      "operator_label": "Manual adapter required",
+      "safe_default_enabled": false,
+      "role": "",
+      "blocked_command_mappings": [],
+      "missing_snapshot_fields": []
+    },
+    {
+      "workshop_id": "2287673468",
+      "display_name": "Whip's Missile Status Script (for WHAM)",
+      "script_id": "workshop_2287673468_adapter",
+      "compatibility": "manual_adapter_required",
+      "operator_status": "manual_adapter_required",
+      "operator_label": "Manual adapter required",
+      "safe_default_enabled": false,
+      "role": "",
+      "blocked_command_mappings": [],
+      "missing_snapshot_fields": []
+    },
+    {
+      "workshop_id": "2344510837",
+      "display_name": "SIMPL | Ship Integrity Monitoring Program Lite (A sprite-based ship layout/floor plan script)",
+      "script_id": "workshop_2344510837_adapter",
+      "compatibility": "manual_adapter_required",
+      "operator_status": "manual_adapter_required",
+      "operator_label": "Manual adapter required",
+      "safe_default_enabled": false,
+      "role": "",
+      "blocked_command_mappings": [],
+      "missing_snapshot_fields": []
+    },
+    {
+      "workshop_id": "2572154209",
+      "display_name": "[SCAM] Simple Concurrent Adaptive Min3r",
+      "script_id": "workshop_2572154209_adapter",
+      "compatibility": "manual_adapter_required",
+      "operator_status": "manual_adapter_required",
+      "operator_label": "Manual adapter required",
+      "safe_default_enabled": false,
+      "role": "",
+      "blocked_command_mappings": [],
+      "missing_snapshot_fields": []
+    },
+    {
+      "workshop_id": "2686110637",
+      "display_name": "Workshop 2686110637",
+      "script_id": "workshop_2686110637_adapter",
+      "compatibility": "manual_adapter_required",
+      "operator_status": "manual_adapter_required",
+      "operator_label": "Manual adapter required",
+      "safe_default_enabled": false,
+      "role": "",
+      "blocked_command_mappings": [],
+      "missing_snapshot_fields": []
+    },
+    {
+      "workshop_id": "2734307639",
+      "display_name": "SDS-Gravity Drive Script",
+      "script_id": "workshop_2734307639_adapter",
+      "compatibility": "manual_adapter_required",
+      "operator_status": "manual_adapter_required",
+      "operator_label": "Manual adapter required",
+      "safe_default_enabled": false,
+      "role": "",
+      "blocked_command_mappings": [],
+      "missing_snapshot_fields": []
+    },
+    {
+      "workshop_id": "2831096030",
+      "display_name": "Vector Thrust OS",
+      "script_id": "workshop_2831096030_adapter",
+      "compatibility": "virtual_pb_blocked",
+      "operator_status": "blocked_needs_command_mapping",
+      "operator_label": "Blocked command mapping",
+      "safe_default_enabled": false,
+      "role": "flight_control",
+      "blocked_command_mappings": [
+        "DampenersOverride",
+        "RotorLock",
+        "TargetVelocityRad",
+        "ThrustOverride",
+        "ThrustOverridePercentage"
+      ],
+      "missing_snapshot_fields": []
+    },
+    {
+      "workshop_id": "2870413224",
+      "display_name": "AAECS - Advanced Automatic Elevator Control Script",
+      "script_id": "workshop_2870413224_adapter",
+      "compatibility": "manual_adapter_required",
+      "operator_status": "manual_adapter_required",
+      "operator_label": "Manual adapter required",
+      "safe_default_enabled": false,
+      "role": "",
+      "blocked_command_mappings": [],
+      "missing_snapshot_fields": []
+    },
+    {
+      "workshop_id": "2896627172",
+      "display_name": "Stick & Throttle",
+      "script_id": "workshop_2896627172_adapter",
+      "compatibility": "manual_adapter_required",
+      "operator_status": "manual_adapter_required",
+      "operator_label": "Manual adapter required",
+      "safe_default_enabled": false,
+      "role": "",
+      "blocked_command_mappings": [],
+      "missing_snapshot_fields": []
+    },
+    {
+      "workshop_id": "2900108843",
+      "display_name": "AutoPillock - universal flight automaton [SUPERSEDED]",
+      "script_id": "workshop_2900108843_adapter",
+      "compatibility": "manual_adapter_required",
+      "operator_status": "manual_adapter_required",
+      "operator_label": "Manual adapter required",
+      "safe_default_enabled": false,
+      "role": "",
+      "blocked_command_mappings": [],
+      "missing_snapshot_fields": []
+    },
+    {
+      "workshop_id": "2987202091",
+      "display_name": "Auto Gravity Generator Controller",
+      "script_id": "workshop_2987202091_adapter",
+      "compatibility": "manual_adapter_required",
+      "operator_status": "manual_adapter_required",
+      "operator_label": "Manual adapter required",
+      "safe_default_enabled": false,
+      "role": "",
+      "blocked_command_mappings": [],
+      "missing_snapshot_fields": []
+    },
+    {
+      "workshop_id": "3504247283",
+      "display_name": "Rdav's Gen3 Guided Missile Script",
+      "script_id": "workshop_3504247283_adapter",
+      "compatibility": "manual_adapter_required",
+      "operator_status": "manual_adapter_required",
+      "operator_label": "Manual adapter required",
+      "safe_default_enabled": false,
+      "role": "",
+      "blocked_command_mappings": [],
+      "missing_snapshot_fields": []
+    }
+  ],
+  "repair_actions": [
+    "build_multi_script_bridge",
+    "prioritize_read_only_stubs",
+    "review_api_mappings",
+    "run_pb_heartbeat"
+  ]
+}

@@ -1,44 +1,10 @@
 from __future__ import annotations
 
 import json
-import re
 import subprocess
 import tempfile
 from pathlib import Path
 from typing import Any
-
-
-UNSAFE_PATTERNS = {
-    "System.IO": "System.IO",
-    "File.": "File.",
-    "Directory.": "Directory.",
-    "System.Net": "System.Net",
-    "HttpClient": "HttpClient",
-    "Process.": "Process.",
-    "System.Diagnostics": "System.Diagnostics",
-    "Thread": "Thread",
-    "Task.": "Task.",
-    "Reflection": "Reflection",
-    "Activator.": "Activator.",
-    "Marshal.": "Marshal.",
-}
-
-SUPPORTED_INTERFACES = {
-    "IMyAirtightHangarDoor",
-    "IMyDoor",
-    "IMyLightingBlock",
-    "IMyGridTerminalSystem",
-    "IMyProgrammableBlock",
-    "IMySoundBlock",
-    "IMyTerminalBlock",
-    "IMyTextSurface",
-}
-
-IMY_IDENTIFIER = re.compile(r"\bIMy[A-Za-z0-9_]+\b")
-UNSUPPORTED_MEMBER_PATTERNS = {
-    "IMyTerminalBlock.ApplyAction": re.compile(r"\.ApplyAction\s*\("),
-    "IMyTerminalBlock.SetValue": re.compile(r"\.SetValue(?:<[^>]+>)?\s*\("),
-}
 
 
 def analyze_virtual_pb_script(script_path: Path, root: Path | None = None) -> dict[str, Any]:
@@ -82,35 +48,37 @@ def analyze_virtual_pb_script(script_path: Path, root: Path | None = None) -> di
                 payload = json.loads(output_path.read_text(encoding="utf-8-sig"))
                 payload.setdefault("runner_stdout", completed.stdout[-1000:])
                 return payload
+            return {
+                "status": "unsupported",
+                "compiled": False,
+                "unsupported_apis": ["runner_unavailable"],
+                "unsupported_interfaces": [],
+                "unsupported_members": ["runner_unavailable"],
+                "blocked_members": [],
+                "blocked_command_mappings": [],
+                "missing_types": [],
+                "missing_members": [],
+                "compile_errors": [],
+                "error_bucket": "virtual_pb_runner_unavailable",
+                "runner_unavailable": True,
+                "runner_stdout": completed.stdout[-1000:],
+                "runner_stderr": completed.stderr[-1000:],
+            }
 
-    try:
-        source = script_path.read_text(encoding="utf-8", errors="replace")
-    except OSError as exc:
-        return {"status": "missing", "unsupported_apis": [], "unsupported_interfaces": [], "unsupported_members": [], "error": type(exc).__name__}
-    unsafe_matches = sorted(label for pattern, label in UNSAFE_PATTERNS.items() if pattern in source)
-    referenced_interfaces = set(IMY_IDENTIFIER.findall(source))
-    unsupported_interfaces = sorted(referenced_interfaces - SUPPORTED_INTERFACES)
-    unsupported_members = sorted(f"unsupported_member:{name}" for name, pattern in UNSUPPORTED_MEMBER_PATTERNS.items() if pattern.search(source))
-    unsupported = (
-        unsafe_matches
-        + [f"unsupported_interface:{name}" for name in unsupported_interfaces]
-        + unsupported_members
-    )
-    supported_block_types = sorted(
-        block_type
-        for block_type in SUPPORTED_INTERFACES
-        if block_type in source
-    )
     return {
-        "status": "unsupported" if unsupported else "supported",
+        "status": "unsupported",
         "compiled": False,
-        "unsupported_apis": unsupported,
-        "unsupported_interfaces": unsupported_interfaces,
-        "unsupported_members": unsupported_members,
-        "supported_block_types": supported_block_types,
-        "uses_grid_terminal_system": "GridTerminalSystem" in source,
-        "uses_runtime": "Runtime." in source,
-        "uses_custom_data": "CustomData" in source,
+        "unsupported_apis": ["runner_unavailable"],
+        "unsupported_interfaces": [],
+        "unsupported_members": ["runner_unavailable"],
+        "blocked_members": [],
+        "blocked_command_mappings": [],
+        "missing_types": [],
+        "missing_members": [],
+        "compile_errors": [],
+        "supported_block_types": [],
+        "runner_unavailable": True,
+        "error_bucket": "virtual_pb_runner_unavailable",
     }
 
 
@@ -140,27 +108,9 @@ def run_virtual_pb(script_path: Path, request: dict[str, Any], root: Path | None
         request_path = Path(temp_dir) / "request.json"
         output_path = Path(temp_dir) / "output.json"
         request_path.write_text(json.dumps(request), encoding="utf-8")
-        completed = subprocess.run(
-            [
-                "dotnet",
-                "run",
-                "--project",
-                str(project),
-                "--",
-                "--script",
-                str(script_path),
-                "--request",
-                str(request_path),
-                "--output",
-                str(output_path),
-            ],
-            cwd=str(active_root),
-            text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            timeout=15,
-            check=False,
-        )
+        completed = run_virtual_pb_runner_process(project, script_path, request_path, output_path, active_root)
+        if completed.returncode != 0 or not output_path.exists():
+            completed = run_virtual_pb_runner_process(project, script_path, request_path, output_path, active_root)
         if completed.returncode != 0 or not output_path.exists():
             return {
                 "adapter_status": "failed",
@@ -184,3 +134,33 @@ def run_virtual_pb(script_path: Path, request: dict[str, Any], root: Path | None
     payload.setdefault("summary", "Virtual PB tick processed.")
     payload.setdefault("commands", [])
     return payload
+
+
+def run_virtual_pb_runner_process(
+    project: Path,
+    script_path: Path,
+    request_path: Path,
+    output_path: Path,
+    active_root: Path,
+) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [
+            "dotnet",
+            "run",
+            "--project",
+            str(project),
+            "--",
+            "--script",
+            str(script_path),
+            "--request",
+            str(request_path),
+            "--output",
+            str(output_path),
+        ],
+        cwd=str(active_root),
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        timeout=60,
+        check=False,
+    )

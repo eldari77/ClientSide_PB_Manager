@@ -68,5 +68,5 @@ new plugin build, validate these before moving to deeper behavior parity:
 8. If assembler output inventory contains completed components and component
    cargo exists, the worker queues `transfer_item
    reason=assembler_output_cleanup`.
-9. Under `max_apply_commands_per_tick=1`, `state.last_apply` rotates through LCD
+9. Under latency-limited multi-command apply, `state.last_apply` rotates through LCD
    writes and machine setup over successive sequences.

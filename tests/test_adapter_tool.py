@@ -246,3 +246,185 @@ public void Main(string argument)
     assert [item["script_id"] for item in manifest["scripts"]] == ["virtual_workshop_822950976"]
     updated_catalog = json.loads(catalog.read_text(encoding="utf-8"))
     assert updated_catalog["records"][0]["compatibility"] == "virtual_pb_ready"
+    compatibility_summary = json.loads((root / "data" / "virtual_pb_compatibility.json").read_text(encoding="utf-8"))
+    assert compatibility_summary["scripts"]["virtual_workshop_822950976"]["last_run_status"] == "virtual_pb_ready"
+
+
+def test_prepare_adapter_reports_virtual_pb_blocked_without_replacing_scaffold(tmp_path: Path, monkeypatch):
+    monkeypatch.setattr(
+        "workshop.adapter_tool.analyze_virtual_pb_script",
+        lambda script_path, root=None: {
+            "status": "blocked_command_mapping",
+            "compiled": True,
+            "unsupported_apis": [],
+            "unsupported_interfaces": [],
+            "unsupported_members": [],
+            "blocked_members": ["unsupported_member:IMyTerminalBlock.SetValue:Dangerous.Property"],
+            "blocked_command_mappings": ["Dangerous.Property"],
+            "supported_block_types": ["IMyProgrammableBlock"],
+            "uses_grid_terminal_system": True,
+        },
+    )
+    root = tmp_path
+    source_dir = root / "steam" / "2831096030"
+    source_dir.mkdir(parents=True)
+    source = source_dir / "Script.cs"
+    source.write_text(
+        """
+public Program() {}
+public void Main(string argument)
+{
+    Me.SetValue<float>("Dangerous.Property", 1f);
+}
+""",
+        encoding="utf-8",
+    )
+    catalog = root / "data" / "workshop_catalog.json"
+    catalog.parent.mkdir()
+    catalog.write_text(
+        json.dumps(
+            {
+                "schema": "novali.client_side_pb.workshop_catalog.v1",
+                "records": [
+                    {
+                        "workshop_id": "2831096030",
+                        "workshop_title": "Vector Thrust OS",
+                        "source_path": str(source),
+                        "detected_kind": "pb_script",
+                        "compatibility": "manual_adapter_required",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    worker = root / "worker"
+    (worker / "scripts").mkdir(parents=True)
+    (worker / "scripts" / "__init__.py").write_text("", encoding="utf-8")
+    (worker / "manifest.json").write_text(
+        json.dumps(
+            {
+                "schema": "x",
+                "scripts": [
+                    {
+                        "script_id": "workshop_2831096030_adapter",
+                        "source": "workshop_import",
+                        "display_name": "Vector Thrust OS",
+                        "module": "worker.scripts.workshop_2831096030_adapter",
+                        "enabled": True,
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    report = prepare_adapter(root, catalog, "2831096030")
+
+    assert report["status"] == "virtual_pb_blocked"
+    assert report["script_id"] == "workshop_2831096030_adapter"
+    assert report["compatibility"]["blocked_command_mappings"] == ["Dangerous.Property"]
+    assert (root / "worker" / "scripts" / "workshop_2831096030_adapter.py").exists()
+    manifest = json.loads((worker / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["scripts"][0]["enabled"] is True
+    updated_catalog = json.loads(catalog.read_text(encoding="utf-8"))
+    assert updated_catalog["records"][0]["compatibility"] == "virtual_pb_blocked"
+    compatibility_summary = json.loads((root / "data" / "virtual_pb_compatibility.json").read_text(encoding="utf-8"))
+    blocked_summary = compatibility_summary["scripts"]["workshop_2831096030_adapter"]
+    assert blocked_summary["last_run_status"] == "virtual_pb_blocked"
+    assert blocked_summary["blocked_command_mappings"] == ["Dangerous.Property"]
+
+
+def test_prepare_adapter_generates_enabled_isy_profile_adapter_and_config(tmp_path: Path, monkeypatch):
+    monkeypatch.setattr(
+        "workshop.adapter_tool.analyze_virtual_pb_script",
+        lambda script_path, root=None: {
+            "status": "unsupported",
+            "compiled": False,
+            "unsupported_apis": ["runner_unavailable"],
+            "unsupported_members": ["runner_unavailable"],
+        },
+    )
+    root = tmp_path
+    source_dir = root / "steam" / "1216126863"
+    source_dir.mkdir(parents=True)
+    source = source_dir / "Script.cs"
+    source.write_text(
+        """
+// Isy's Inventory Manager
+public Program() {}
+public void Main(string argument)
+{
+    Echo("Isy's Inventory Manager");
+    GridTerminalSystem.GetBlocks(new List<IMyTerminalBlock>());
+}
+""",
+        encoding="utf-8",
+    )
+    catalog = root / "data" / "workshop_catalog.json"
+    catalog.parent.mkdir()
+    catalog.write_text(
+        json.dumps(
+            {
+                "schema": "novali.client_side_pb.workshop_catalog.v1",
+                "records": [
+                    {
+                        "workshop_id": "1216126863",
+                        "workshop_title": "Isy's Inventory Manager",
+                        "source_path": str(source),
+                        "detected_kind": "pb_script",
+                        "compatibility": "manual_adapter_required",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    worker = root / "worker"
+    (worker / "scripts").mkdir(parents=True)
+    (worker / "scripts" / "__init__.py").write_text("", encoding="utf-8")
+    stale = worker / "scripts" / "workshop_1216126863_adapter.py"
+    stale.write_text('"Adapter scaffold created; manual mapping still required."', encoding="utf-8")
+    (worker / "manifest.json").write_text(
+        json.dumps(
+            {
+                "schema": "x",
+                "scripts": [
+                    {
+                        "script_id": "workshop_1216126863_adapter",
+                        "source": "workshop_import",
+                        "display_name": "Isy's Inventory Manager",
+                        "module": "worker.scripts.workshop_1216126863_adapter",
+                        "enabled": False,
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    report = prepare_adapter(root, catalog, "1216126863")
+
+    assert report["status"] == "profile_adapter_ready"
+    assert report["runtime"] == "python"
+    assert report["profile_id"] == "isy_inventory_manager"
+    assert report["profile_confidence"] == "high"
+    assert report["enabled"] is True
+    adapter_source = stale.read_text(encoding="utf-8")
+    assert "from worker.isy_foundation import plan_isy_foundation" in adapter_source
+    assert "return plan_isy_foundation(request)" in adapter_source
+    assert "manual mapping still required" not in adapter_source
+    manifest = json.loads((worker / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["scripts"][0]["enabled"] is True
+    assert manifest["scripts"][0]["profile_id"] == "isy_inventory_manager"
+    config = json.loads((root / "data" / "worker_configs" / "workshop_1216126863_adapter.json").read_text(encoding="utf-8"))
+    entries = {entry["key"]: entry["value"] for entry in config["entries"]}
+    assert entries["inventorySortingEnabled"] is True
+    assert entries["inventorySortingDryRun"] is False
+    assert entries["maxApplyCommands"] == 8
+    assert entries["maxPlannedTransfers"] == 16
+    assert entries["maxPlannedMachineCommands"] == 12
+    assert entries["allowConnectedGrids"] is False
+    assert entries["virtualPbCustomData"] == ""
+    updated_catalog = json.loads(catalog.read_text(encoding="utf-8"))
+    assert updated_catalog["records"][0]["compatibility"] == "profile_adapter_ready"
