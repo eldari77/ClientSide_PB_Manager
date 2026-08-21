@@ -328,3 +328,9 @@ button can launch the Windows WPF manager. To register the protocol directly:
   `error_bucket=snapshot_missing`.
 - PB-side command application is allowlisted and rate-limited. The default is
   one immediate command per PB run.
+
+## License
+
+This repository is source-available under the [NOVALI Client-Side PB Bridge Proprietary Beta License](LICENSE.md). It is not open source.
+
+You may view, download, install, and run it for evaluation, development testing, and approved private beta testing. Redistribution, commercial use, derivative publication, and public or live server use outside an approved beta require prior written permission.

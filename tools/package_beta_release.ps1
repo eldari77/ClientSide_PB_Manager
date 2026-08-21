@@ -79,6 +79,7 @@ if (Test-Path -LiteralPath $stageRoot) {
 Ensure-Directory $stageRoot
 
 Copy-RequiredFile (Join-Path $ProjectRoot "docs\beta_handoff\README-START-HERE.md") (Join-Path $stageRoot "README-START-HERE.md")
+Copy-RequiredFile (Join-Path $ProjectRoot "LICENSE.md") (Join-Path $stageRoot "LICENSE.md")
 Copy-RequiredFile (Join-Path $ProjectRoot "docs\beta_handoff\setup-guide.md") (Join-Path $stageRoot "docs\setup-guide.md")
 Copy-RequiredFile (Join-Path $ProjectRoot "docs\beta_handoff\safety-and-server-notes.md") (Join-Path $stageRoot "docs\safety-and-server-notes.md")
 Copy-RequiredFile (Join-Path $ProjectRoot "docs\beta_handoff\profiling-checklist.md") (Join-Path $stageRoot "docs\profiling-checklist.md")
@@ -125,6 +126,7 @@ $manifest = [ordered]@{
     created_at = (Get-Date).ToUniversalTime().ToString("o")
     layout = @(
         "README-START-HERE.md",
+        "LICENSE.md",
         "docs\setup-guide.md",
         "docs\safety-and-server-notes.md",
         "docs\profiling-checklist.md",

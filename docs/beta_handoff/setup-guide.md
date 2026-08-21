@@ -13,8 +13,9 @@ Audience: private beta testers who are comfortable launching Space Engineers but
 ## Install Or Update
 
 1. Unzip the package to a normal user folder such as `Documents\NOVALI-ClientSidePB-Bridge-beta`.
-2. Right-click PowerShell and choose normal user mode. Administrator is not required.
-3. Run:
+2. Review `LICENSE.md`. This beta is not open source and is intended for evaluation and approved private beta testing.
+3. Right-click PowerShell and choose normal user mode. Administrator is not required.
+4. Run:
 
 ```powershell
 cd "$HOME\Documents\NOVALI-ClientSidePB-Bridge-beta"

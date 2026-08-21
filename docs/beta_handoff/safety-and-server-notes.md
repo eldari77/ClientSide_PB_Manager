@@ -35,3 +35,6 @@ If any of those drift, stop the worker with `scripts\stop-worker.ps1` or Docker 
 
 The first beta path is the guided bridge flow with recognized safe profiles such as Isy's Inventory Manager. Other scripts may appear in discovery but should not be enabled on a live server until their adapter or virtual PB compatibility status is clear.
 
+## License And IP
+
+This package is governed by `LICENSE.md`. It is not open source. The beta can be viewed, installed, and run for evaluation and approved private beta testing, but redistribution, commercial use, derivative publication, and public or live server use outside an approved beta require prior written permission from the repository owner.

@@ -11,6 +11,7 @@ def read_text(path: str) -> str:
 def test_beta_package_script_defines_private_handoff_layout():
     script = read_text("tools/package_beta_release.ps1")
 
+    assert "LICENSE.md" in script
     assert "README-START-HERE.md" in script
     assert "setup-guide.md" in script
     assert "safety-and-server-notes.md" in script
@@ -64,3 +65,27 @@ def test_beta_safety_notes_preserve_bridge_boundaries():
     assert "allowlisted command" in notes
     assert "pause" in notes
     assert "live server" in notes
+
+
+def test_public_beta_license_is_source_available_not_open_source():
+    license_text = read_text("LICENSE.md")
+    license_lower = license_text.lower()
+
+    assert "NOVALI Client-Side PB Bridge Proprietary Beta License" in license_text
+    assert "All rights reserved" in license_text
+    assert "not open source" in license_lower
+    assert "view and download" in license_lower
+    assert "Install and run" in license_text
+    assert "Redistribute" in license_text
+    assert "commercially exploit" in license_text
+    assert "written permission" in license_text
+
+
+def test_beta_docs_reference_public_repo_license():
+    readme = read_text("README.md")
+    start_here = read_text("docs/beta_handoff/README-START-HERE.md")
+    safety = read_text("docs/beta_handoff/safety-and-server-notes.md")
+
+    for text in (readme, start_here, safety):
+        assert "LICENSE.md" in text
+        assert "not open source" in text

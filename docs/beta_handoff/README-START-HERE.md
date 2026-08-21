@@ -13,3 +13,4 @@ Start here:
 
 This package is local-only. It does not edit Steam Workshop items, does not run arbitrary PB C# from Docker, and the in-game shim only applies reviewed command kinds.
 
+License: this package is covered by `LICENSE.md`. It is not open source. Testers may use it for evaluation and approved private beta testing, but redistribution, commercial use, derivative publication, and public or live server use outside an approved beta require prior written permission.
