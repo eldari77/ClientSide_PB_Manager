@@ -36,6 +36,8 @@ INTEGRITY_BLOCK_KEYS = (
 LOGISTICS_SNAPSHOT_KEYS = ("inventory_snapshot", "ship_inventory", "logistics_snapshot")
 LOGISTICS_READY_KEYS = ("cargo", "cargo_containers", "ammo", "fuel", "resources", "production")
 FUEL_SUBTYPE_KEYS = {"ice", "uranium"}
+AIRLOCK_SNAPSHOT_KEYS = ("airlock_snapshot", "door_snapshot", "ship_doors")
+AIRLOCK_READY_KEYS = ("doors", "airlocks", "vents", "compartments")
 DEFAULT_LCD_QUEUE_COOLDOWN_SEQUENCES = 1
 DEFAULT_BRIDGE_STALE_SECONDS = 120
 DEFAULT_PROCESSED_REQUEST_RETENTION_SECONDS = 300
@@ -542,6 +544,205 @@ def float_or_none(value: Any) -> float | None:
         return float(value)
     except (TypeError, ValueError):
         return None
+
+
+def attach_airlock_snapshot_from_grid_snapshot(request: dict[str, Any]) -> None:
+    for key in ("airlock_snapshot", "door_snapshot", "ship_doors"):
+        snapshot = request.get(key)
+        if isinstance(snapshot, dict) and airlock_snapshot_is_ready(snapshot):
+            request["airlock_snapshot"] = snapshot
+            return
+
+    grid_snapshot = request.get("grid_snapshot") if isinstance(request.get("grid_snapshot"), dict) else {}
+    snapshot = airlock_snapshot_from_grid_snapshot(grid_snapshot)
+    if snapshot:
+        request["airlock_snapshot"] = snapshot
+        return
+    for key in AIRLOCK_SNAPSHOT_KEYS:
+        request.pop(key, None)
+
+
+def airlock_snapshot_is_ready(snapshot: dict[str, Any]) -> bool:
+    return any(snapshot.get(key) not in (None, "", [], {}) for key in AIRLOCK_READY_KEYS)
+
+
+def airlock_snapshot_from_grid_snapshot(grid_snapshot: dict[str, Any]) -> dict[str, Any]:
+    blocks = grid_snapshot.get("blocks") if isinstance(grid_snapshot.get("blocks"), list) else []
+    doors = [door for door in (normalized_airlock_door(block) for block in blocks) if door]
+    vents = [vent for vent in (normalized_airlock_vent(block) for block in blocks) if vent]
+    airlocks_payload = grid_snapshot.get("airlocks", grid_snapshot.get("airlock_groups"))
+    airlocks = [
+        airlock for airlock in (normalized_airlock_group(item) for item in airlocks_payload)
+        if airlock
+    ] if isinstance(airlocks_payload, list) else []
+    compartments_payload = grid_snapshot.get("compartments") if isinstance(grid_snapshot.get("compartments"), list) else []
+    compartments = [
+        compartment for compartment in (normalized_airlock_compartment(item) for item in compartments_payload)
+        if compartment
+    ]
+    snapshot: dict[str, Any] = {}
+    if doors:
+        snapshot["doors"] = doors
+    if airlocks:
+        snapshot["airlocks"] = airlocks
+    if vents:
+        snapshot["vents"] = vents
+    if compartments:
+        snapshot["compartments"] = compartments
+    return snapshot
+
+
+def normalized_airlock_door(block: Any) -> dict[str, Any]:
+    if not isinstance(block, dict) or not looks_like_airlock_door(block):
+        return {}
+    normalized: dict[str, Any] = {}
+    entity_id = block.get("entity_id")
+    if entity_id is not None:
+        normalized["entity_id"] = json_scalar(entity_id)
+    name = first_text(block, "name", "custom_name", "display_name")
+    if name:
+        normalized["name"] = name
+    opened = bool_or_none(block.get("is_open", block.get("door_open", block.get("open", block.get("opened")))))
+    if opened is None:
+        ratio = float_or_none(block.get("door_open_ratio", block.get("open_ratio")))
+        if ratio is not None:
+            opened = ratio > 0.0
+    if opened is None:
+        opened = bool_or_none(block.get("door_status", block.get("status", block.get("state"))))
+    if opened is not None:
+        normalized["is_open"] = opened
+    is_exterior = bool_or_none(block.get("is_exterior", block.get("exterior")))
+    if is_exterior is not None:
+        normalized["is_exterior"] = is_exterior
+    add_bool_if_present(normalized, block, "functional", "functional")
+    add_bool_if_present(normalized, block, "enabled", "enabled")
+    ratio = integrity_ratio_from_payload(block)
+    if ratio is not None:
+        normalized["integrity_ratio"] = ratio
+    airlock_id = first_text(block, "airlock_id", "airlock")
+    if airlock_id:
+        normalized["airlock_id"] = airlock_id
+    return normalized
+
+
+def normalized_airlock_vent(block: Any) -> dict[str, Any]:
+    if not isinstance(block, dict) or not looks_like_airlock_vent(block):
+        return {}
+    normalized: dict[str, Any] = {}
+    vent_entity_id = block.get("vent_entity_id", block.get("entity_id"))
+    if vent_entity_id is not None:
+        normalized["vent_entity_id"] = json_scalar(vent_entity_id)
+    name = first_text(block, "name", "custom_name", "display_name")
+    if name:
+        normalized["name"] = name
+    compartment_id = first_text(block, "compartment_id", "compartment")
+    if compartment_id:
+        normalized["compartment_id"] = compartment_id
+    compartment_name = first_text(block, "compartment_name", "compartment", "room")
+    if compartment_name:
+        normalized["compartment_name"] = compartment_name
+    add_float_if_present(normalized, block, "oxygen_level", "oxygen_level", "oxygen_ratio", "oxygen")
+    add_float_if_present(normalized, block, "pressure_ratio", "pressure_ratio", "pressure")
+    add_bool_if_present(normalized, block, "pressurized", "pressurized")
+    add_bool_if_present(normalized, block, "depressurized", "depressurized")
+    add_bool_if_present(normalized, block, "functional", "functional")
+    add_bool_if_present(normalized, block, "enabled", "enabled")
+    ratio = integrity_ratio_from_payload(block)
+    if ratio is not None:
+        normalized["integrity_ratio"] = ratio
+    return normalized
+
+
+def normalized_airlock_group(item: Any) -> dict[str, Any]:
+    if not isinstance(item, dict):
+        return {}
+    normalized: dict[str, Any] = {}
+    for key in ("airlock_id", "name", "inner_door_id", "outer_door_id"):
+        value = item.get(key)
+        if value is not None and value != "":
+            normalized[key] = json_scalar(value)
+    for key in ("inner_door_open", "outer_door_open", "safe", "pressurized"):
+        value = bool_or_none(item.get(key))
+        if value is not None:
+            normalized[key] = value
+    return normalized
+
+
+def normalized_airlock_compartment(item: Any) -> dict[str, Any]:
+    if not isinstance(item, dict):
+        return {}
+    normalized: dict[str, Any] = {}
+    for key in ("compartment_id", "compartment_name", "name"):
+        value = item.get(key)
+        if value is not None and value != "":
+            normalized[key] = json_scalar(value)
+    add_float_if_present(normalized, item, "oxygen_level", "oxygen_level", "oxygen_ratio", "oxygen")
+    add_float_if_present(normalized, item, "pressure_ratio", "pressure_ratio", "pressure")
+    add_bool_if_present(normalized, item, "pressurized", "pressurized")
+    add_bool_if_present(normalized, item, "depressurized", "depressurized")
+    return normalized
+
+
+def looks_like_airlock_door(block: dict[str, Any]) -> bool:
+    type_key = " ".join(first_text(block, key) for key in ("type", "subtype", "name", "custom_name")).lower()
+    return (
+        bool(block.get("is_door") or block.get("is_hangar_door"))
+        or "door" in type_key
+        or any(key in block for key in ("door_status", "door_open_ratio", "door_open", "is_open", "open", "opened"))
+    )
+
+
+def looks_like_airlock_vent(block: dict[str, Any]) -> bool:
+    type_key = " ".join(first_text(block, key) for key in ("type", "subtype", "name", "custom_name")).lower()
+    return (
+        bool(block.get("is_air_vent") or block.get("is_vent"))
+        or "airvent" in type_key
+        or "air vent" in type_key
+        or any(key in block for key in ("oxygen_level", "oxygen_ratio", "pressure_ratio", "pressurized", "depressurized"))
+    )
+
+
+def add_bool_if_present(target: dict[str, Any], source: dict[str, Any], target_key: str, *source_keys: str) -> None:
+    for key in source_keys:
+        if key in source:
+            value = bool_or_none(source.get(key))
+            if value is not None:
+                target[target_key] = value
+                return
+
+
+def add_float_if_present(target: dict[str, Any], source: dict[str, Any], target_key: str, *source_keys: str) -> None:
+    for key in source_keys:
+        if key in source:
+            value = float_or_none(source.get(key))
+            if value is not None:
+                target[target_key] = value
+                return
+
+
+def integrity_ratio_from_payload(payload: dict[str, Any]) -> float | None:
+    ratio = float_or_none(payload.get("integrity_ratio"))
+    if ratio is not None:
+        return ratio
+    integrity = float_or_none(payload.get("integrity", payload.get("current_integrity")))
+    max_integrity = float_or_none(payload.get("max_integrity", payload.get("maximum_integrity")))
+    if integrity is None or max_integrity is None or max_integrity <= 0:
+        return None
+    ratio = integrity / max_integrity
+    return max(0.0, min(1.0, ratio))
+
+
+def bool_or_none(value: Any) -> bool | None:
+    if isinstance(value, bool):
+        return value
+    if value is None or value == "":
+        return None
+    text = str(value).strip().lower()
+    if text in {"true", "1", "yes", "on", "open", "opened"}:
+        return True
+    if text in {"false", "0", "no", "off", "closed", "close", "shut"}:
+        return False
+    return None
 
 
 def first_text(payload: dict[str, Any], *keys: str) -> str:
@@ -1313,10 +1514,17 @@ def execute_orchestrator_request(
         child_request["parent_script_id"] = "bridge_orchestrator"
         child_request["runtime_telemetry"] = child_runtime_telemetry
         child_service_id = str(child_config.get("service_id", "") or "").strip().lower()
-        if child_service_id == "integrity" or "sos_integrity" in child_id.lower() or "sos_damage" in child_id.lower():
+        if (
+            child_service_id in {"integrity", "mobility"}
+            or "sos_integrity" in child_id.lower()
+            or "sos_damage" in child_id.lower()
+            or "sos_mobility" in child_id.lower()
+        ):
             attach_integrity_snapshot_from_grid_snapshot(child_request)
         if child_service_id == "logistics" or "sos_logistics" in child_id.lower():
             attach_logistics_snapshot_from_host_snapshots(child_request)
+        if child_service_id == "airlock" or "sos_airlock" in child_id.lower():
+            attach_airlock_snapshot_from_grid_snapshot(child_request)
         child_result = execute_request(child_request, scripts, bridge_configs, root=root, apply_queue=False)
         result_payload = child_result.get("result") if isinstance(child_result.get("result"), dict) else {}
         child_result_summary = {

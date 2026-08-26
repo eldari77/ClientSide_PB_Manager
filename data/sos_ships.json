@@ -30,6 +30,16 @@
           "enabled": true
         },
         {
+          "service_id": "airlock",
+          "script_id": "pb-bridge-001-sos_airlock",
+          "enabled": true
+        },
+        {
+          "service_id": "mobility",
+          "script_id": "pb-bridge-001-sos_mobility",
+          "enabled": true
+        },
+        {
           "service_id": "inventory",
           "script_id": "pb-bridge-001-workshop_1216126863_adapter",
           "enabled": true

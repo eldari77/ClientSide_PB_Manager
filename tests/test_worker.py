@@ -775,7 +775,9 @@ def test_execute_sos_orchestrator_runs_dashboard_child_with_existing_services(tm
         "bridge-a-doors",
     ]
     dashboard_child = result["result"]["child_results"][1]
-    assert dashboard_child["summary"] == "SOS Dashboard Ship A mode=Docked integrity=unknown logistics=unknown queue=0 blockers=none"
+    assert dashboard_child["summary"] == (
+        "SOS Dashboard Ship A mode=Docked integrity=unknown logistics=unknown airlock=unknown queue=0 blockers=none"
+    )
     assert dashboard_child["error_bucket"] == "none"
     assert result["result"]["commands"][1]["kind"] == "echo"
 
@@ -856,6 +858,27 @@ def test_execute_sos_orchestrator_passes_child_payload_history_to_dashboard_requ
                                 }
                             },
                         },
+                        {
+                            "script_id": "bridge-a-sos_airlock",
+                            "status": "ok",
+                            "error_bucket": "none",
+                            "summary": "airlock warning",
+                            "result": {
+                                "sos_airlock": {
+                                    "state": "warning",
+                                    "snapshot_status": "ok",
+                                    "doors": {
+                                        "open_count": 1,
+                                        "exterior_open_count": 1,
+                                        "damaged_or_offline_count": 0,
+                                    },
+                                    "airlocks": {"unsafe_count": 1},
+                                    "compartments": {"low_oxygen_count": 0, "depressurized_count": 1},
+                                    "vents": {"damaged_or_offline_count": 0},
+                                    "warnings": ["airlock_unsafe:Port Lock"],
+                                }
+                            },
+                        },
                     ],
                 },
             }
@@ -876,6 +899,7 @@ def test_execute_sos_orchestrator_passes_child_payload_history_to_dashboard_requ
                             {"script_id": "bridge-a-sos_dashboard", "service_id": "dashboard"},
                             {"script_id": "bridge-a-sos_integrity", "service_id": "integrity"},
                             {"script_id": "bridge-a-sos_logistics", "service_id": "logistics"},
+                            {"script_id": "bridge-a-sos_airlock", "service_id": "airlock"},
                         ],
                     }
                 ],
@@ -891,6 +915,7 @@ def test_execute_sos_orchestrator_passes_child_payload_history_to_dashboard_requ
         "bridge-a-sos_dashboard": WorkerScript("bridge-a-sos_dashboard", "manual", "Dashboard", module.__name__, "", "", 1000, True),
         "bridge-a-sos_integrity": WorkerScript("bridge-a-sos_integrity", "manual", "Integrity", module.__name__, "", "", 1000, True),
         "bridge-a-sos_logistics": WorkerScript("bridge-a-sos_logistics", "manual", "Logistics", module.__name__, "", "", 1000, True),
+        "bridge-a-sos_airlock": WorkerScript("bridge-a-sos_airlock", "manual", "Airlock", module.__name__, "", "", 1000, True),
     }
 
     result = execute_request(
@@ -921,6 +946,8 @@ def test_execute_sos_orchestrator_passes_child_payload_history_to_dashboard_requ
     assert telemetry["child_services_by_service_id"]["status"]["result"]["sos_status"]["mode"] == "Combat"
     assert telemetry["child_services_by_service_id"]["integrity"]["result"]["sos_integrity"]["state"] == "degraded"
     assert telemetry["child_services_by_service_id"]["logistics"]["result"]["sos_logistics"]["state"] == "warning"
+    assert telemetry["child_services_by_service_id"]["airlock"]["result"]["sos_airlock"]["state"] == "warning"
+    assert telemetry["child_services_by_service_id"]["airlock"]["result"]["sos_airlock"]["airlocks"]["unsafe_count"] == 1
 
 
 def test_execute_sos_dashboard_child_degrades_gracefully_without_child_history(tmp_path: Path):
@@ -976,14 +1003,474 @@ def test_execute_sos_dashboard_child_degrades_gracefully_without_child_history(t
 
     assert result["status"] == "ok"
     assert result["result"]["child_results"][0]["summary"] == (
-        "SOS Dashboard Ship A mode=Docked integrity=unknown logistics=unknown queue=0 blockers=none"
+        "SOS Dashboard Ship A mode=Docked integrity=unknown logistics=unknown airlock=unknown queue=0 blockers=none"
     )
     dashboard = result["result"]["child_results"][0]["result"]["sos_dashboard"]
     assert dashboard["integrity"]["snapshot_status"] == "missing_child_result"
     assert dashboard["logistics"]["snapshot_status"] == "missing_child_result"
     assert result["result"]["commands"][0]["text"] == (
-        "SOS Dashboard Ship A mode=Docked integrity=unknown logistics=unknown queue=0 blockers=none"
+        "SOS Dashboard Ship A mode=Docked integrity=unknown logistics=unknown airlock=unknown queue=0 blockers=none"
     )
+
+
+def test_execute_sos_orchestrator_passes_airlock_snapshot_only_to_airlock_child(tmp_path: Path):
+    captured: dict[str, dict] = {}
+
+    def install_adapter(module_name: str) -> None:
+        module = types.ModuleType(module_name)
+
+        def run(request):
+            captured[request["script_id"]] = request
+            return {"summary": f"{request['script_id']} captured", "commands": [{"kind": "echo", "text": request["script_id"]}]}
+
+        module.run = run
+        sys.modules[module_name] = module
+
+    install_adapter("tests.sos_airlock_capture_children")
+    data = tmp_path / "data"
+    data.mkdir()
+    (data / "sos_ships.json").write_text(
+        json.dumps(
+            {
+                "schema": "novali.client_side_pb.sos_ships.v1",
+                "ships": [
+                    {
+                        "ship_id": "ship-a",
+                        "bridge_id": "bridge-a",
+                        "display_name": "Ship A",
+                        "expected_grid_entity_id": 10,
+                        "services": [
+                            {"script_id": "bridge-a-sos_airlock", "service_id": "airlock"},
+                            {"script_id": "bridge-a-doors", "service_id": "doors"},
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    scripts = {
+        "bridge-a-orchestrator": WorkerScript(
+            "bridge-a-orchestrator", "script_instance", "Bridge A SOS", "", "", "", 1000, True, base_script_id="bridge_orchestrator"
+        ),
+        "bridge-a-sos_airlock": WorkerScript("bridge-a-sos_airlock", "manual", "Airlock", "tests.sos_airlock_capture_children", "", "", 1000, True),
+        "bridge-a-doors": WorkerScript("bridge-a-doors", "manual", "Doors", "tests.sos_airlock_capture_children", "", "", 1000, True),
+    }
+
+    result = execute_request(
+        {
+            "schema": "novali.client_side_pb_bridge.v1",
+            "message_kind": "request",
+            "bridge_id": "bridge-a",
+            "sequence": 1,
+            "script_id": "bridge-a-orchestrator",
+            "grid_snapshot": {
+                "schema": "novali.client_side_pb.grid_snapshot.v1",
+                "grid_entity_id": 10,
+                "blocks": [
+                    {
+                        "entity_id": 101,
+                        "name": "Port Outer",
+                        "type": "Door",
+                        "is_door": True,
+                        "door_status": "Open",
+                        "door_open_ratio": 1.0,
+                        "is_exterior": True,
+                        "functional": True,
+                        "enabled": True,
+                        "integrity_ratio": 0.82,
+                        "airlock_id": "port",
+                    },
+                    {
+                        "entity_id": 201,
+                        "name": "Port Vent",
+                        "type": "AirVent",
+                        "is_air_vent": True,
+                        "compartment_id": "port-compartment",
+                        "compartment_name": "Port Lock",
+                        "oxygen_level": 0.62,
+                        "pressure_ratio": 0.7,
+                        "pressurized": True,
+                        "functional": True,
+                        "enabled": True,
+                        "integrity_ratio": 1.0,
+                    },
+                ],
+                "airlocks": [
+                    {
+                        "airlock_id": "port",
+                        "name": "Port Lock",
+                        "inner_door_id": 100,
+                        "outer_door_id": 101,
+                        "inner_door_open": False,
+                        "outer_door_open": True,
+                        "safe": True,
+                        "pressurized": True,
+                    }
+                ],
+            },
+            "state": {},
+        },
+        scripts,
+        {},
+        tmp_path,
+    )
+
+    assert result["status"] == "ok"
+    assert captured["bridge-a-sos_airlock"]["airlock_snapshot"] == {
+        "doors": [
+            {
+                "entity_id": 101,
+                "name": "Port Outer",
+                "is_open": True,
+                "is_exterior": True,
+                "functional": True,
+                "enabled": True,
+                "integrity_ratio": 0.82,
+                "airlock_id": "port",
+            }
+        ],
+        "airlocks": [
+            {
+                "airlock_id": "port",
+                "name": "Port Lock",
+                "inner_door_id": 100,
+                "outer_door_id": 101,
+                "inner_door_open": False,
+                "outer_door_open": True,
+                "safe": True,
+                "pressurized": True,
+            }
+        ],
+        "vents": [
+            {
+                "vent_entity_id": 201,
+                "name": "Port Vent",
+                "compartment_id": "port-compartment",
+                "compartment_name": "Port Lock",
+                "oxygen_level": 0.62,
+                "pressure_ratio": 0.7,
+                "pressurized": True,
+                "functional": True,
+                "enabled": True,
+                "integrity_ratio": 1.0,
+            }
+        ],
+    }
+    assert "airlock_snapshot" not in captured["bridge-a-doors"]
+    assert "door_snapshot" not in captured["bridge-a-doors"]
+    assert "ship_doors" not in captured["bridge-a-doors"]
+
+
+def test_execute_sos_airlock_child_degrades_gracefully_without_snapshot(tmp_path: Path):
+    data = tmp_path / "data"
+    data.mkdir()
+    (data / "sos_ships.json").write_text(
+        json.dumps(
+            {
+                "schema": "novali.client_side_pb.sos_ships.v1",
+                "ships": [
+                    {
+                        "ship_id": "ship-a",
+                        "bridge_id": "bridge-a",
+                        "display_name": "Ship A",
+                        "expected_grid_entity_id": 10,
+                        "services": [{"script_id": "bridge-a-sos_airlock", "service_id": "airlock"}],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    scripts = {
+        "bridge-a-orchestrator": WorkerScript(
+            "bridge-a-orchestrator", "script_instance", "Bridge A SOS", "", "", "", 1000, True, base_script_id="bridge_orchestrator"
+        ),
+        "bridge-a-sos_airlock": WorkerScript(
+            "bridge-a-sos_airlock",
+            "manual",
+            "Airlock",
+            "worker.scripts.sos_airlock",
+            "",
+            "",
+            1000,
+            True,
+        ),
+    }
+
+    result = execute_request(
+        {
+            "schema": "novali.client_side_pb_bridge.v1",
+            "message_kind": "request",
+            "bridge_id": "bridge-a",
+            "sequence": 1,
+            "script_id": "bridge-a-orchestrator",
+            "grid_snapshot": {
+                "schema": "novali.client_side_pb.grid_snapshot.v1",
+                "grid_entity_id": 10,
+                "blocks": [{"entity_id": 301, "name": "LCD", "type": "TextPanel"}],
+            },
+            "state": {},
+        },
+        scripts,
+        {},
+        tmp_path,
+    )
+
+    assert result["status"] == "ok"
+    airlock_child = result["result"]["child_results"][0]
+    assert airlock_child["summary"] == "SOS Airlock Ship A state=unknown snapshot=no_snapshot"
+    assert airlock_child["result"]["sos_airlock"]["snapshot_status"] == "no_snapshot"
+    assert result["result"]["commands"] == [
+        {
+            "kind": "echo",
+            "text": "SOS Airlock Ship A state=unknown snapshot=no_snapshot",
+            "source_script_id": "bridge-a-sos_airlock",
+            "source_priority": 14,
+            "source_order": 0,
+            "source_role": "status",
+        }
+    ]
+
+
+def test_execute_sos_orchestrator_runs_mobility_child_with_existing_services(tmp_path: Path):
+    def install_adapter(module_name: str, summary: str, command: dict[str, object]) -> None:
+        module = types.ModuleType(module_name)
+
+        def run(request):
+            return {"summary": summary, "commands": [command]}
+
+        module.run = run
+        sys.modules[module_name] = module
+
+    install_adapter("tests.sos_mobility_registry_status_child", "status ok", {"kind": "echo", "text": "status"})
+    install_adapter("tests.sos_mobility_registry_inventory_child", "inventory ok", {"kind": "echo", "text": "inventory"})
+    install_adapter("tests.sos_mobility_registry_door_child", "doors ok", {"kind": "echo", "text": "doors"})
+    data = tmp_path / "data"
+    data.mkdir()
+    (data / "sos_ships.json").write_text(
+        json.dumps(
+            {
+                "schema": "novali.client_side_pb.sos_ships.v1",
+                "ships": [
+                    {
+                        "ship_id": "ship-a",
+                        "bridge_id": "bridge-a",
+                        "display_name": "Ship A",
+                        "expected_grid_entity_id": 10,
+                        "services": [
+                            {"script_id": "bridge-a-sos_status", "service_id": "status"},
+                            {"script_id": "bridge-a-sos_mobility", "service_id": "mobility"},
+                            {"script_id": "bridge-a-inventory", "service_id": "inventory"},
+                            {"script_id": "bridge-a-doors", "service_id": "doors"},
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    scripts = {
+        "bridge-a-orchestrator": WorkerScript(
+            "bridge-a-orchestrator", "script_instance", "Bridge A SOS", "", "", "", 1000, True, base_script_id="bridge_orchestrator"
+        ),
+        "bridge-a-sos_status": WorkerScript("bridge-a-sos_status", "manual", "Status", "tests.sos_mobility_registry_status_child", "", "", 1000, True),
+        "bridge-a-sos_mobility": WorkerScript(
+            "bridge-a-sos_mobility",
+            "manual",
+            "Mobility",
+            "worker.scripts.sos_mobility",
+            "",
+            "",
+            1000,
+            True,
+        ),
+        "bridge-a-inventory": WorkerScript("bridge-a-inventory", "manual", "Inventory", "tests.sos_mobility_registry_inventory_child", "", "", 1000, True),
+        "bridge-a-doors": WorkerScript("bridge-a-doors", "manual", "Doors", "tests.sos_mobility_registry_door_child", "", "", 1000, True),
+    }
+
+    result = execute_request(
+        {
+            "schema": "novali.client_side_pb_bridge.v1",
+            "message_kind": "request",
+            "bridge_id": "bridge-a",
+            "sequence": 1,
+            "script_id": "bridge-a-orchestrator",
+            "grid_snapshot": {
+                "schema": "novali.client_side_pb.grid_snapshot.v1",
+                "grid_entity_id": 10,
+                "blocks": [
+                    {"name": "Main Thruster", "type": "LargeBlockLargeThrust", "functional": True},
+                    {"name": "Main Gyro", "type": "Gyro", "functional": True},
+                    {"name": "Cockpit", "type": "Cockpit", "functional": True},
+                ],
+            },
+            "state": {},
+        },
+        scripts,
+        {},
+        tmp_path,
+    )
+
+    assert result["status"] == "ok"
+    assert [child["script_id"] for child in result["result"]["child_results"]] == [
+        "bridge-a-sos_status",
+        "bridge-a-sos_mobility",
+        "bridge-a-inventory",
+        "bridge-a-doors",
+    ]
+    mobility_child = result["result"]["child_results"][1]
+    assert mobility_child["summary"] == (
+        "SOS Mobility Ship A state=ok thrusters=0/1 gyros=0/1 control=0/1 jump=0/0 power_fuel=0"
+    )
+    assert mobility_child["error_bucket"] == "none"
+    assert mobility_child["result"]["sos_mobility"]["snapshot_status"] == "ok"
+    assert {command["kind"] for command in result["result"]["commands"]} <= {"echo", "write_text_surface"}
+
+
+def test_execute_sos_orchestrator_passes_grid_and_integrity_snapshot_to_mobility_child_only(tmp_path: Path):
+    captured: dict[str, dict] = {}
+    module = types.ModuleType("tests.sos_mobility_capture_children")
+
+    def run(request):
+        captured[request["script_id"]] = request
+        return {"summary": f"{request['script_id']} captured", "commands": [{"kind": "echo", "text": request["script_id"]}]}
+
+    module.run = run
+    sys.modules[module.__name__] = module
+    data = tmp_path / "data"
+    data.mkdir()
+    (data / "sos_ships.json").write_text(
+        json.dumps(
+            {
+                "schema": "novali.client_side_pb.sos_ships.v1",
+                "ships": [
+                    {
+                        "ship_id": "ship-a",
+                        "bridge_id": "bridge-a",
+                        "display_name": "Ship A",
+                        "expected_grid_entity_id": 10,
+                        "services": [
+                            {"script_id": "bridge-a-sos_mobility", "service_id": "mobility"},
+                            {"script_id": "bridge-a-inventory", "service_id": "inventory"},
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    scripts = {
+        "bridge-a-orchestrator": WorkerScript(
+            "bridge-a-orchestrator", "script_instance", "Bridge A SOS", "", "", "", 1000, True, base_script_id="bridge_orchestrator"
+        ),
+        "bridge-a-sos_mobility": WorkerScript("bridge-a-sos_mobility", "manual", "Mobility", module.__name__, "", "", 1000, True),
+        "bridge-a-inventory": WorkerScript("bridge-a-inventory", "manual", "Inventory", module.__name__, "", "", 1000, True),
+    }
+    grid_snapshot = {
+        "schema": "novali.client_side_pb.grid_snapshot.v1",
+        "grid_entity_id": 10,
+        "blocks": [
+            {"name": "Main Thruster", "type": "LargeBlockLargeThrust", "integrity_ratio": 0.91, "functional": True},
+            {"name": "LCD", "type": "TextPanel"},
+        ],
+    }
+
+    result = execute_request(
+        {
+            "schema": "novali.client_side_pb_bridge.v1",
+            "message_kind": "request",
+            "bridge_id": "bridge-a",
+            "sequence": 1,
+            "script_id": "bridge-a-orchestrator",
+            "grid_snapshot": grid_snapshot,
+            "state": {},
+        },
+        scripts,
+        {},
+        tmp_path,
+    )
+
+    assert result["status"] == "ok"
+    assert captured["bridge-a-sos_mobility"]["grid_snapshot"] == grid_snapshot
+    assert captured["bridge-a-sos_mobility"]["integrity_snapshot"] == {
+        "blocks": [{"name": "Main Thruster", "type": "LargeBlockLargeThrust", "integrity_ratio": 0.91, "functional": True}],
+        "critical_systems": [],
+    }
+    assert "mobility_snapshot" not in captured["bridge-a-sos_mobility"]
+    assert "mobility_snapshot" not in captured["bridge-a-inventory"]
+    assert "integrity_snapshot" not in captured["bridge-a-inventory"]
+
+
+def test_execute_sos_mobility_child_degrades_gracefully_without_snapshot(tmp_path: Path):
+    data = tmp_path / "data"
+    data.mkdir()
+    (data / "sos_ships.json").write_text(
+        json.dumps(
+            {
+                "schema": "novali.client_side_pb.sos_ships.v1",
+                "ships": [
+                    {
+                        "ship_id": "ship-a",
+                        "bridge_id": "bridge-a",
+                        "display_name": "Ship A",
+                        "expected_grid_entity_id": 10,
+                        "services": [{"script_id": "bridge-a-sos_mobility", "service_id": "mobility"}],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    scripts = {
+        "bridge-a-orchestrator": WorkerScript(
+            "bridge-a-orchestrator", "script_instance", "Bridge A SOS", "", "", "", 1000, True, base_script_id="bridge_orchestrator"
+        ),
+        "bridge-a-sos_mobility": WorkerScript(
+            "bridge-a-sos_mobility",
+            "manual",
+            "Mobility",
+            "worker.scripts.sos_mobility",
+            "",
+            "",
+            1000,
+            True,
+        ),
+    }
+
+    result = execute_request(
+        {
+            "schema": "novali.client_side_pb_bridge.v1",
+            "message_kind": "request",
+            "bridge_id": "bridge-a",
+            "sequence": 1,
+            "script_id": "bridge-a-orchestrator",
+            "grid_snapshot": {
+                "schema": "novali.client_side_pb.grid_snapshot.v1",
+                "grid_entity_id": 10,
+                "blocks": [{"entity_id": 301, "name": "LCD", "type": "TextPanel"}],
+            },
+            "state": {},
+        },
+        scripts,
+        {},
+        tmp_path,
+    )
+
+    assert result["status"] == "ok"
+    mobility_child = result["result"]["child_results"][0]
+    assert mobility_child["summary"] == "SOS Mobility Ship A state=unknown snapshot=no_snapshot"
+    assert mobility_child["result"]["sos_mobility"]["snapshot_status"] == "no_snapshot"
+    assert result["result"]["commands"] == [
+        {
+            "kind": "echo",
+            "text": "SOS Mobility Ship A state=unknown snapshot=no_snapshot",
+            "source_script_id": "bridge-a-sos_mobility",
+            "source_priority": 13,
+            "source_order": 0,
+            "source_role": "status",
+        }
+    ]
 
 
 def test_execute_sos_orchestrator_passes_logistics_snapshot_from_inventory_data_to_child_request(tmp_path: Path):

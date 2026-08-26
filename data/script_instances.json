@@ -61,6 +61,26 @@
       "created_at": "2026-08-26T00:00:00Z",
       "updated_at": "2026-08-26T00:00:00Z"
     },
+    "pb-bridge-001-sos_airlock": {
+      "instance_id": "pb-bridge-001-sos_airlock",
+      "base_script_id": "sos_airlock",
+      "display_name": "Primary PB Bridge - SOS Airlock",
+      "bridge_id": "pb-bridge-001",
+      "enabled": true,
+      "config_id": "pb-bridge-001-sos_airlock",
+      "created_at": "2026-08-26T00:00:00Z",
+      "updated_at": "2026-08-26T00:00:00Z"
+    },
+    "pb-bridge-001-sos_mobility": {
+      "instance_id": "pb-bridge-001-sos_mobility",
+      "base_script_id": "sos_mobility",
+      "display_name": "Primary PB Bridge - SOS Mobility",
+      "bridge_id": "pb-bridge-001",
+      "enabled": true,
+      "config_id": "pb-bridge-001-sos_mobility",
+      "created_at": "2026-08-26T00:00:00Z",
+      "updated_at": "2026-08-26T00:00:00Z"
+    },
     "pb-bridge-001-virtual_whip_auto_door": {
       "instance_id": "pb-bridge-001-virtual_whip_auto_door",
       "base_script_id": "virtual_whip_auto_door",
