@@ -776,7 +776,7 @@ def test_execute_sos_orchestrator_runs_dashboard_child_with_existing_services(tm
     ]
     dashboard_child = result["result"]["child_results"][1]
     assert dashboard_child["summary"] == (
-        "SOS Dashboard Ship A mode=Docked integrity=unknown logistics=unknown airlock=unknown queue=0 blockers=none"
+        "SOS Dashboard Ship A mode=Docked integrity=unknown logistics=unknown airlock=unknown mobility=unknown queue=0 blockers=none"
     )
     assert dashboard_child["error_bucket"] == "none"
     assert result["result"]["commands"][1]["kind"] == "echo"
@@ -879,6 +879,28 @@ def test_execute_sos_orchestrator_passes_child_payload_history_to_dashboard_requ
                                 }
                             },
                         },
+                        {
+                            "script_id": "bridge-a-sos_mobility",
+                            "status": "ok",
+                            "error_bucket": "none",
+                            "summary": "mobility warning",
+                            "result": {
+                                "sos_mobility": {
+                                    "state": "warning",
+                                    "snapshot_status": "ok",
+                                    "thrusters": {"damaged_or_offline_count": 1, "total_count": 4},
+                                    "gyros": {"damaged_or_offline_count": 0, "total_count": 2},
+                                    "control_blocks": {"damaged_or_offline_count": 0, "total_count": 1},
+                                    "jump_drives": {
+                                        "damaged_or_offline_count": 0,
+                                        "not_ready_count": 1,
+                                        "total_count": 1,
+                                    },
+                                    "power_fuel": {"blocker_count": 1, "blockers": ["battery_power_low:Main Battery"]},
+                                    "warnings": ["thruster_damaged_or_offline:Port Thruster"],
+                                }
+                            },
+                        },
                     ],
                 },
             }
@@ -900,6 +922,7 @@ def test_execute_sos_orchestrator_passes_child_payload_history_to_dashboard_requ
                             {"script_id": "bridge-a-sos_integrity", "service_id": "integrity"},
                             {"script_id": "bridge-a-sos_logistics", "service_id": "logistics"},
                             {"script_id": "bridge-a-sos_airlock", "service_id": "airlock"},
+                            {"script_id": "bridge-a-sos_mobility", "service_id": "mobility"},
                         ],
                     }
                 ],
@@ -916,6 +939,7 @@ def test_execute_sos_orchestrator_passes_child_payload_history_to_dashboard_requ
         "bridge-a-sos_integrity": WorkerScript("bridge-a-sos_integrity", "manual", "Integrity", module.__name__, "", "", 1000, True),
         "bridge-a-sos_logistics": WorkerScript("bridge-a-sos_logistics", "manual", "Logistics", module.__name__, "", "", 1000, True),
         "bridge-a-sos_airlock": WorkerScript("bridge-a-sos_airlock", "manual", "Airlock", module.__name__, "", "", 1000, True),
+        "bridge-a-sos_mobility": WorkerScript("bridge-a-sos_mobility", "manual", "Mobility", module.__name__, "", "", 1000, True),
     }
 
     result = execute_request(
@@ -948,6 +972,10 @@ def test_execute_sos_orchestrator_passes_child_payload_history_to_dashboard_requ
     assert telemetry["child_services_by_service_id"]["logistics"]["result"]["sos_logistics"]["state"] == "warning"
     assert telemetry["child_services_by_service_id"]["airlock"]["result"]["sos_airlock"]["state"] == "warning"
     assert telemetry["child_services_by_service_id"]["airlock"]["result"]["sos_airlock"]["airlocks"]["unsafe_count"] == 1
+    mobility = telemetry["child_services_by_service_id"]["mobility"]["result"]["sos_mobility"]
+    assert mobility["state"] == "warning"
+    assert mobility["thrusters"]["damaged_or_offline_count"] == 1
+    assert mobility["jump_drives"]["not_ready_count"] == 1
 
 
 def test_execute_sos_dashboard_child_degrades_gracefully_without_child_history(tmp_path: Path):
@@ -1003,13 +1031,14 @@ def test_execute_sos_dashboard_child_degrades_gracefully_without_child_history(t
 
     assert result["status"] == "ok"
     assert result["result"]["child_results"][0]["summary"] == (
-        "SOS Dashboard Ship A mode=Docked integrity=unknown logistics=unknown airlock=unknown queue=0 blockers=none"
+        "SOS Dashboard Ship A mode=Docked integrity=unknown logistics=unknown airlock=unknown mobility=unknown queue=0 blockers=none"
     )
     dashboard = result["result"]["child_results"][0]["result"]["sos_dashboard"]
     assert dashboard["integrity"]["snapshot_status"] == "missing_child_result"
     assert dashboard["logistics"]["snapshot_status"] == "missing_child_result"
+    assert dashboard["mobility"]["snapshot_status"] == "missing_child_result"
     assert result["result"]["commands"][0]["text"] == (
-        "SOS Dashboard Ship A mode=Docked integrity=unknown logistics=unknown airlock=unknown queue=0 blockers=none"
+        "SOS Dashboard Ship A mode=Docked integrity=unknown logistics=unknown airlock=unknown mobility=unknown queue=0 blockers=none"
     )
 
 
