@@ -1,0 +1,46 @@
+<h2>Control Authority Handoff</h2>
+<p class="subtitle">The lead ship carries the player/tether, but Fleet C2 can still pilot it until the operator explicitly takes manual control.</p>
+
+<div class="mockup">
+  <div class="mockup-header">Lead Ship Authority Model</div>
+  <div class="mockup-body">
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;text-align:center">
+      <div class="placeholder" style="border-left:8px solid #8fb6ff">Player suit/cockpit is on lead ship</div>
+      <div class="placeholder" style="border-left:8px solid #69c779">Fleet C2 app issues squad orders</div>
+      <div class="placeholder" style="border-left:8px solid #e6b84a">Lead ship PB receiver applies tiny commands</div>
+      <div class="placeholder" style="border-left:8px solid #b875ff">Manual takeover toggles autonomous mode off</div>
+      <div class="placeholder" style="border-left:8px solid #47c1bf">C2 continues escort/other-ship control if allowed</div>
+    </div>
+  </div>
+</div>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">Autonomous Mode On</div>
+    <div class="mockup-body">
+      <div style="display:grid;gap:8px">
+        <div class="placeholder">Remote Control/autopilot receives C2 waypoints</div>
+        <div class="placeholder">C2 may orient rail geometry and manage combat posture</div>
+        <div class="placeholder">PB receiver accepts current bridge commands</div>
+        <div class="placeholder">Cockpit pilot is present but not directly flying</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">Manual Override</div>
+    <div class="mockup-body">
+      <div style="display:grid;gap:8px">
+        <div class="placeholder">Operator runs PB argument: c2 off / c2 toggle</div>
+        <div class="placeholder">Receiver stops applying movement/fire-posture commands</div>
+        <div class="placeholder">Remote Control/autopilot is disabled or released</div>
+        <div class="placeholder">UI marks lead ship Manual while squad context remains visible</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Safety Default</h3>
+  <p>Manual override should fail closed: once autonomous mode is off, Fleet C2 can observe and plan but cannot actuate that ship until the operator toggles it back on.</p>
+</div>

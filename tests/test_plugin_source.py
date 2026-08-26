@@ -10,6 +10,7 @@ def test_plugin_enriches_requests_with_grid_snapshot_and_status_counters():
     assert '"grid_snapshot"' in source
     assert "BuildGridSnapshotJson" in source
     assert "novali.client_side_pb.grid_snapshot.v1" in source
+    assert '"grid_entity_id"' in source
     assert "last_grid_snapshot_state" in source
     assert "last_grid_snapshot_blocks" in source
     assert "last_grid_snapshot_lcds" in source
@@ -17,6 +18,8 @@ def test_plugin_enriches_requests_with_grid_snapshot_and_status_counters():
     assert "last_grid_snapshot_skipped_blocks" in source
     assert "last_grid_snapshot_truncated_blocks" in source
     assert "last_grid_snapshot_skip_samples" in source
+    assert "last_integrity_snapshot_state" in source
+    assert "last_integrity_snapshot_blocks" in source
     assert "visible_grid_scan_state" in source
     assert "visible_grid_scan_blocks" in source
     assert "visible_grid_scan_machines" in source
@@ -85,6 +88,25 @@ def test_plugin_grid_snapshot_contains_isy_block_fields():
         assert f'Quote("{field}")' in source
 
 
+def test_plugin_grid_snapshot_contains_integrity_fields_from_slim_blocks():
+    source = PLUGIN.read_text(encoding="utf-8")
+
+    assert '"integrity_snapshot"' in source
+    assert "BuildIntegritySnapshotJson" in source
+    assert "novali.client_side_pb.integrity_snapshot.v1" in source
+    for field in [
+        "integrity",
+        "max_integrity",
+        "integrity_ratio",
+        "functional",
+    ]:
+        assert f'Quote("{field}")' in source
+    assert "BuildGridBlockJson(slimBlock, includeTerminalMetadata)" in source
+    assert 'ReadDoubleLikeMember(slimBlock, "Integrity")' in source
+    assert 'ReadDoubleLikeMember(slimBlock, "MaxIntegrity")' in source
+    assert 'ReadBoolMember(slimBlock, "IsFunctional", true)' in source
+
+
 def test_plugin_reads_text_surface_metadata_for_virtual_pb_fidelity():
     source = PLUGIN.read_text(encoding="utf-8")
 
@@ -140,7 +162,7 @@ def test_plugin_snapshot_reads_terminal_metadata_for_read_only_harness():
 
     assert "ShouldIncludeTerminalMetadata(body)" in source
     assert "BuildGridSnapshotJson(programmableBlock, includeTerminalMetadata)" in source
-    assert "BuildGridBlockJson(slimBlock.FatBlock, includeTerminalMetadata)" in source
+    assert "BuildGridBlockJson(slimBlock, includeTerminalMetadata)" in source
     assert 'ReadStringMember(block, "CustomNameWithFaction", ReadStringMember(block, "CustomName"))' in source
     assert 'ReadBoolMethod(block, "HasLocalPlayerAccess", true)' in source
     assert 'ReadBoolMethod(block, "HasNobodyPlayerAccessToBlock", true)' in source

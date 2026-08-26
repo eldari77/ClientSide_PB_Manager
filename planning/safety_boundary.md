@@ -22,6 +22,9 @@
 - Edit and clone only local worker adapter files under `worker/scripts`.
 - Edit only local extracted worker config files under `data/worker_configs`.
 - Configure conservative PB runtime limiter profiles through the local manager.
+- Configure SOS ship profiles that mount existing allowlisted services under one
+  bridge orchestrator per ship.
+- Write SOS status displays through the existing `write_text_surface` command.
 
 ## Not Allowed
 
@@ -85,3 +88,7 @@
   bounded text payload. Do not use it as a generic custom-data or terminal
   action channel.
 - Skip commands that are not on the PB shim allowlist.
+- Reject invalid SOS ship registries with duplicate active bridge ids or
+  duplicate expected grid entity ids.
+- Treat SOS expected-grid mismatches as identity blockers before adding any
+  navigation, weapons, or broader ship-control service.

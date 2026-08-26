@@ -92,8 +92,9 @@ cycle.
 
 Plugin-side grid snapshots use schema
 `novali.client_side_pb.grid_snapshot.v1`. They sit alongside
-`inventory_snapshot` rather than replacing it. The snapshot includes bounded
-records for visible same-grid LCD/text panels, assemblers, refineries, O2/H2
+`inventory_snapshot` rather than replacing it. The snapshot includes
+`grid_entity_id` for the PB's owning cube grid plus bounded records for visible
+same-grid LCD/text panels, assemblers, refineries, O2/H2
 generators, gas tanks, reactors, cargo, connectors, and PB-adjacent terminal
 blocks. Records expose block identity, same-construct state, enabled/conveyor
 flags where available, inventories, LCD text/custom data, assembler
@@ -190,6 +191,29 @@ snapshot fields rather than arbitrary terminal action execution.
 Idempotent setup commands are only planned when the latest plugin snapshot does
 not already match the desired state. This keeps the worker command queue from
 repeating already-applied conveyor, mode, cooperative, and auto-refill setup.
+
+## SOS Ship Operating System
+
+SOS V1 is a native orchestrator profile over the existing bridge runtime. Each
+ship is registered in `data/sos_ships.json` with one active bridge id, a display
+name, an optional expected grid entity id, a ship mode, mounted services, and
+status surfaces. The worker expands SOS ships into bridge-orchestrator child
+scripts, so the PB still runs one mailbox, one sequence, and one command queue
+per ship.
+
+The first SOS service is `sos_status`, which writes compact cockpit/LCD status
+through the existing `write_text_surface` command or falls back to `echo` when
+no status surface is configured. Existing reviewed services such as the Isy
+profile adapter and Whip-style door service can mount under SOS as child
+services. Mode policy for `Docked`, `Cruise`, `Combat`, and `Emergency` adjusts
+child budgets, priorities, fairness weights, and reactive expiry without adding
+new PB-side actuator primitives.
+
+SOS validates duplicate bridge and expected-grid claims before activating a ship
+profile. When an expected grid entity id is configured, the plugin-enriched
+`grid_snapshot.grid_entity_id` must match the request. Missing or mismatched
+identity is surfaced as a blocker to SOS services so later ship-control services
+can fail closed instead of cross-contaminating commands across grids.
 
 ## PB Runtime Limiter
 

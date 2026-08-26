@@ -72,6 +72,11 @@
 - Captured the future single-PB, multi-adapter orchestration path in
   `planning/multi_adapter_bridge_orchestrator.md`, including Isy plus Whip auto
   door as the motivating example.
+- Added SOS V1 core as a native orchestrator profile: `data/sos_ships.json`
+  registers one bridge per ship, the worker expands SOS service mounts into
+  child orchestrator scripts, `sos_status` emits cockpit/LCD status through the
+  existing text-surface command, and plugin grid snapshots expose
+  `grid_entity_id` for ship identity validation.
 - Next Isy work is live dummy-grid validation of the bounded autocrafting
   queue/material/output loop, reactor target uranium, refinery ore input, and
   generator Ice fills, then deeper behavior parity for gas bottle refill nuance

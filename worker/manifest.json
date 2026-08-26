@@ -26,6 +26,30 @@
       "enabled": true
     },
     {
+      "script_id": "sos_status",
+      "source": "local_worker",
+      "display_name": "SOS Status",
+      "module": "worker.scripts.sos_status",
+      "runtime": "python",
+      "source_path": "",
+      "input_schema": "adapter_tick.v1",
+      "output_schema": "compact_commands.v1",
+      "timeout_ms": 1000,
+      "enabled": true
+    },
+    {
+      "script_id": "sos_integrity",
+      "source": "local_worker",
+      "display_name": "SOS Integrity",
+      "module": "worker.scripts.sos_integrity",
+      "runtime": "python",
+      "source_path": "",
+      "input_schema": "adapter_tick.v1",
+      "output_schema": "compact_commands.v1",
+      "timeout_ms": 1000,
+      "enabled": true
+    },
+    {
       "script_id": "virtual_whip_auto_door",
       "source": "workshop_import",
       "display_name": "Whip's Auto Door and Airlock Script (Virtual PB)",

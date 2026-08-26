@@ -1,0 +1,47 @@
+<h2>Role-First Fleet Model</h2>
+<p class="subtitle">A ship's class/core defines what it is good at. Orders change what it is trying to do right now.</p>
+
+<div class="mockup">
+  <div class="mockup-header">Decision Stack</div>
+  <div class="mockup-body">
+    <div style="display:grid;gap:10px;text-align:center">
+      <div class="placeholder" style="border-left:8px solid #8fb6ff">Core / Class Block: authoritative class, orientation, limits</div>
+      <div style="font-size:24px">↓</div>
+      <div class="placeholder" style="border-left:8px solid #69c779">Role: rail frigate, escort corvette, command ship, etc.</div>
+      <div style="font-size:24px">↓</div>
+      <div class="placeholder" style="border-left:8px solid #e6b84a">Order: patrol, guard, pursue, disengage, hold fire, regroup</div>
+      <div style="font-size:24px">↓</div>
+      <div class="placeholder" style="border-left:8px solid #b875ff">Doctrine Parameters: rail band, side-angle, screen offset, thrust signature</div>
+      <div style="font-size:24px">↓</div>
+      <div class="placeholder" style="border-left:8px solid #47c1bf">Tiny Receiver Commands: Remote Control waypoint, block toggles, fire posture</div>
+    </div>
+  </div>
+</div>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">Rail Frigate Defaults</div>
+    <div class="mockup-body">
+      <div style="display:grid;gap:8px">
+        <div class="placeholder">Preferred band: 8-8.5 km</div>
+        <div class="placeholder">Avoid: PDC range below 3 km</div>
+        <div class="placeholder">Orientation: side-angle rail solution from core frame</div>
+        <div class="placeholder">Default target posture: WeaponCore power targeting</div>
+        <div class="placeholder">On disabled target: cycle to next hostile</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">Escort Corvette Defaults</div>
+    <div class="mockup-body">
+      <div style="display:grid;gap:8px">
+        <div class="placeholder">Preferred position: screen/offset around protected ship</div>
+        <div class="placeholder">Threat response: intercept or bias toward torp vector if supported</div>
+        <div class="placeholder">Avoid: independent overextension into PDC range</div>
+        <div class="placeholder">Movement: keep up with frigate or command ship</div>
+        <div class="placeholder">Fallback: regroup if command geometry is stale</div>
+      </div>
+    </div>
+  </div>
+</div>

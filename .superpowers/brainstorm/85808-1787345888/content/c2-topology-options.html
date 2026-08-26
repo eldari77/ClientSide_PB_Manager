@@ -1,0 +1,80 @@
+<h2>Fleet Control Topology</h2>
+<p class="subtitle">The client can do the heavy RTS planning, but each independent grid still needs an in-game path that can apply thrust, gyro, weapon, camera, sensor, or block commands without violating the PB cap.</p>
+
+<div class="cards">
+  <div class="card" data-choice="a-single-commander" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">A. Single Commander PB</div>
+        <div class="mockup-body">
+          <div style="display:grid;gap:12px;text-align:center">
+            <div class="placeholder">Client RTS UI + Docker planner</div>
+            <div style="font-size:28px">↓</div>
+            <div class="placeholder">One in-game PB shim</div>
+            <div style="font-size:28px">↓</div>
+            <div class="placeholder">Same construct / docked grids only</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Lowest PB Cost</h3>
+      <p>Best if controlled craft remain mechanically connected or are managed by a carrier grid. Weak for truly independent drones.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b-squad-leaders" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">B. Squad Leader PBs</div>
+        <div class="mockup-body">
+          <div style="display:grid;gap:10px;text-align:center">
+            <div class="placeholder">Client RTS UI + Docker planner</div>
+            <div style="font-size:24px">↓</div>
+            <div class="placeholder">Command PB / bridge_orchestrator</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+              <div class="placeholder">Leader PB</div>
+              <div class="placeholder">Leader PB</div>
+              <div class="placeholder">Leader PB</div>
+            </div>
+            <div style="font-size:13px">Each leader controls one grid or a tight squad.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Recommended Baseline</h3>
+      <p>Spends PBs where actuation is unavoidable, keeps client-side planning centralized, and scales by grouping roles.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c-every-grid-receiver" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">C. Receiver PB Per Grid</div>
+        <div class="mockup-body">
+          <div style="display:grid;gap:10px;text-align:center">
+            <div class="placeholder">Client RTS UI + tactical planner</div>
+            <div style="font-size:24px">↓</div>
+            <div class="placeholder">Fleet bridge</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+              <div class="placeholder">Grid PB</div>
+              <div class="placeholder">Grid PB</div>
+              <div class="placeholder">Grid PB</div>
+              <div class="placeholder">Grid PB</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Most Capable</h3>
+      <p>Closest to true RTS control, but burns the PB cap fastest and needs strict command budgets on every craft.</p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>First Constraint To Pin Down</h3>
+  <p>Are we allowed enough PBs for at least one tiny receiver/actuator PB on each independent grid, or does the design need to work with fewer PBs than controlled grids?</p>
+</div>

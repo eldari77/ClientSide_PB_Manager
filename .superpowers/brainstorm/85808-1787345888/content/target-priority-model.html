@@ -1,0 +1,41 @@
+<h2>Target Priority Model</h2>
+<p class="subtitle">Fleet C2 should use WeaponCore lock-on as the operator's target intent when available, then rotate targets when the current hostile is disabled.</p>
+
+<div class="mockup">
+  <div class="mockup-header">V1 Target Decision Chain</div>
+  <div class="mockup-body">
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;text-align:center">
+      <div class="placeholder" style="border-left:8px solid #8fb6ff">1. Read WeaponCore locked target, if exposed</div>
+      <div class="placeholder" style="border-left:8px solid #69c779">2. Hold squad focus on locked hostile</div>
+      <div class="placeholder" style="border-left:8px solid #e6b84a">3. Watch for No Pwr / disabled state</div>
+      <div class="placeholder" style="border-left:8px solid #b875ff">4. Retire disabled target for salvage</div>
+      <div class="placeholder" style="border-left:8px solid #47c1bf">5. Fallback to nearest powered hostile</div>
+    </div>
+  </div>
+</div>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">Primary Path</div>
+    <div class="mockup-body">
+      <div style="display:grid;gap:8px">
+        <div class="placeholder">Operator locks target in-game through WeaponCore</div>
+        <div class="placeholder">Plugin surfaces locked target identity/range/status</div>
+        <div class="placeholder">Fleet C2 keeps frigates/corvettes on that target</div>
+        <div class="placeholder">Power-targeting remains ship prep, not a dynamic order</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">Fallback Path</div>
+    <div class="mockup-body">
+      <div style="display:grid;gap:8px">
+        <div class="placeholder">If lock telemetry is missing, use Fleet C2 manual target selection</div>
+        <div class="placeholder">If No Pwr telemetry is missing, operator can mark disabled</div>
+        <div class="placeholder">If contact ranking is missing, stay on manual target until changed</div>
+        <div class="placeholder">Never keep firing a known disabled ship by default</div>
+      </div>
+    </div>
+  </div>
+</div>

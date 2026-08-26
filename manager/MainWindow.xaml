@@ -361,6 +361,68 @@
                 </DockPanel>
             </TabItem>
 
+            <TabItem Header="SOS">
+                <DockPanel Margin="8">
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+                        <Button Content="Refresh" Width="92" Margin="0,0,8,0" Click="RefreshSosShips_Click" />
+                        <Button Content="Create SOS Ship" Width="126" Margin="0,0,8,0" Click="NewSosShip_Click" />
+                        <Button Content="Save SOS Ship" Width="112" Margin="0,0,8,0" Click="SaveSosShip_Click" />
+                        <Button Content="Build SOS Services" Width="132" Margin="0,0,16,0" Click="BuildSosServices_Click" />
+                        <TextBlock x:Name="SosStatusText" Foreground="#334155" VerticalAlignment="Center"
+                                   Text="One SOS bridge per ship; services run through the bridge orchestrator." />
+                    </StackPanel>
+                    <Grid DockPanel.Dock="Top" Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Bridge Id" Margin="0,0,8,2" Foreground="#334155" />
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="Ship Id" Margin="0,0,8,2" Foreground="#334155" />
+                        <TextBlock Grid.Row="0" Grid.Column="2" Text="Display Name" Margin="0,0,8,2" Foreground="#334155" />
+                        <TextBlock Grid.Row="0" Grid.Column="3" Text="Mode" Margin="0,0,8,2" Foreground="#334155" />
+                        <TextBox x:Name="SosBridgeIdBox" Grid.Row="1" Grid.Column="0" Margin="0,0,8,8" Text="pb-bridge-001" />
+                        <TextBox x:Name="SosShipIdBox" Grid.Row="1" Grid.Column="1" Margin="0,0,8,8" Text="ship-pb-bridge-001" />
+                        <TextBox x:Name="SosDisplayNameBox" Grid.Row="1" Grid.Column="2" Margin="0,0,8,8" Text="SOS Ship" />
+                        <ComboBox x:Name="SosModeBox" Grid.Row="1" Grid.Column="3" Margin="0,0,8,8">
+                            <ComboBoxItem Content="Docked" IsSelected="True" />
+                            <ComboBoxItem Content="Cruise" />
+                            <ComboBoxItem Content="Combat" />
+                            <ComboBoxItem Content="Emergency" />
+                        </ComboBox>
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Expected Grid Entity Id" Margin="0,0,8,2" Foreground="#334155" />
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="Status Surface Entity Id" Margin="0,0,8,2" Foreground="#334155" />
+                        <TextBlock Grid.Row="2" Grid.Column="2" Text="Surface Index" Margin="0,0,8,2" Foreground="#334155" />
+                        <TextBlock Grid.Row="2" Grid.Column="3" Text="PB Limit Profile" Margin="0,0,8,2" Foreground="#334155" />
+                        <TextBox x:Name="SosExpectedGridEntityIdBox" Grid.Row="3" Grid.Column="0" Margin="0,0,8,0" Text="0" />
+                        <TextBox x:Name="SosStatusSurfaceEntityIdBox" Grid.Row="3" Grid.Column="1" Margin="0,0,8,0" Text="0" />
+                        <TextBox x:Name="SosStatusSurfaceIndexBox" Grid.Row="3" Grid.Column="2" Margin="0,0,8,0" Text="0" />
+                        <TextBox x:Name="SosPbLimitProfileBox" Grid.Row="3" Grid.Column="3" Margin="0,0,8,0" Text="default" />
+                    </Grid>
+                    <TextBlock DockPanel.Dock="Top" Margin="0,0,0,8" Foreground="#475569"
+                               Text="Build SOS Services creates a per-bridge orchestrator, SOS status service, and reviewed existing ops services when their base scripts are enabled." />
+                    <DataGrid x:Name="SosShipGrid" AutoGenerateColumns="False" IsReadOnly="True"
+                              CanUserAddRows="False" SelectionMode="Single" SelectionChanged="SosShipGrid_SelectionChanged">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Ship" Binding="{Binding ShipId}" Width="160" />
+                            <DataGridTextColumn Header="Bridge" Binding="{Binding BridgeId}" Width="160" />
+                            <DataGridTextColumn Header="Name" Binding="{Binding DisplayName}" Width="220" />
+                            <DataGridTextColumn Header="Mode" Binding="{Binding Mode}" Width="100" />
+                            <DataGridTextColumn Header="Expected Grid" Binding="{Binding ExpectedGridEntityId}" Width="140" />
+                            <DataGridTextColumn Header="Services" Binding="{Binding ServicesText}" Width="280" />
+                            <DataGridTextColumn Header="Updated" Binding="{Binding UpdatedAt}" Width="*" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </TabItem>
+
             <TabItem Header="Limits">
                 <DockPanel Margin="8">
                     <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,12">

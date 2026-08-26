@@ -1,0 +1,41 @@
+<h2>V1 Order Set</h2>
+<p class="subtitle">The Fleet C2 app should expose six basic orders. Roles interpret each order differently, while the receiver PB only sees tiny actuation packets.</p>
+
+<div class="mockup">
+  <div class="mockup-header">Orders</div>
+  <div class="mockup-body">
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:center">
+      <div class="placeholder" style="border-left:8px solid #69c779">Patrol<br><span style="font-size:12px">move between points, scan/hold doctrine</span></div>
+      <div class="placeholder" style="border-left:8px solid #8fb6ff">Guard<br><span style="font-size:12px">protect ship/area, maintain screen geometry</span></div>
+      <div class="placeholder" style="border-left:8px solid #e6b84a">Pursue<br><span style="font-size:12px">close/maintain rail envelope on target</span></div>
+      <div class="placeholder" style="border-left:8px solid #b875ff">Hold Formation<br><span style="font-size:12px">keep assigned offsets and facing</span></div>
+      <div class="placeholder" style="border-left:8px solid #47c1bf">Regroup<br><span style="font-size:12px">return to anchor/leader safely</span></div>
+      <div class="placeholder" style="border-left:8px solid #e06666">Disengage<br><span style="font-size:12px">burn out along vector, then reduce signature</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">Normal Transitions</div>
+    <div class="mockup-body">
+      <div style="display:grid;gap:8px">
+        <div class="placeholder">Patrol → Pursue when hostile target is selected</div>
+        <div class="placeholder">Guard → Hold Formation when threat is stale</div>
+        <div class="placeholder">Pursue → Regroup if range/geometry goes bad</div>
+        <div class="placeholder">Any order → Disengage on explicit operator command</div>
+      </div>
+    </div>
+  </div>
+  <div class="mockup">
+    <div class="mockup-header">Role Interpretation</div>
+    <div class="mockup-body">
+      <div style="display:grid;gap:8px">
+        <div class="placeholder">Frigate Pursue: rail band, side-angle, power target</div>
+        <div class="placeholder">Corvette Guard: PDC screen, single-rail contribution</div>
+        <div class="placeholder">Frigate Disengage: max burn vector, then coast/low thrust</div>
+        <div class="placeholder">Corvette Regroup: recover screen position around anchor</div>
+      </div>
+    </div>
+  </div>
+</div>

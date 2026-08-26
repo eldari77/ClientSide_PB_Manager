@@ -1,0 +1,49 @@
+<h2>Fleet C2 Registration Flow</h2>
+<p class="subtitle">The app owns fleet intent. The in-game shims prove each ship can actually participate. Discovery produces an operator checklist before any squad is marked ready.</p>
+
+<div class="mockup">
+  <div class="mockup-header">Proposed V1 Flow</div>
+  <div class="mockup-body">
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;text-align:center;align-items:stretch">
+      <div class="placeholder">1. Create bridge in Fleet C2 app</div>
+      <div class="placeholder">2. Assign C2 module + ship role/class</div>
+      <div class="placeholder">3. Paste generated shim/CustomData on ship PB</div>
+      <div class="placeholder">4. Run discovery while ship is visible</div>
+      <div class="placeholder">5. Review readiness actions</div>
+    </div>
+  </div>
+</div>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">Discovery Should Confirm</div>
+    <div class="mockup-body">
+      <div style="display:grid;gap:8px">
+        <div class="placeholder">Receiver PB heartbeat and matching bridge id</div>
+        <div class="placeholder">Remote Control block found and usable</div>
+        <div class="placeholder">Gyros/thrusters available for vanilla autopilot/corrections</div>
+        <div class="placeholder">Fixed rail weapon group found</div>
+        <div class="placeholder">WeaponCore power targeting configured</div>
+        <div class="placeholder">PDC group present but default posture avoids 3 km range</div>
+        <div class="placeholder">Telemetry exposes enough target/No Pwr data, or fallback manual control is needed</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">Readiness Summary Shape</div>
+    <div class="mockup-body">
+      <div style="display:grid;gap:8px">
+        <div class="placeholder" style="border-left:8px solid #69c779">Ready: bridge, role, Remote Control, rail group</div>
+        <div class="placeholder" style="border-left:8px solid #e6b84a">Warn: WeaponCore No Pwr telemetry not proven</div>
+        <div class="placeholder" style="border-left:8px solid #e06666">Blocker: no receiver heartbeat / bad bridge id</div>
+        <div class="placeholder" style="border-left:8px solid #8fb6ff">Action: paste CustomData, rename group, set WC power targeting</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Open Choice</h3>
+  <p>Should Fleet C2 allow a ship into a squad with warnings, or should any missing discovery item block squad readiness until acknowledged?</p>
+</div>

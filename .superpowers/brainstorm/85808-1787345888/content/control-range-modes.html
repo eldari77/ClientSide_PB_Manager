@@ -1,0 +1,80 @@
+<h2>Fleet Control Range Modes</h2>
+<p class="subtitle">Because the bridge depends on the client seeing the grids, live command and telemetry are strongest in render range. Remote operation can still exist, but it becomes a different mode with less feedback and more risk.</p>
+
+<div class="cards">
+  <div class="card" data-choice="a-tethered-rts" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">A. Tethered RTS</div>
+        <div class="mockup-body">
+          <div style="display:grid;gap:10px;text-align:center">
+            <div class="placeholder">Player command ship / nearby client</div>
+            <div style="font-size:26px">↕ live bridge</div>
+            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">
+              <div class="placeholder">FF</div>
+              <div class="placeholder">FF</div>
+              <div class="placeholder">CV</div>
+              <div class="placeholder">CV</div>
+              <div class="placeholder">CV</div>
+            </div>
+            <div style="font-size:13px">Patrol, guard, pursue, regroup while grids remain visible.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Best First Slice</h3>
+      <p>Matches the existing bridge, supports live RTS commands, and lets the client do perception and tactical planning.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b-mission-packet" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">B. Mission Packet</div>
+        <div class="mockup-body">
+          <div style="display:grid;gap:10px;text-align:center">
+            <div class="placeholder">Client preloads stance + waypoints</div>
+            <div style="font-size:26px">↓</div>
+            <div class="placeholder">Tiny onboard PB executes slowly</div>
+            <div style="font-size:26px">↓</div>
+            <div class="placeholder">No live correction out of render range</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Remote-ish</h3>
+      <p>Useful for “go there and hold” behavior, but must be conservative because telemetry and replanning disappear.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c-relay-network" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">C. PB / Antenna Relay</div>
+        <div class="mockup-body">
+          <div style="display:grid;gap:10px;text-align:center">
+            <div class="placeholder">Command PB</div>
+            <div style="font-size:24px">IGC / antenna chain</div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+              <div class="placeholder">Relay</div>
+              <div class="placeholder">Relay</div>
+              <div class="placeholder">Relay</div>
+            </div>
+            <div class="placeholder">Distant squad receivers</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Later Research</h3>
+      <p>May help remote commands, but shifts work back onto server-side PB communication under the same 0.3 ms global cap.</p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Recommended Product Shape</h3>
+  <p>Build V1 as tethered RTS. Add mission packets as a constrained fallback, not as the main promise. Treat relay networking as a later experiment after the receiver loop is proven cheap.</p>
+</div>

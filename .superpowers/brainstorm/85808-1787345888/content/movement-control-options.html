@@ -1,0 +1,72 @@
+<h2>Ship Movement Control</h2>
+<p class="subtitle">With a 0.3 ms global PB cap, the movement primitive matters more than the stance names. The client can plan patrol, guard, and pursue, but the receiver PB needs the cheapest safe actuator path.</p>
+
+<div class="cards">
+  <div class="card" data-choice="a-remote-control-autopilot" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">A. Remote Control Waypoints</div>
+        <div class="mockup-body">
+          <div style="display:grid;gap:10px;text-align:center">
+            <div class="placeholder">Client computes waypoint / heading goal</div>
+            <div style="font-size:24px">↓ tiny packet</div>
+            <div class="placeholder">Receiver PB updates Remote Control</div>
+            <div style="font-size:24px">↓ game autopilot</div>
+            <div class="placeholder">Ship flies the leg</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Cheapest If Allowed</h3>
+      <p>Best runtime profile. Depends on Remote Control/autopilot being available and good enough on this server.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b-direct-thrust-gyro" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">B. Direct Thruster/Gyro Commands</div>
+        <div class="mockup-body">
+          <div style="display:grid;gap:10px;text-align:center">
+            <div class="placeholder">Client computes control vector</div>
+            <div style="font-size:24px">↓ per-step packet</div>
+            <div class="placeholder">Receiver PB applies gyro/thrust overrides</div>
+            <div style="font-size:24px">↓</div>
+            <div class="placeholder">Ship steers manually</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Most Independent</h3>
+      <p>Can work without autopilot, but costs more PB time and needs careful stabilization, failsafes, and testing.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c-hybrid" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">C. Hybrid Autopilot + Corrections</div>
+        <div class="mockup-body">
+          <div style="display:grid;gap:10px;text-align:center">
+            <div class="placeholder">Remote Control handles travel</div>
+            <div style="font-size:24px">+</div>
+            <div class="placeholder">PB applies small facing / braking / block actions</div>
+            <div style="font-size:24px">+</div>
+            <div class="placeholder">Client refreshes tactical intent</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Likely Best V1</h3>
+      <p>Uses the cheapest movement path first, while leaving room for guard-facing, pursue-brake, and combat posture commands.</p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Question</h3>
+  <p>On this server, are Remote Control blocks and their autopilot/waypoint behavior available and acceptable for combat ships?</p>
+</div>

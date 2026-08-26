@@ -18,6 +18,9 @@ public partial class MainWindow : Window
     private const string ChildWorkerScriptsJsonField = "child_worker_scripts";
     private const string ExpiresAfterSequencesJsonField = "expires_after_sequences";
     private const string FairnessWeightJsonField = "fairness_weight";
+    private const string SosShipsSchema = "novali.client_side_pb.sos_ships.v1";
+    private const string SosStatusScriptId = "sos_status";
+    private const string ExpectedGridEntityIdJsonField = "expected_grid_entity_id";
     private const string ExpectedShimVersion = "baseline-template-v1";
     private const string WorkerUiUrl = "http://localhost:8788";
     private const string WorkerUiLauncherRelativePath = @"tools\open_worker_ui.ps1";
@@ -26,6 +29,7 @@ public partial class MainWindow : Window
     private readonly ObservableCollection<FileRecord> _bridgeFiles = new();
     private readonly ObservableCollection<BridgeUiRecord> _bridges = new();
     private readonly ObservableCollection<ScriptInstanceUiRecord> _scriptInstances = new();
+    private readonly ObservableCollection<SosShipUiRecord> _sosShips = new();
     private readonly ObservableCollection<WorkerScriptRecord> _workerScripts = new();
     private readonly ObservableCollection<WorkerConfigEntry> _workerConfigEntries = new();
     private readonly HashSet<string> _knownBridgeIds = new(StringComparer.OrdinalIgnoreCase);
@@ -40,6 +44,7 @@ public partial class MainWindow : Window
         BridgeGrid.ItemsSource = _bridgeFiles;
         BridgeRegistryGrid.ItemsSource = _bridges;
         ScriptInstanceGrid.ItemsSource = _scriptInstances;
+        SosShipGrid.ItemsSource = _sosShips;
         WorkerGrid.ItemsSource = _workerScripts;
         BridgeSelectedScriptBox.ItemsSource = _workerScripts;
         BridgeSetupScriptBox.ItemsSource = _workerScripts;
@@ -75,6 +80,7 @@ public partial class MainWindow : Window
         LoadBridgeFiles();
         LoadScriptInstances();
         LoadBridgeRegistry();
+        LoadSosShips();
         LoadLimits();
         RefreshLogs();
         LoadDiscoverySummary();
@@ -719,6 +725,242 @@ public partial class MainWindow : Window
         StatusText.Text = string.Equals(bridge.Status, "verified", StringComparison.OrdinalIgnoreCase)
             ? "Multi-script bridge assigned to orchestrator instance"
             : "Multi-script bridge staged; copy PB CustomData so the in-game PB runs the orchestrator instance";
+    }
+
+    private void RefreshSosShips_Click(object sender, RoutedEventArgs e)
+    {
+        LoadSosShips();
+        StatusText.Text = "SOS ships refreshed";
+    }
+
+    private void LoadSosShips()
+    {
+        _sosShips.Clear();
+        var payload = LoadSosShipsPayload();
+        foreach (var ship in payload.Ships.OrderBy(item => item.BridgeId, StringComparer.OrdinalIgnoreCase))
+        {
+            _sosShips.Add(SosShipUiRecord.FromRecord(NormalizeSosShipRecord(ship)));
+        }
+        if (SosShipGrid.SelectedItem is null && _sosShips.Count > 0)
+        {
+            SosShipGrid.SelectedItem = _sosShips[0];
+        }
+        if (SosShipGrid.SelectedItem is SosShipUiRecord selected)
+        {
+            ApplySosShipToForm(selected);
+        }
+    }
+
+    private void SosShipGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (SosShipGrid.SelectedItem is not SosShipUiRecord record)
+        {
+            return;
+        }
+        ApplySosShipToForm(record);
+        SetCurrentWorkerBridgeId(record.BridgeId);
+    }
+
+    private void NewSosShip_Click(object sender, RoutedEventArgs e)
+    {
+        var bridgeId = (BridgeRegistryGrid.SelectedItem as BridgeUiRecord)?.BridgeId
+            ?? TextOrFallback(SosBridgeIdBox.Text, "pb-bridge-001");
+        SosBridgeIdBox.Text = bridgeId;
+        SosShipIdBox.Text = NormalizeScriptId("ship-" + bridgeId);
+        SosDisplayNameBox.Text = (BridgeRegistryGrid.SelectedItem as BridgeUiRecord)?.DisplayName ?? "SOS Ship";
+        SosModeBox.Text = "Docked";
+        SosExpectedGridEntityIdBox.Text = "0";
+        SosStatusSurfaceEntityIdBox.Text = "0";
+        SosStatusSurfaceIndexBox.Text = "0";
+        SosPbLimitProfileBox.Text = "default";
+        StatusText.Text = "SOS ship staged";
+    }
+
+    private void SaveSosShip_Click(object sender, RoutedEventArgs e)
+    {
+        var ship = SaveSosShipFromForm();
+        if (ship == null)
+        {
+            return;
+        }
+        LoadSosShips();
+        StatusText.Text = "SOS ship saved";
+    }
+
+    private void BuildSosServices_Click(object sender, RoutedEventArgs e)
+    {
+        var ship = SaveSosShipFromForm();
+        if (ship == null)
+        {
+            return;
+        }
+        var bridge = EnsureBridgeForSosShip(ship);
+        var scriptInstances = LoadScriptInstancesPayload();
+        var childInstanceIds = new List<string>();
+        foreach (var baseScriptId in SosBaseServiceScriptIds())
+        {
+            var instanceId = BuildChildInstanceId(ship.BridgeId, baseScriptId);
+            var scriptName = _workerScripts.FirstOrDefault(script => string.Equals(script.ScriptId, baseScriptId, StringComparison.OrdinalIgnoreCase))?.DisplayName;
+            CreateOrUpdateScriptInstance(
+                scriptInstances,
+                ship.BridgeId,
+                instanceId,
+                baseScriptId,
+                bridge.DisplayName + " - " + TextOrFallback(scriptName, baseScriptId),
+                true);
+            childInstanceIds.Add(instanceId);
+        }
+        var orchestratorInstanceId = EnsureBridgeOrchestratorInstance(scriptInstances, bridge);
+        SaveScriptInstancesPayload(scriptInstances);
+        bridge.SelectedScriptInstanceId = orchestratorInstanceId;
+        bridge.AllowedScriptInstanceIds = new[] { orchestratorInstanceId }
+            .Concat(childInstanceIds)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        bridge.UpdatedAt = DateTime.UtcNow.ToString("o");
+        SaveBridgeRecord(bridge);
+        ship.Services = BuildSosServiceRecords(childInstanceIds);
+        SaveSosShipRecord(ship);
+        LoadScriptInstances();
+        LoadBridgeRegistry();
+        LoadSosShips();
+        LoadWorkerScripts();
+        SosStatusText.Text = "SOS services built for " + ship.BridgeId;
+        StatusText.Text = "SOS services built";
+    }
+
+    private SosShipRecord? SaveSosShipFromForm()
+    {
+        _ = ExpectedGridEntityIdJsonField;
+        var bridgeId = NormalizeScriptId(SosBridgeIdBox.Text);
+        var shipId = NormalizeScriptId(SosShipIdBox.Text);
+        if (string.IsNullOrWhiteSpace(bridgeId) || string.IsNullOrWhiteSpace(shipId))
+        {
+            StatusText.Text = "SOS bridge id and ship id are required";
+            return null;
+        }
+        var payload = LoadSosShipsPayload();
+        var existing = payload.Ships.FirstOrDefault(item => string.Equals(item.ShipId, shipId, StringComparison.OrdinalIgnoreCase));
+        var ship = existing ?? new SosShipRecord();
+        ship.ShipId = shipId;
+        ship.BridgeId = bridgeId;
+        ship.DisplayName = TextOrFallback(SosDisplayNameBox.Text, shipId);
+        ship.ExpectedGridEntityId = GetLimitLong(SosExpectedGridEntityIdBox.Text, 0);
+        ship.Mode = NormalizeSosMode(SelectedComboText(SosModeBox, "Docked"));
+        ship.PbLimitProfile = TextOrFallback(SosPbLimitProfileBox.Text, "default");
+        ship.Enabled = true;
+        ship.Services = ship.Services.Count == 0 ? BuildSosServiceRecords(DefaultSosServiceInstanceIds(bridgeId)) : ship.Services;
+        ship.StatusSurfaces = BuildSosStatusSurfacesFromForm();
+        ship.CreatedAt = TextOrFallback(ship.CreatedAt, DateTime.UtcNow.ToString("o"));
+        ship.UpdatedAt = DateTime.UtcNow.ToString("o");
+        payload.Ships.RemoveAll(item => string.Equals(item.ShipId, shipId, StringComparison.OrdinalIgnoreCase));
+        payload.Ships.Add(ship);
+        SaveSosShipsPayload(payload);
+        return ship;
+    }
+
+    private BridgeRegistryRecord EnsureBridgeForSosShip(SosShipRecord ship)
+    {
+        var bridges = LoadBridgeRegistryPayload();
+        if (!bridges.Bridges.TryGetValue(ship.BridgeId, out var bridge))
+        {
+            bridge = new BridgeRegistryRecord
+            {
+                BridgeId = ship.BridgeId,
+                DisplayName = ship.DisplayName,
+                Status = "created",
+                Shim = new BridgeShimSettings(),
+                CreatedAt = DateTime.UtcNow.ToString("o")
+            };
+        }
+        bridge.DisplayName = TextOrFallback(bridge.DisplayName, ship.DisplayName);
+        bridge.Shim.SetupScriptId = BridgeOrchestratorScriptId;
+        bridge.Shim.RuntimeMsLimit = 0.25;
+        bridge.Shim.FailClosed = true;
+        bridge.UpdatedAt = DateTime.UtcNow.ToString("o");
+        bridges.Bridges[ship.BridgeId] = bridge;
+        SaveBridgeRegistryPayload(bridges);
+        return NormalizeBridgeRecord(bridge);
+    }
+
+    private List<string> SosBaseServiceScriptIds()
+    {
+        var scriptIds = new[] { SosStatusScriptId, "workshop_1216126863_adapter", "virtual_whip_auto_door" };
+        return scriptIds
+            .Where(scriptId => _workerScripts.Any(script => string.Equals(script.ScriptId, scriptId, StringComparison.OrdinalIgnoreCase) && script.Enabled))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static List<string> DefaultSosServiceInstanceIds(string bridgeId)
+    {
+        return new List<string>
+        {
+            BuildChildInstanceId(bridgeId, SosStatusScriptId),
+            BuildChildInstanceId(bridgeId, "workshop_1216126863_adapter"),
+            BuildChildInstanceId(bridgeId, "virtual_whip_auto_door")
+        };
+    }
+
+    private static List<SosServiceRecord> BuildSosServiceRecords(IEnumerable<string> instanceIds)
+    {
+        return instanceIds
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Select(id => new SosServiceRecord
+            {
+                ServiceId = SosServiceIdForScript(id),
+                ScriptId = id,
+                Enabled = true
+            })
+            .ToList();
+    }
+
+    private static string SosServiceIdForScript(string scriptId)
+    {
+        if (scriptId.Contains("sos_status", StringComparison.OrdinalIgnoreCase))
+        {
+            return "status";
+        }
+        if (scriptId.Contains("1216126863", StringComparison.OrdinalIgnoreCase) || scriptId.Contains("isy", StringComparison.OrdinalIgnoreCase))
+        {
+            return "inventory";
+        }
+        if (scriptId.Contains("door", StringComparison.OrdinalIgnoreCase) || scriptId.Contains("416932930", StringComparison.OrdinalIgnoreCase))
+        {
+            return "doors";
+        }
+        return "maintenance";
+    }
+
+    private List<SosStatusSurfaceRecord> BuildSosStatusSurfacesFromForm()
+    {
+        var blockId = GetLimitLong(SosStatusSurfaceEntityIdBox.Text, 0);
+        if (blockId == 0)
+        {
+            return new List<SosStatusSurfaceRecord>();
+        }
+        return new List<SosStatusSurfaceRecord>
+        {
+            new()
+            {
+                BlockEntityId = blockId,
+                SurfaceIndex = GetLimitInt(SosStatusSurfaceIndexBox.Text, 0)
+            }
+        };
+    }
+
+    private void ApplySosShipToForm(SosShipUiRecord record)
+    {
+        SosBridgeIdBox.Text = record.BridgeId;
+        SosShipIdBox.Text = record.ShipId;
+        SosDisplayNameBox.Text = record.DisplayName;
+        SosModeBox.Text = record.Mode;
+        SosExpectedGridEntityIdBox.Text = record.ExpectedGridEntityId.ToString();
+        SosPbLimitProfileBox.Text = record.PbLimitProfile;
+        var surface = record.StatusSurfaces.FirstOrDefault();
+        SosStatusSurfaceEntityIdBox.Text = surface?.BlockEntityId.ToString() ?? "0";
+        SosStatusSurfaceIndexBox.Text = surface?.SurfaceIndex.ToString() ?? "0";
     }
 
     private void AssignScriptInstance_Click(object sender, RoutedEventArgs e)
@@ -1889,6 +2131,10 @@ public partial class MainWindow : Window
 
     private static string RoleForScript(string scriptId)
     {
+        if (scriptId.Contains("sos_status", StringComparison.OrdinalIgnoreCase))
+        {
+            return "status";
+        }
         if (scriptId.Contains("whip", StringComparison.OrdinalIgnoreCase) || scriptId.Contains("416932930", StringComparison.OrdinalIgnoreCase))
         {
             return "reactive";
@@ -1908,10 +2154,14 @@ public partial class MainWindow : Window
 
     private static int ExpiresAfterSequencesForScript(string scriptId) => IsReactiveScript(scriptId) ? 1 : 0;
 
-    private static int FairnessWeightForScript(string scriptId) => IsReactiveScript(scriptId) ? 3 : 1;
+    private static int FairnessWeightForScript(string scriptId) => RoleForScript(scriptId) == "status" ? 4 : IsReactiveScript(scriptId) ? 3 : 1;
 
     private static string OperatorStatusForScript(string scriptId)
     {
+        if (scriptId.Contains("sos_status", StringComparison.OrdinalIgnoreCase))
+        {
+            return "ready_sos";
+        }
         if (scriptId.Contains("2831096030", StringComparison.OrdinalIgnoreCase))
         {
             return "blocked_needs_command_mapping";
@@ -2655,9 +2905,26 @@ public partial class MainWindow : Window
         return int.TryParse(text, out var value) && value > 0 ? value : fallback;
     }
 
+    private static long GetLimitLong(string? text, long fallback)
+    {
+        return long.TryParse(text, out var value) && value >= 0 ? value : fallback;
+    }
+
     private static double GetLimitDouble(string? text, double fallback)
     {
         return double.TryParse(text, out var value) && value > 0 ? value : fallback;
+    }
+
+    private static string NormalizeSosMode(string value)
+    {
+        return value switch
+        {
+            "Docked" => "Docked",
+            "Cruise" => "Cruise",
+            "Combat" => "Combat",
+            "Emergency" => "Emergency",
+            _ => "Docked"
+        };
     }
 
     private static string EscapeCSharpString(string value)
@@ -2718,7 +2985,72 @@ public partial class MainWindow : Window
 
     private string BridgesRegistryPath() => Path.Combine(_root, "data", "bridges.json");
 
+    private string SosShipsPath() => Path.Combine(_root, "data", "sos_ships.json");
+
     private string ScriptInstancesPath() => Path.Combine(_root, "data", "script_instances.json");
+
+    private SosShipsPayload LoadSosShipsPayload()
+    {
+        var path = SosShipsPath();
+        if (!File.Exists(path))
+        {
+            return new SosShipsPayload
+            {
+                Schema = SosShipsSchema,
+                Ships = new List<SosShipRecord>()
+            };
+        }
+        try
+        {
+            var payload = JsonSerializer.Deserialize<SosShipsPayload>(File.ReadAllText(path), JsonOptions());
+            if (payload == null)
+            {
+                throw new JsonException();
+            }
+            payload.Schema = SosShipsSchema;
+            payload.Ships ??= new List<SosShipRecord>();
+            return payload;
+        }
+        catch (JsonException)
+        {
+            return new SosShipsPayload
+            {
+                Schema = SosShipsSchema,
+                Ships = new List<SosShipRecord>()
+            };
+        }
+    }
+
+    private void SaveSosShipsPayload(SosShipsPayload payload)
+    {
+        var path = SosShipsPath();
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        payload.Schema = SosShipsSchema;
+        File.WriteAllText(path, JsonSerializer.Serialize(payload, JsonOptions()));
+    }
+
+    private void SaveSosShipRecord(SosShipRecord ship)
+    {
+        var payload = LoadSosShipsPayload();
+        payload.Ships.RemoveAll(item => string.Equals(item.ShipId, ship.ShipId, StringComparison.OrdinalIgnoreCase));
+        payload.Ships.Add(ship);
+        SaveSosShipsPayload(payload);
+    }
+
+    private static SosShipRecord NormalizeSosShipRecord(SosShipRecord ship)
+    {
+        var now = DateTime.UtcNow.ToString("o");
+        ship.ShipId = NormalizeScriptId(TextOrFallback(ship.ShipId, "ship-" + ship.BridgeId));
+        ship.BridgeId = NormalizeScriptId(TextOrFallback(ship.BridgeId, "pb-bridge-001"));
+        ship.DisplayName = TextOrFallback(ship.DisplayName, ship.ShipId);
+        ship.Mode = NormalizeSosMode(TextOrFallback(ship.Mode, "Docked"));
+        ship.PbLimitProfile = TextOrFallback(ship.PbLimitProfile, "default");
+        ship.Services ??= new List<SosServiceRecord>();
+        ship.StatusSurfaces ??= new List<SosStatusSurfaceRecord>();
+        ship.CreatedAt = TextOrFallback(ship.CreatedAt, now);
+        ship.UpdatedAt = TextOrFallback(ship.UpdatedAt, now);
+        return ship;
+    }
 
     private BridgeScriptsPayload LoadBridgeScriptsPayload()
     {
@@ -3302,6 +3634,68 @@ public sealed class ScriptInstanceRecord
     public string UpdatedAt { get; set; } = "";
 }
 
+public sealed class SosShipsPayload
+{
+    public string Schema { get; set; } = "novali.client_side_pb.sos_ships.v1";
+    public List<SosShipRecord> Ships { get; set; } = new();
+}
+
+public sealed class SosShipRecord
+{
+    public string ShipId { get; set; } = "";
+    public string BridgeId { get; set; } = "";
+    public string DisplayName { get; set; } = "";
+    public long ExpectedGridEntityId { get; set; }
+    public string Mode { get; set; } = "Docked";
+    public string PbLimitProfile { get; set; } = "default";
+    public List<SosServiceRecord> Services { get; set; } = new();
+    public List<SosStatusSurfaceRecord> StatusSurfaces { get; set; } = new();
+    public bool Enabled { get; set; } = true;
+    public string CreatedAt { get; set; } = "";
+    public string UpdatedAt { get; set; } = "";
+}
+
+public sealed class SosServiceRecord
+{
+    public string ServiceId { get; set; } = "";
+    public string ScriptId { get; set; } = "";
+    public bool Enabled { get; set; } = true;
+}
+
+public sealed class SosStatusSurfaceRecord
+{
+    public long BlockEntityId { get; set; }
+    public int SurfaceIndex { get; set; }
+}
+
+public sealed record SosShipUiRecord(
+    string ShipId,
+    string BridgeId,
+    string DisplayName,
+    long ExpectedGridEntityId,
+    string Mode,
+    string PbLimitProfile,
+    List<SosServiceRecord> Services,
+    List<SosStatusSurfaceRecord> StatusSurfaces,
+    string ServicesText,
+    string UpdatedAt)
+{
+    public static SosShipUiRecord FromRecord(SosShipRecord ship)
+    {
+        return new SosShipUiRecord(
+            ship.ShipId,
+            ship.BridgeId,
+            ship.DisplayName,
+            ship.ExpectedGridEntityId,
+            ship.Mode,
+            ship.PbLimitProfile,
+            ship.Services,
+            ship.StatusSurfaces,
+            string.Join(", ", ship.Services.Select(service => service.ServiceId + ":" + service.ScriptId)),
+            ship.UpdatedAt);
+    }
+}
+
 public sealed class WorkerConfigEntry : INotifyPropertyChanged
 {
     private string _valueText;
@@ -3359,5 +3753,5 @@ public sealed record BridgeLimitProfile(
     int MaxCommandsPerMinute,
     bool FailClosed)
 {
-    public static BridgeLimitProfile Default { get; } = new(0.03, 0.75, 10, 30, true);
+    public static BridgeLimitProfile Default { get; } = new(0.25, 0.75, 3, 60, true);
 }

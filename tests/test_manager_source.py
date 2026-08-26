@@ -13,6 +13,34 @@ def test_manager_mentions_orchestrator_and_virtual_pb_status():
     assert "virtual_pb_compatibility" in source
 
 
+def test_manager_has_sos_mounting_surface_and_persistence_hooks():
+    xaml = Path("manager/MainWindow.xaml").read_text(encoding="utf-8")
+    source = MANAGER.read_text(encoding="utf-8")
+
+    for token in [
+        'TabItem Header="SOS"',
+        "SosShipGrid",
+        "SosBridgeIdBox",
+        "SosShipIdBox",
+        "SosModeBox",
+        "Create SOS Ship",
+        "Save SOS Ship",
+        "Build SOS Services",
+    ]:
+        assert token in xaml
+
+    for token in [
+        "SosShipsPath",
+        "novali.client_side_pb.sos_ships.v1",
+        "LoadSosShips",
+        "SaveSosShip_Click",
+        "BuildSosServices_Click",
+        "sos_status",
+        "expected_grid_entity_id",
+    ]:
+        assert token in source
+
+
 def test_manager_guided_setup_runs_discovery_and_local_repair_automation():
     xaml = Path("manager/MainWindow.xaml").read_text(encoding="utf-8")
     source = MANAGER.read_text(encoding="utf-8")

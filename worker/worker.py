@@ -14,6 +14,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
+from worker.sos import attach_sos_request_context, expand_sos_bridge_configs
+
 
 SCHEMA = "novali.client_side_pb_bridge.v1"
 COMMAND_QUEUE_SCHEMA = "novali.client_side_pb.command_queue.v1"
@@ -21,6 +23,16 @@ AUTOCRAFTING_BLUEPRINT_SCHEMA = "novali.client_side_pb.autocrafting_blueprints.v
 SCRIPT_INSTANCES_SCHEMA = "novali.client_side_pb.script_instances.v1"
 BRIDGE_HEALTH_SCHEMA = "novali.client_side_pb.bridge_health.v1"
 VOLATILE_COMMAND_KINDS = {"transfer_item", "write_text_surface"}
+INTEGRITY_SNAPSHOT_KEYS = ("integrity_snapshot", "ship_integrity", "damage_snapshot")
+INTEGRITY_BLOCK_KEYS = (
+    "integrity_ratio",
+    "integrity",
+    "current_integrity",
+    "max_integrity",
+    "maximum_integrity",
+    "functional",
+    "is_functional",
+)
 DEFAULT_LCD_QUEUE_COOLDOWN_SEQUENCES = 1
 DEFAULT_BRIDGE_STALE_SECONDS = 120
 DEFAULT_PROCESSED_REQUEST_RETENTION_SECONDS = 300
@@ -198,7 +210,7 @@ def load_bridge_script_configs(root: Path) -> dict[str, BridgeScriptConfig]:
                 if isinstance(child, dict) and str(child.get("script_id", ""))
             ),
         )
-    return configs
+    return expand_sos_bridge_configs(root, configs, bridge_config_factory=BridgeScriptConfig)
 
 
 def load_worker_config(root: Path, script_id: str) -> dict[str, Any]:
@@ -314,6 +326,87 @@ def learn_autocrafting_blueprints(root: Path, request: dict[str, Any]) -> dict[s
     if changed:
         save_autocrafting_blueprints(root, bridge_id, script_id, payload)
     return payload
+
+
+def attach_integrity_snapshot_from_grid_snapshot(request: dict[str, Any]) -> None:
+    if any(isinstance(request.get(key), dict) for key in INTEGRITY_SNAPSHOT_KEYS):
+        return
+    grid_snapshot = request.get("grid_snapshot") if isinstance(request.get("grid_snapshot"), dict) else {}
+    snapshot = integrity_snapshot_from_grid_snapshot(grid_snapshot)
+    if snapshot:
+        request["integrity_snapshot"] = snapshot
+
+
+def integrity_snapshot_from_grid_snapshot(grid_snapshot: dict[str, Any]) -> dict[str, Any]:
+    blocks_payload = grid_snapshot.get("blocks") if isinstance(grid_snapshot.get("blocks"), list) else []
+    blocks = [block for block in (normalized_integrity_block(item) for item in blocks_payload) if block]
+    critical_payload = grid_snapshot.get("critical_systems") if isinstance(grid_snapshot.get("critical_systems"), list) else []
+    critical_systems = [
+        system for system in (normalized_critical_system(item) for item in critical_payload) if system
+    ]
+    if not blocks and not critical_systems:
+        return {}
+    return {"blocks": blocks, "critical_systems": critical_systems}
+
+
+def normalized_integrity_block(block: Any) -> dict[str, Any]:
+    if not isinstance(block, dict) or not any(key in block and block.get(key) is not None for key in INTEGRITY_BLOCK_KEYS):
+        return {}
+    normalized: dict[str, Any] = {}
+    name = first_text(block, "name", "custom_name", "display_name")
+    block_type = first_text(block, "type", "subtype", "definition")
+    subtype = first_text(block, "subtype")
+    if name:
+        normalized["name"] = name
+    if block_type:
+        normalized["type"] = block_type
+    if subtype:
+        normalized["subtype"] = subtype
+    if block.get("integrity_ratio") is not None:
+        normalized["integrity_ratio"] = json_scalar(block.get("integrity_ratio"))
+    else:
+        integrity = block.get("integrity", block.get("current_integrity"))
+        max_integrity = block.get("max_integrity", block.get("maximum_integrity"))
+        if integrity is not None:
+            normalized["integrity"] = json_scalar(integrity)
+        if max_integrity is not None:
+            normalized["max_integrity"] = json_scalar(max_integrity)
+    functional = block.get("functional", block.get("is_functional"))
+    if functional is not None:
+        normalized["functional"] = bool(functional)
+    return normalized
+
+
+def normalized_critical_system(system: Any) -> dict[str, Any]:
+    if not isinstance(system, dict):
+        return {}
+    normalized: dict[str, Any] = {}
+    name = first_text(system, "name", "custom_name", "display_name")
+    system_type = first_text(system, "type", "subtype", "role")
+    subtype = first_text(system, "subtype")
+    if name:
+        normalized["name"] = name
+    if system_type:
+        normalized["type"] = system_type
+    if subtype:
+        normalized["subtype"] = subtype
+    if system.get("present") is not None:
+        normalized["present"] = bool(system.get("present"))
+    return normalized
+
+
+def first_text(payload: dict[str, Any], *keys: str) -> str:
+    for key in keys:
+        value = payload.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return ""
+
+
+def json_scalar(value: Any) -> Any:
+    if isinstance(value, (str, int, float, bool)) or value is None:
+        return value
+    return str(value)
 
 
 def component_name_from_blueprint_id(blueprint_id: str) -> str:
@@ -934,6 +1027,29 @@ def validate_request(request: dict[str, Any]) -> str:
     return "none"
 
 
+def sos_blocker_result(request: dict[str, Any], error_bucket: str, blockers: list[Any]) -> dict[str, Any]:
+    normalized_blockers = [str(item) for item in blockers if str(item)]
+    blocker_text = ", ".join(normalized_blockers) if normalized_blockers else error_bucket
+    bridge_id = str(request.get("bridge_id", "bridge") or "bridge")
+    sos_ship = request.get("sos_ship") if isinstance(request.get("sos_ship"), dict) else {}
+    identity_status = str(sos_ship.get("identity_status", "blocked") or "blocked")
+    output = {
+        "summary": f"SOS {bridge_id} rejected: {blocker_text}",
+        "commands": [{"kind": "echo", "text": f"SOS {bridge_id} rejected: {blocker_text}"}],
+        "orchestrator": {"status": error_bucket},
+        "child_results": [],
+        "sos": {
+            "ship_id": str(sos_ship.get("ship_id", "")),
+            "display_name": str(sos_ship.get("display_name", "")),
+            "mode": str(sos_ship.get("mode", "")),
+            "identity_status": identity_status,
+            "blockers": normalized_blockers,
+            "warnings": sos_ship.get("warnings", []) if isinstance(sos_ship.get("warnings"), list) else [],
+        },
+    }
+    return result_for(request, "rejected", output, error_bucket)
+
+
 def execute_request(
     request: dict[str, Any],
     scripts: dict[str, WorkerScript],
@@ -948,6 +1064,8 @@ def execute_request(
         return stale_request_result(request)
 
     script_id = str(request["script_id"])
+    if root is not None:
+        bridge_configs = expand_sos_bridge_configs(root, bridge_configs or {}, bridge_config_factory=BridgeScriptConfig)
     bridge_config = (bridge_configs or {}).get(str(request["bridge_id"]))
     if bridge_config is not None and bridge_config.allowed_worker_scripts and script_id not in bridge_config.allowed_worker_scripts:
         return result_for(request, "rejected", {}, "script_not_allowed_for_bridge")
@@ -960,6 +1078,13 @@ def execute_request(
     if script.instance_bridge_id and not string_equals(script.instance_bridge_id, str(request["bridge_id"])):
         return result_for(request, "rejected", {}, "script_instance_bridge_mismatch")
     if script_id == "bridge_orchestrator" or script.base_script_id == "bridge_orchestrator":
+        if root is not None:
+            sos_context = attach_sos_request_context(root, request)
+            if sos_context.get("registry_errors"):
+                return sos_blocker_result(request, "sos_registry_invalid", sos_context["registry_errors"])
+            blockers = sos_context.get("blockers")
+            if isinstance(blockers, list) and blockers:
+                return sos_blocker_result(request, "sos_identity_blocked", blockers)
         return execute_orchestrator_request(request, scripts, bridge_configs or {}, bridge_config, root)
 
     try:
@@ -1026,6 +1151,7 @@ def execute_orchestrator_request(
     child_results: list[dict[str, Any]] = []
     scheduler_fairness: list[dict[str, Any]] = []
     allowed = set(bridge_config.allowed_worker_scripts if bridge_config is not None else ())
+    child_runtime_telemetry = enriched_child_runtime_telemetry(root, request, child_configs)
     for index, child_config in enumerate(child_configs):
         child_id = str(child_config.get("script_id", "")).strip()
         if not child_id or child_id == "bridge_orchestrator" or not bool(child_config.get("enabled", True)):
@@ -1036,6 +1162,10 @@ def execute_orchestrator_request(
         child_request = dict(request)
         child_request["script_id"] = child_id
         child_request["parent_script_id"] = "bridge_orchestrator"
+        child_request["runtime_telemetry"] = child_runtime_telemetry
+        child_service_id = str(child_config.get("service_id", "") or "").strip().lower()
+        if child_service_id == "integrity" or "sos_integrity" in child_id.lower() or "sos_damage" in child_id.lower():
+            attach_integrity_snapshot_from_grid_snapshot(child_request)
         child_result = execute_request(child_request, scripts, bridge_configs, root=root, apply_queue=False)
         result_payload = child_result.get("result") if isinstance(child_result.get("result"), dict) else {}
         child_results.append(
@@ -1116,11 +1246,115 @@ def execute_orchestrator_request(
         "conflicts": conflicts,
         "child_results": child_results,
     }
+    sos_ship = request.get("sos_ship") if isinstance(request.get("sos_ship"), dict) else {}
+    if sos_ship:
+        output["sos"] = {
+            "ship_id": str(sos_ship.get("ship_id", "")),
+            "display_name": str(sos_ship.get("display_name", "")),
+            "mode": str(sos_ship.get("mode", "")),
+            "identity_status": str(sos_ship.get("identity_status", "")),
+            "blockers": sos_ship.get("blockers", []) if isinstance(sos_ship.get("blockers"), list) else [],
+            "warnings": sos_ship.get("warnings", []) if isinstance(sos_ship.get("warnings"), list) else [],
+        }
     if root is not None:
         output = apply_command_queue(root, request, output)
     output["queue_pressure"] = queue_pressure_summary(output)
     attach_child_queue_stats(output)
     return result_for(request, "ok", output, "none")
+
+
+def enriched_child_runtime_telemetry(
+    root: Path | None,
+    request: dict[str, Any],
+    child_configs: tuple[dict[str, Any], ...],
+) -> dict[str, Any]:
+    telemetry = request.get("runtime_telemetry") if isinstance(request.get("runtime_telemetry"), dict) else {}
+    enriched = dict(telemetry)
+    previous = previous_orchestrator_result(root, str(request.get("bridge_id", "")))
+    previous_payload = previous.get("result") if isinstance(previous.get("result"), dict) else {}
+    queue_pressure = stable_queue_pressure(previous_payload)
+    child_services = child_service_telemetry(child_configs, previous_payload, queue_pressure)
+    enriched["queue_pressure"] = queue_pressure
+    enriched["child_services"] = child_services
+    enriched["child_services_by_script_id"] = {
+        item["script_id"]: item for item in child_services if str(item.get("script_id", ""))
+    }
+    enriched["child_services_by_service_id"] = {
+        item["service_id"]: item for item in child_services if str(item.get("service_id", ""))
+    }
+    return enriched
+
+
+def previous_orchestrator_result(root: Path | None, bridge_id: str) -> dict[str, Any]:
+    if root is None or not bridge_id:
+        return {}
+    return read_json_file(root / "data" / "bridge_results" / f"{safe_file_name(bridge_id)}.json")
+
+
+def stable_queue_pressure(previous_payload: dict[str, Any]) -> dict[str, Any]:
+    queue = previous_payload.get("queue_pressure") if isinstance(previous_payload.get("queue_pressure"), dict) else {}
+    if not queue and isinstance(previous_payload.get("command_queue"), dict):
+        queue = previous_payload["command_queue"]
+    by_source = queue.get("by_source") if isinstance(queue.get("by_source"), dict) else {}
+    return {
+        "queued": int_value(queue.get("queued"), 0),
+        "drained": int_value(queue.get("drained"), 0),
+        "remaining": int_value(queue.get("remaining"), 0),
+        "by_source": {
+            str(source_id): stable_queue_stats(stats)
+            for source_id, stats in by_source.items()
+            if isinstance(stats, dict) and str(source_id)
+        },
+    }
+
+
+def child_service_telemetry(
+    child_configs: tuple[dict[str, Any], ...],
+    previous_payload: dict[str, Any],
+    queue_pressure: dict[str, Any],
+) -> list[dict[str, Any]]:
+    previous_children = previous_payload.get("child_results") if isinstance(previous_payload.get("child_results"), list) else []
+    previous_by_script = {
+        str(item.get("script_id", "")): item
+        for item in previous_children
+        if isinstance(item, dict) and str(item.get("script_id", ""))
+    }
+    by_source = queue_pressure.get("by_source") if isinstance(queue_pressure.get("by_source"), dict) else {}
+    children: list[dict[str, Any]] = []
+    for child_config in child_configs:
+        if not isinstance(child_config, dict):
+            continue
+        script_id = str(child_config.get("script_id", "")).strip()
+        if not script_id or script_id == "bridge_orchestrator":
+            continue
+        service_id = str(child_config.get("service_id", "") or script_id).strip()
+        previous = previous_by_script.get(script_id, {})
+        children.append(
+            {
+                "service_id": service_id,
+                "script_id": script_id,
+                "status": str(previous.get("status", "unknown") or "unknown"),
+                "error_bucket": str(previous.get("error_bucket", "none") or "none"),
+                "summary": str(previous.get("summary", "") or ""),
+                "command_queue": stable_queue_stats(by_source.get(script_id) if isinstance(by_source.get(script_id), dict) else {}),
+            }
+        )
+    return children
+
+
+def stable_queue_stats(stats: dict[str, Any]) -> dict[str, int]:
+    return {
+        "queued": int_value(stats.get("queued"), 0),
+        "drained": int_value(stats.get("drained"), 0),
+        "remaining": int_value(stats.get("remaining"), 0),
+    }
+
+
+def int_value(value: Any, default: int) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
 
 
 def queue_pressure_summary(output: dict[str, Any]) -> dict[str, Any]:

@@ -1,0 +1,77 @@
+<h2>Fleet C2 Module Boundary</h2>
+<p class="subtitle">The fleet controller can remain private while the ClientSide PB framework provides shared transport, snapshots, command queues, and PB receiver primitives.</p>
+
+<div class="cards">
+  <div class="card" data-choice="a-standalone-app" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">A. Standalone Fleet C2 App</div>
+        <div class="mockup-body">
+          <div style="display:grid;gap:10px;text-align:center">
+            <div class="placeholder">Fleet C2 UI</div>
+            <div style="font-size:24px">↕ module API</div>
+            <div class="placeholder">ClientSide PB bridge core</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+              <div class="placeholder">PB receivers</div>
+              <div class="placeholder">Plugin snapshots</div>
+              <div class="placeholder">Worker commands</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Recommended</h3>
+      <p>Private, focused UI with its own data model. Requires the framework to expose cleaner module hooks.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b-manager-plugin" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">B. Manager-Hosted Module</div>
+        <div class="mockup-body">
+          <div style="display:grid;gap:10px;text-align:center">
+            <div class="placeholder">Existing WPF manager</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <div class="placeholder">Bridge tabs</div>
+              <div class="placeholder">Fleet C2 tab</div>
+            </div>
+            <div style="font-size:24px">↓</div>
+            <div class="placeholder">Shared bridge files</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Fastest Integration</h3>
+      <p>Less plumbing, but mixes private tactical UI into the broader bridge manager and can make sharing harder.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c-local-web-console" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">C. Local Web Console</div>
+        <div class="mockup-body">
+          <div style="display:grid;gap:10px;text-align:center">
+            <div class="placeholder">Browser RTS console</div>
+            <div style="font-size:24px">↕ localhost service</div>
+            <div class="placeholder">Fleet C2 planner process</div>
+            <div style="font-size:24px">↕</div>
+            <div class="placeholder">Bridge core</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Most Flexible UI</h3>
+      <p>Good map-like controls and overlays, but adds a local service and web app stack to maintain.</p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>WeaponCore Disabled Signal</h3>
+  <p>Target cycling should consume a verified telemetry field equivalent to the in-game “No Pwr” state. Until we prove where that appears in Plugin/PB-accessible data, V1 should also allow manual “mark disabled / next target”.</p>
+</div>

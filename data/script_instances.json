@@ -21,6 +21,26 @@
       "created_at": "2026-08-08T00:50:32.8200701Z",
       "updated_at": "2026-08-08T03:48:39.5026883Z"
     },
+    "pb-bridge-001-sos_status": {
+      "instance_id": "pb-bridge-001-sos_status",
+      "base_script_id": "sos_status",
+      "display_name": "Primary PB Bridge - SOS Status",
+      "bridge_id": "pb-bridge-001",
+      "enabled": true,
+      "config_id": "pb-bridge-001-sos_status",
+      "created_at": "2026-08-26T00:00:00Z",
+      "updated_at": "2026-08-26T00:00:00Z"
+    },
+    "pb-bridge-001-sos_integrity": {
+      "instance_id": "pb-bridge-001-sos_integrity",
+      "base_script_id": "sos_integrity",
+      "display_name": "Primary PB Bridge - SOS Integrity",
+      "bridge_id": "pb-bridge-001",
+      "enabled": true,
+      "config_id": "pb-bridge-001-sos_integrity",
+      "created_at": "2026-08-26T00:00:00Z",
+      "updated_at": "2026-08-26T00:00:00Z"
+    },
     "pb-bridge-001-virtual_whip_auto_door": {
       "instance_id": "pb-bridge-001-virtual_whip_auto_door",
       "base_script_id": "virtual_whip_auto_door",

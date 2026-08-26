@@ -28,6 +28,7 @@ namespace NOVALI.ClientSidePBBridge
         private const int InventorySnapshotBlockCap = 300;
         private const int InventorySnapshotItemCap = 1200;
         private const int GridSnapshotBlockCap = 500;
+        private const int IntegritySnapshotBlockCap = 1200;
         private const int ProductionQueueItemCap = 120;
         private int _tick;
         private string _root;
@@ -52,6 +53,10 @@ namespace NOVALI.ClientSidePBBridge
         private int _lastGridSnapshotSkippedBlocks;
         private bool _lastGridSnapshotTruncatedBlocks;
         private string _lastGridSnapshotSkipSamples = "";
+        private int _lastIntegritySnapshotBlocks;
+        private int _lastIntegritySnapshotSkippedBlocks;
+        private bool _lastIntegritySnapshotTruncatedBlocks;
+        private string _lastIntegritySnapshotState = "not_requested";
         private string _lastVisibleGridScanState = "not_seen";
         private int _lastVisibleGridScanBlocks;
         private int _lastVisibleGridScanMachines;
@@ -213,6 +218,19 @@ namespace NOVALI.ClientSidePBBridge
                 }
             }
 
+            if (HasIntegritySnapshot(enriched))
+            {
+                _lastIntegritySnapshotState = "already_present";
+            }
+            else
+            {
+                var integritySnapshot = BuildIntegritySnapshotJson(programmableBlock);
+                if (!string.IsNullOrWhiteSpace(integritySnapshot))
+                {
+                    enriched = AppendJsonProperty(enriched, "integrity_snapshot", integritySnapshot, ref _lastIntegritySnapshotState);
+                }
+            }
+
             if (enriched.IndexOf("\"grid_snapshot\"", StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 _lastGridSnapshotState = "already_present";
@@ -227,6 +245,13 @@ namespace NOVALI.ClientSidePBBridge
                 }
             }
             return enriched;
+        }
+
+        private static bool HasIntegritySnapshot(string body)
+        {
+            return body.IndexOf("\"integrity_snapshot\"", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                body.IndexOf("\"ship_integrity\"", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                body.IndexOf("\"damage_snapshot\"", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private static bool ShouldIncludeTerminalMetadata(string body)
@@ -396,6 +421,134 @@ namespace NOVALI.ClientSidePBBridge
             return builder.ToString();
         }
 
+        private string BuildIntegritySnapshotJson(object programmableBlock)
+        {
+            _lastIntegritySnapshotBlocks = 0;
+            _lastIntegritySnapshotSkippedBlocks = 0;
+            _lastIntegritySnapshotTruncatedBlocks = false;
+            try
+            {
+                var grid = ReadObjectMember(programmableBlock, "CubeGrid") as IMyCubeGrid;
+                if (grid == null)
+                {
+                    _lastIntegritySnapshotState = "pb_grid_missing";
+                    return "";
+                }
+                var slimBlocks = new List<IMySlimBlock>();
+                try
+                {
+                    grid.GetBlocks(slimBlocks, block => block != null);
+                }
+                catch
+                {
+                    var entities = new HashSet<IMyEntity>();
+                    MyAPIGateway.Entities.GetEntities(entities);
+                    foreach (var entity in entities)
+                    {
+                        var candidateGrid = entity as IMyCubeGrid;
+                        if (candidateGrid == null)
+                        {
+                            continue;
+                        }
+                        try
+                        {
+                            candidateGrid.GetBlocks(slimBlocks, block => block != null);
+                        }
+                        catch
+                        {
+                        }
+                    }
+                }
+                var builder = new StringBuilder();
+                builder.Append("{");
+                builder.Append(Quote("schema")).Append(":").Append(Quote("novali.client_side_pb.integrity_snapshot.v1")).Append(",");
+                builder.Append(Quote("source")).Append(":").Append(Quote("plugin")).Append(",");
+                builder.Append(Quote("block_cap")).Append(":").Append(IntegritySnapshotBlockCap.ToString()).Append(",");
+                builder.Append(Quote("blocks")).Append(":[");
+                var firstBlock = true;
+                foreach (var slimBlock in slimBlocks)
+                {
+                    if (_lastIntegritySnapshotBlocks >= IntegritySnapshotBlockCap)
+                    {
+                        _lastIntegritySnapshotTruncatedBlocks = true;
+                        break;
+                    }
+                    if (slimBlock == null)
+                    {
+                        continue;
+                    }
+                    string blockJson;
+                    try
+                    {
+                        blockJson = BuildIntegrityBlockJson(slimBlock);
+                    }
+                    catch
+                    {
+                        _lastIntegritySnapshotSkippedBlocks++;
+                        continue;
+                    }
+                    if (string.IsNullOrWhiteSpace(blockJson))
+                    {
+                        continue;
+                    }
+                    if (!firstBlock)
+                    {
+                        builder.Append(",");
+                    }
+                    firstBlock = false;
+                    builder.Append(blockJson);
+                    _lastIntegritySnapshotBlocks++;
+                }
+                builder.Append("],");
+                builder.Append(Quote("critical_systems")).Append(":[],");
+                builder.Append(Quote("truncated_blocks")).Append(":").Append(_lastIntegritySnapshotTruncatedBlocks ? "true" : "false");
+                builder.Append("}");
+                _lastIntegritySnapshotState = _lastIntegritySnapshotSkippedBlocks > 0 ? "ok_with_skips" : "ok";
+                return builder.ToString();
+            }
+            catch (Exception ex)
+            {
+                _lastIntegritySnapshotState = "snapshot_exception_" + ex.GetType().Name;
+                return "";
+            }
+        }
+
+        private static string BuildIntegrityBlockJson(object slimBlock)
+        {
+            if (slimBlock == null)
+            {
+                return "";
+            }
+            var block = ReadObjectMember(slimBlock, "FatBlock") ?? slimBlock;
+            var type = BlockTypeName(block);
+            var subtype = BlockSubtypeName(block);
+            var name = ReadStringMember(block, "CustomName");
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                name = subtype;
+            }
+            var integrity = ReadDoubleLikeMember(slimBlock, "Integrity");
+            var maxIntegrity = ReadDoubleLikeMember(slimBlock, "MaxIntegrity");
+            var ratio = maxIntegrity > 0 ? integrity / maxIntegrity : 1.0;
+            if (ratio < 0)
+            {
+                ratio = 0;
+            }
+            if (ratio > 1)
+            {
+                ratio = 1;
+            }
+            return "{" +
+                Quote("name") + ":" + Quote(name) + "," +
+                Quote("type") + ":" + Quote(type) + "," +
+                Quote("subtype") + ":" + Quote(subtype) + "," +
+                Quote("integrity") + ":" + FormatDouble(integrity) + "," +
+                Quote("max_integrity") + ":" + FormatDouble(maxIntegrity) + "," +
+                Quote("integrity_ratio") + ":" + FormatDouble(ratio) + "," +
+                Quote("functional") + ":" + (ReadBoolMember(slimBlock, "IsFunctional", true) ? "true" : "false") +
+                "}";
+        }
+
         private string BuildGridSnapshotJson(object programmableBlock, bool includeTerminalMetadata)
         {
             _lastGridSnapshotBlocks = 0;
@@ -418,6 +571,7 @@ namespace NOVALI.ClientSidePBBridge
                 builder.Append("{");
                 builder.Append(Quote("schema")).Append(":").Append(Quote("novali.client_side_pb.grid_snapshot.v1")).Append(",");
                 builder.Append(Quote("source")).Append(":").Append(Quote("plugin")).Append(",");
+                builder.Append(Quote("grid_entity_id")).Append(":").Append(ReadLongMember(grid, "EntityId", 0).ToString()).Append(",");
                 builder.Append(Quote("block_cap")).Append(":").Append(GridSnapshotBlockCap.ToString()).Append(",");
                 builder.Append(Quote("blocks")).Append(":[");
                 var firstBlock = true;
@@ -435,12 +589,13 @@ namespace NOVALI.ClientSidePBBridge
                     string blockJson;
                     try
                     {
-                        blockJson = BuildGridBlockJson(slimBlock.FatBlock, includeTerminalMetadata);
+                        blockJson = BuildGridBlockJson(slimBlock, includeTerminalMetadata);
                     }
                     catch (Exception ex)
                     {
-                        RecordGridSnapshotSkip(slimBlock.FatBlock, ex);
-                        blockJson = BuildGridBlockFallbackJson(slimBlock.FatBlock, includeTerminalMetadata);
+                        var fallbackBlock = slimBlock.FatBlock != null ? (object)slimBlock.FatBlock : slimBlock;
+                        RecordGridSnapshotSkip(fallbackBlock, ex);
+                        blockJson = BuildGridBlockFallbackJson(fallbackBlock, includeTerminalMetadata);
                         if (string.IsNullOrWhiteSpace(blockJson))
                         {
                             continue;
@@ -580,12 +735,13 @@ namespace NOVALI.ClientSidePBBridge
                 "|conveyor=" + (conveyor ? "true" : "false");
         }
 
-        private string BuildGridBlockJson(object block, bool includeTerminalMetadata)
+        private string BuildGridBlockJson(object slimBlock, bool includeTerminalMetadata)
         {
-            if (block == null)
+            if (slimBlock == null)
             {
                 return "";
             }
+            var block = ReadObjectMember(slimBlock, "FatBlock") ?? slimBlock;
             var type = BlockTypeName(block);
             var subtype = BlockSubtypeName(block);
             var typeKey = (type + " " + subtype + " " + block.GetType().FullName).ToLowerInvariant();
@@ -630,6 +786,21 @@ namespace NOVALI.ClientSidePBBridge
             builder.Append(Quote("custom_name_with_faction")).Append(":").Append(Quote(ReadStringMember(block, "CustomNameWithFaction", ReadStringMember(block, "CustomName")))).Append(",");
             builder.Append(Quote("type")).Append(":").Append(Quote(type)).Append(",");
             builder.Append(Quote("subtype")).Append(":").Append(Quote(subtype)).Append(",");
+            var integrity = ReadDoubleLikeMember(slimBlock, "Integrity");
+            var maxIntegrity = ReadDoubleLikeMember(slimBlock, "MaxIntegrity");
+            var integrityRatio = maxIntegrity > 0 ? integrity / maxIntegrity : 1.0;
+            if (integrityRatio < 0)
+            {
+                integrityRatio = 0;
+            }
+            if (integrityRatio > 1)
+            {
+                integrityRatio = 1;
+            }
+            builder.Append(Quote("integrity")).Append(":").Append(FormatDouble(integrity)).Append(",");
+            builder.Append(Quote("max_integrity")).Append(":").Append(FormatDouble(maxIntegrity)).Append(",");
+            builder.Append(Quote("integrity_ratio")).Append(":").Append(FormatDouble(integrityRatio)).Append(",");
+            builder.Append(Quote("functional")).Append(":").Append(ReadBoolMember(slimBlock, "IsFunctional", true) ? "true" : "false").Append(",");
             builder.Append(Quote("same_construct")).Append(":true,");
             builder.Append(Quote("enabled")).Append(":").Append(ReadBoolMember(block, "Enabled", true) ? "true" : "false").Append(",");
             builder.Append(Quote("use_conveyor")).Append(":").Append(ReadBoolMember(block, "UseConveyorSystem", ReadBoolMember(block, "UseConveyor", false)) ? "true" : "false").Append(",");
@@ -1474,6 +1645,10 @@ namespace NOVALI.ClientSidePBBridge
                     Quote("last_grid_snapshot_skipped_blocks") + ":" + _lastGridSnapshotSkippedBlocks.ToString() + "," +
                     Quote("last_grid_snapshot_truncated_blocks") + ":" + (_lastGridSnapshotTruncatedBlocks ? "true" : "false") + "," +
                     Quote("last_grid_snapshot_skip_samples") + ":" + Quote(_lastGridSnapshotSkipSamples) + "," +
+                    Quote("last_integrity_snapshot_state") + ":" + Quote(_lastIntegritySnapshotState) + "," +
+                    Quote("last_integrity_snapshot_blocks") + ":" + _lastIntegritySnapshotBlocks.ToString() + "," +
+                    Quote("last_integrity_snapshot_skipped_blocks") + ":" + _lastIntegritySnapshotSkippedBlocks.ToString() + "," +
+                    Quote("last_integrity_snapshot_truncated_blocks") + ":" + (_lastIntegritySnapshotTruncatedBlocks ? "true" : "false") + "," +
                     Quote("visible_grid_scan_state") + ":" + Quote(_lastVisibleGridScanState) + "," +
                     Quote("visible_grid_scan_blocks") + ":" + _lastVisibleGridScanBlocks.ToString() + "," +
                     Quote("visible_grid_scan_machines") + ":" + _lastVisibleGridScanMachines.ToString() + "," +

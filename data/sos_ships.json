@@ -1,0 +1,39 @@
+{
+  "schema": "novali.client_side_pb.sos_ships.v1",
+  "ships": [
+    {
+      "ship_id": "ship-pb-bridge-001",
+      "bridge_id": "pb-bridge-001",
+      "display_name": "Primary SOS Ship",
+      "expected_grid_entity_id": 0,
+      "mode": "Docked",
+      "pb_limit_profile": "default",
+      "services": [
+        {
+          "service_id": "status",
+          "script_id": "pb-bridge-001-sos_status",
+          "enabled": true
+        },
+        {
+          "service_id": "integrity",
+          "script_id": "pb-bridge-001-sos_integrity",
+          "enabled": true
+        },
+        {
+          "service_id": "inventory",
+          "script_id": "pb-bridge-001-workshop_1216126863_adapter",
+          "enabled": true
+        },
+        {
+          "service_id": "doors",
+          "script_id": "pb-bridge-001-virtual_whip_auto_door",
+          "enabled": true
+        }
+      ],
+      "status_surfaces": [],
+      "enabled": true,
+      "created_at": "2026-08-26T00:00:00Z",
+      "updated_at": "2026-08-26T00:00:00Z"
+    }
+  ]
+}

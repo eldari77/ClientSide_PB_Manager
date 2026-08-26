@@ -5,10 +5,22 @@
       "selected_script_id": "pb-bridge-001-orchestrator",
       "allowed_worker_scripts": [
         "pb-bridge-001-orchestrator",
+        "pb-bridge-001-sos_status",
         "pb-bridge-001-virtual_whip_auto_door",
         "pb-bridge-001-workshop_1216126863_adapter"
       ],
       "child_worker_scripts": [
+        {
+          "script_id": "pb-bridge-001-sos_status",
+          "enabled": true,
+          "budget": 1,
+          "priority": 5,
+          "role": "status",
+          "reactive": false,
+          "expires_after_sequences": 0,
+          "fairness_weight": 4,
+          "operator_status": "ready_sos"
+        },
         {
           "script_id": "pb-bridge-001-virtual_whip_auto_door",
           "enabled": true,

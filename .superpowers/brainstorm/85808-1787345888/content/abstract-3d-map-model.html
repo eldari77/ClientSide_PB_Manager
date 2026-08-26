@@ -1,0 +1,46 @@
+<h2>Abstract 3D Tactical Map</h2>
+<p class="subtitle">V1 should avoid PB-heavy real-time mapping. The UI can still show useful 3D tactical intent through abstract range shells, vertical offsets, formation lanes, and target focus.</p>
+
+<div class="mockup">
+  <div class="mockup-header">Abstract 3D View</div>
+  <div class="mockup-body">
+    <div style="display:grid;grid-template-columns:3fr 1fr;gap:12px;min-height:420px">
+      <div class="placeholder" style="display:grid;grid-template-rows:auto 1fr auto;gap:10px;text-align:left">
+        <div style="display:flex;justify-content:space-between;gap:8px">
+          <span>Squad-relative 3D tactical view</span>
+          <span style="font-size:12px">not a full live coordinate map</span>
+        </div>
+        <div style="display:grid;place-items:center;border:1px dashed rgba(255,255,255,.28);border-radius:8px;position:relative;overflow:hidden">
+          <div style="position:absolute;width:80%;height:80%;border:2px solid rgba(230,184,74,.55);border-radius:50%;transform:rotateX(62deg)"></div>
+          <div style="position:absolute;width:58%;height:58%;border:2px solid rgba(156,207,90,.55);border-radius:50%;transform:rotateX(62deg)"></div>
+          <div style="position:absolute;width:24%;height:24%;border:2px solid rgba(224,102,102,.6);border-radius:50%;transform:rotateX(62deg)"></div>
+          <div style="z-index:2;text-align:center">
+            <div style="font-size:14px">Locked Target / Focus</div>
+            <div style="font-size:12px;margin-top:6px">range shell, bearing, elevation band, squad offsets</div>
+          </div>
+          <div style="position:absolute;left:22%;top:58%;z-index:3">FF +2</div>
+          <div style="position:absolute;left:34%;top:65%;z-index:3">CV -1</div>
+          <div style="position:absolute;right:28%;top:55%;z-index:3">CV +0</div>
+          <div style="position:absolute;right:18%;top:67%;z-index:3">FF +1</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center">
+          <div class="placeholder">3 km danger</div>
+          <div class="placeholder">8.5 km ideal</div>
+          <div class="placeholder">10 km rail max</div>
+          <div class="placeholder">200 km break</div>
+        </div>
+      </div>
+      <div style="display:grid;gap:8px">
+        <div class="placeholder" style="border-left:8px solid #8fb6ff">Bearing<br><span style="font-size:12px">ahead / flank / rear</span></div>
+        <div class="placeholder" style="border-left:8px solid #b875ff">Elevation<br><span style="font-size:12px">above / level / below</span></div>
+        <div class="placeholder" style="border-left:8px solid #69c779">Formation Slot<br><span style="font-size:12px">left screen / right rail / anchor</span></div>
+        <div class="placeholder" style="border-left:8px solid #e6b84a">Telemetry Quality<br><span style="font-size:12px">exact / estimated / stale</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Design Principle</h3>
+  <p>The map shows tactical relationships and confidence, not an expensive perfect simulation. If later plugin-side telemetry can provide true positions cheaply, the same UI can grow into a richer map.</p>
+</div>

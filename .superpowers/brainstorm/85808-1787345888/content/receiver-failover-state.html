@@ -1,0 +1,41 @@
+<h2>Receiver Failover State</h2>
+<p class="subtitle">Each ship is one logical C2 unit with a primary receiver and optional standby receiver. Only one should actuate at a time.</p>
+
+<div class="mockup">
+  <div class="mockup-header">Automatic Failover</div>
+  <div class="mockup-body">
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;text-align:center">
+      <div class="placeholder" style="border-left:8px solid #69c779">Primary Active<br><span style="font-size:12px">normal command path</span></div>
+      <div class="placeholder" style="border-left:8px solid #e6b84a">Heartbeat Stale<br><span style="font-size:12px">short grace window</span></div>
+      <div class="placeholder" style="border-left:8px solid #8fb6ff">Verify Primary<br><span style="font-size:12px">probe status / last apply</span></div>
+      <div class="placeholder" style="border-left:8px solid #e06666">Promote Backup<br><span style="font-size:12px">if primary remains bad</span></div>
+      <div class="placeholder" style="border-left:8px solid #47c1bf">Restore Primary<br><span style="font-size:12px">when proven healthy</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">Failover Rules</div>
+    <div class="mockup-body">
+      <div style="display:grid;gap:8px">
+        <div class="placeholder">Do not fail over on one missed tick</div>
+        <div class="placeholder">Probe primary with a cheap status/nonce request</div>
+        <div class="placeholder">Promote backup only after consecutive stale/failed evidence</div>
+        <div class="placeholder">Mark failover reason in Fleet C2 UI</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">Return Rules</div>
+    <div class="mockup-body">
+      <div style="display:grid;gap:8px">
+        <div class="placeholder">Primary must show fresh heartbeat and matching bridge id</div>
+        <div class="placeholder">Primary must acknowledge observe/probe before actuation resumes</div>
+        <div class="placeholder">Backup demotes to standby before primary applies commands</div>
+        <div class="placeholder">Never allow primary and backup to actuate simultaneously</div>
+      </div>
+    </div>
+  </div>
+</div>

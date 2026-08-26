@@ -27,6 +27,7 @@ The bridge uses one JSON request and one JSON result per bridge id.
   "grid_snapshot": {
     "schema": "novali.client_side_pb.grid_snapshot.v1",
     "source": "plugin",
+    "grid_entity_id": 123456,
     "blocks": []
   },
   "state": {}
@@ -40,9 +41,11 @@ inventory scan.
 
 `grid_snapshot` is also added by the local plugin. It is a separate enrichment
 so existing inventory sorting consumers can keep using `inventory_snapshot`
-unchanged. Grid block records are bounded and include visible same-grid LCD/text
-panels, assemblers, refineries, O2/H2 generators, gas tanks, reactors, cargo,
-connectors, and PB-adjacent terminal blocks. Each record should include:
+unchanged. It includes `grid_entity_id` for the PB's owning cube grid so
+ship-level modules can validate bridge-to-grid identity. Grid block records are
+bounded and include visible same-grid LCD/text panels, assemblers, refineries,
+O2/H2 generators, gas tanks, reactors, cargo, connectors, and PB-adjacent
+terminal blocks. Each record should include:
 
 - `entity_id`, `name`, `type`, `subtype`, `same_construct`
 - `enabled`, `use_conveyor`, `inventory_count`, `surface_count`
@@ -340,3 +343,16 @@ returns a matching `message_kind=result`.
 When `mailbox_mode=both`, PB `CustomData` is the primary mailbox because it is
 the channel polled by the local plugin. The text panel is a mirror/fallback and
 must not take precedence over a fresh PB `CustomData` envelope.
+
+## SOS Ship Registry
+
+SOS ships are configured in `data/sos_ships.json` with schema
+`novali.client_side_pb.sos_ships.v1`. The registry maps one active `bridge_id`
+to one ship instance, optional `expected_grid_entity_id`, current mode, mounted
+service script instances, and status surfaces.
+
+The worker expands SOS services into the existing bridge-orchestrator contract.
+Registry validation rejects duplicate active bridge ids and duplicate active
+expected grid ids. When `expected_grid_entity_id` is non-zero, the request's
+`grid_snapshot.grid_entity_id` must match before control-oriented services
+should apply commands.

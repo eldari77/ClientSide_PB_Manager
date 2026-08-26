@@ -1,0 +1,42 @@
+<h2>Fleet C2 Primary Screen</h2>
+<p class="subtitle">The app should feel like an RTS console: map-first, with a compact sidebar for fleet health, authority, and quick orders.</p>
+
+<div class="mockup">
+  <div class="mockup-header">Map + Ship Status Sidebar</div>
+  <div class="mockup-body">
+    <div style="display:grid;grid-template-columns:3fr 1fr;gap:12px;min-height:420px">
+      <div class="placeholder" style="display:grid;grid-template-rows:auto 1fr auto;gap:10px;text-align:left">
+        <div style="display:flex;gap:8px;align-items:center;justify-content:space-between">
+          <span>Map / Tactical Space</span>
+          <span style="font-size:12px">range rings: 3 km / 8.5 km / 10 km / 200 km</span>
+        </div>
+        <div style="display:grid;place-items:center;border:1px dashed rgba(255,255,255,.25);border-radius:8px">
+          <div style="text-align:center">
+            <div>Squad icons, hostile tracks, locked target, formation offsets</div>
+            <div style="font-size:12px;margin-top:8px">click target, drag waypoint, set patrol route, issue pursue/guard/regroup/disengage</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="mock-button">Patrol</button>
+          <button class="mock-button">Guard</button>
+          <button class="mock-button">Pursue</button>
+          <button class="mock-button">Hold</button>
+          <button class="mock-button">Regroup</button>
+          <button class="mock-button">Disengage</button>
+        </div>
+      </div>
+      <div style="display:grid;gap:8px">
+        <div class="placeholder" style="border-left:8px solid #69c779">Rail Frigate<br><span style="font-size:12px">Auto / Primary RX / rail ready</span></div>
+        <div class="placeholder" style="border-left:8px solid #69c779">Escort Corvette<br><span style="font-size:12px">Auto / backup available / PDC ready</span></div>
+        <div class="placeholder" style="border-left:8px solid #e6b84a">Escort Corvette<br><span style="font-size:12px">Auto / no backup / WC telemetry warning</span></div>
+        <div class="placeholder" style="border-left:8px solid #b875ff">Lead Frigate<br><span style="font-size:12px">Manual / observe-only</span></div>
+        <div class="placeholder" style="border-left:8px solid #e06666">Frigate<br><span style="font-size:12px">Blocked / no receiver heartbeat</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Sidebar Should Stay High Level</h3>
+  <p>Ship status should show readiness, authority, receiver channel, role, current order, and warnings. Detailed per-ship diagnostics can live behind a drill-in panel so the map remains the main working surface.</p>
+</div>
