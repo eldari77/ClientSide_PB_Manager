@@ -79,7 +79,9 @@ def test_expand_sos_bridge_configs_applies_mode_policy_and_services(tmp_path: Pa
                 "mode": "Docked",
                 "services": [
                     {"script_id": "pb-bridge-001-sos_status", "service_id": "status"},
+                    {"script_id": "pb-bridge-001-sos_dashboard", "service_id": "dashboard"},
                     {"script_id": "pb-bridge-001-sos_integrity", "service_id": "integrity"},
+                    {"script_id": "pb-bridge-001-sos_logistics", "service_id": "logistics"},
                     {"script_id": "pb-bridge-001-workshop_1216126863_adapter", "service_id": "inventory"},
                     {"script_id": "pb-bridge-001-virtual_whip_auto_door", "service_id": "doors"},
                 ],
@@ -98,22 +100,31 @@ def test_expand_sos_bridge_configs_applies_mode_policy_and_services(tmp_path: Pa
     assert config.allowed_worker_scripts == (
         "pb-bridge-001-orchestrator",
         "pb-bridge-001-sos_status",
+        "pb-bridge-001-sos_dashboard",
         "pb-bridge-001-sos_integrity",
+        "pb-bridge-001-sos_logistics",
         "pb-bridge-001-workshop_1216126863_adapter",
         "pb-bridge-001-virtual_whip_auto_door",
     )
     assert [child["script_id"] for child in config.child_worker_scripts] == [
         "pb-bridge-001-sos_status",
+        "pb-bridge-001-sos_dashboard",
         "pb-bridge-001-sos_integrity",
+        "pb-bridge-001-sos_logistics",
         "pb-bridge-001-workshop_1216126863_adapter",
         "pb-bridge-001-virtual_whip_auto_door",
     ]
     assert config.child_worker_scripts[0]["role"] == "status"
     assert config.child_worker_scripts[0]["priority"] == 5
-    assert config.child_worker_scripts[1]["service_id"] == "integrity"
+    assert config.child_worker_scripts[1]["service_id"] == "dashboard"
+    assert config.child_worker_scripts[1]["priority"] == 4
+    assert config.child_worker_scripts[2]["service_id"] == "integrity"
+    assert config.child_worker_scripts[2]["budget"] == 1
+    assert config.child_worker_scripts[3]["service_id"] == "logistics"
+    assert config.child_worker_scripts[3]["budget"] == 1
+    assert config.child_worker_scripts[4]["budget"] == 0
+    assert config.child_worker_scripts[5]["expires_after_sequences"] == 1
     assert config.child_worker_scripts[1]["budget"] == 1
-    assert config.child_worker_scripts[2]["budget"] == 0
-    assert config.child_worker_scripts[3]["expires_after_sequences"] == 1
 
 
 def test_sos_context_for_request_validates_expected_grid_identity(tmp_path: Path):

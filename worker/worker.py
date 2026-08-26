@@ -33,6 +33,9 @@ INTEGRITY_BLOCK_KEYS = (
     "functional",
     "is_functional",
 )
+LOGISTICS_SNAPSHOT_KEYS = ("inventory_snapshot", "ship_inventory", "logistics_snapshot")
+LOGISTICS_READY_KEYS = ("cargo", "cargo_containers", "ammo", "fuel", "resources", "production")
+FUEL_SUBTYPE_KEYS = {"ice", "uranium"}
 DEFAULT_LCD_QUEUE_COOLDOWN_SEQUENCES = 1
 DEFAULT_BRIDGE_STALE_SECONDS = 120
 DEFAULT_PROCESSED_REQUEST_RETENTION_SECONDS = 300
@@ -393,6 +396,152 @@ def normalized_critical_system(system: Any) -> dict[str, Any]:
     if system.get("present") is not None:
         normalized["present"] = bool(system.get("present"))
     return normalized
+
+
+def attach_logistics_snapshot_from_host_snapshots(request: dict[str, Any]) -> None:
+    for key in ("logistics_snapshot", "ship_inventory", "inventory_snapshot"):
+        snapshot = request.get(key)
+        if isinstance(snapshot, dict) and logistics_snapshot_is_ready(snapshot):
+            request["inventory_snapshot"] = snapshot
+            return
+
+    inventory_snapshot = request.get("inventory_snapshot") if isinstance(request.get("inventory_snapshot"), dict) else {}
+    grid_snapshot = request.get("grid_snapshot") if isinstance(request.get("grid_snapshot"), dict) else {}
+    snapshot = logistics_snapshot_from_host_snapshots(inventory_snapshot, grid_snapshot)
+    if snapshot:
+        request["inventory_snapshot"] = snapshot
+        return
+    for key in LOGISTICS_SNAPSHOT_KEYS:
+        request.pop(key, None)
+
+
+def logistics_snapshot_is_ready(snapshot: dict[str, Any]) -> bool:
+    return any(snapshot.get(key) not in (None, "", [], {}) for key in LOGISTICS_READY_KEYS)
+
+
+def logistics_snapshot_from_host_snapshots(inventory_snapshot: dict[str, Any], grid_snapshot: dict[str, Any]) -> dict[str, Any]:
+    cargo_used = 0.0
+    cargo_max = 0.0
+    has_cargo = False
+    ammo: dict[str, float] = {}
+    fuel: dict[str, float] = {}
+    inventory_blocks = inventory_snapshot.get("blocks") if isinstance(inventory_snapshot.get("blocks"), list) else []
+    for block in inventory_blocks:
+        if not isinstance(block, dict):
+            continue
+        inventories = block.get("inventories") if isinstance(block.get("inventories"), list) else []
+        for inventory in inventories:
+            if not isinstance(inventory, dict):
+                continue
+            current_volume = float_or_none(inventory.get("current_volume", inventory.get("used_volume")))
+            max_volume = float_or_none(inventory.get("max_volume", inventory.get("capacity")))
+            if current_volume is not None:
+                cargo_used += current_volume
+                has_cargo = True
+            if max_volume is not None:
+                cargo_max += max_volume
+                has_cargo = True
+            items = inventory.get("items") if isinstance(inventory.get("items"), list) else []
+            for item in items:
+                if not isinstance(item, dict):
+                    continue
+                amount = float_or_none(item.get("amount", item.get("current")))
+                if amount is None:
+                    continue
+                if is_ammo_snapshot_item(item):
+                    item_name = logistics_item_name(item)
+                    if item_name:
+                        ammo[item_name] = ammo.get(item_name, 0.0) + amount
+                elif is_fuel_snapshot_item(item):
+                    fuel_name = logistics_fuel_name(item)
+                    if fuel_name:
+                        fuel[fuel_name] = fuel.get(fuel_name, 0.0) + amount
+
+    production = logistics_production_from_grid_snapshot(grid_snapshot)
+    snapshot: dict[str, Any] = {}
+    if has_cargo:
+        snapshot["cargo"] = {"used_volume": cargo_used, "max_volume": cargo_max}
+    if ammo:
+        snapshot["ammo"] = [
+            {"name": name, "current": ammo[name], "minimum": None}
+            for name in sorted(ammo)
+        ]
+    if fuel:
+        snapshot["fuel"] = {
+            name: {"current": fuel[name], "minimum": None}
+            for name in sorted(fuel)
+        }
+    if production:
+        snapshot["production"] = production
+    return snapshot
+
+
+def logistics_production_from_grid_snapshot(grid_snapshot: dict[str, Any]) -> dict[str, Any]:
+    queue: list[dict[str, Any]] = []
+    blockers: list[Any] = []
+    blocks = grid_snapshot.get("blocks") if isinstance(grid_snapshot.get("blocks"), list) else []
+    for block in blocks:
+        if not isinstance(block, dict):
+            continue
+        block_queue = block.get("production_queue") if isinstance(block.get("production_queue"), list) else []
+        for item in block_queue:
+            if not isinstance(item, dict):
+                continue
+            queued: dict[str, Any] = {}
+            item_name = first_text(item, "item", "name", "subtype_id", "blueprint_id")
+            if item_name:
+                queued["item"] = item_name
+            remaining = item.get("remaining", item.get("amount"))
+            if remaining is not None:
+                queued["remaining"] = json_scalar(remaining)
+            if queued:
+                queue.append(queued)
+        block_blockers = block.get("production_blockers", block.get("blockers"))
+        if isinstance(block_blockers, list):
+            blockers.extend(json_scalar(item) for item in block_blockers)
+    if not queue and not blockers:
+        return {}
+    return {"queue": queue, "blockers": blockers}
+
+
+def logistics_item_name(item: dict[str, Any]) -> str:
+    return first_text(item, "subtype_id", "name", "type_id", "item")
+
+
+def logistics_fuel_name(item: dict[str, Any]) -> str:
+    subtype = first_text(item, "subtype_id", "name")
+    lower = subtype.lower()
+    if lower in FUEL_SUBTYPE_KEYS:
+        return lower
+    if "hydrogen" in lower:
+        return "hydrogen"
+    if "oxygen" in lower:
+        return "oxygen"
+    return lower
+
+
+def is_ammo_snapshot_item(item: dict[str, Any]) -> bool:
+    type_id = str(item.get("type_id", "")).lower()
+    subtype = str(item.get("subtype_id", "")).lower()
+    return "ammo" in type_id or "ammo" in subtype
+
+
+def is_fuel_snapshot_item(item: dict[str, Any]) -> bool:
+    type_id = str(item.get("type_id", "")).lower()
+    subtype = str(item.get("subtype_id", item.get("name", ""))).lower()
+    return (
+        subtype in FUEL_SUBTYPE_KEYS
+        or "gascontainerobject" in type_id
+        or "hydrogen" in subtype
+        or "oxygen" in subtype
+    )
+
+
+def float_or_none(value: Any) -> float | None:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def first_text(payload: dict[str, Any], *keys: str) -> str:
@@ -1166,16 +1315,20 @@ def execute_orchestrator_request(
         child_service_id = str(child_config.get("service_id", "") or "").strip().lower()
         if child_service_id == "integrity" or "sos_integrity" in child_id.lower() or "sos_damage" in child_id.lower():
             attach_integrity_snapshot_from_grid_snapshot(child_request)
+        if child_service_id == "logistics" or "sos_logistics" in child_id.lower():
+            attach_logistics_snapshot_from_host_snapshots(child_request)
         child_result = execute_request(child_request, scripts, bridge_configs, root=root, apply_queue=False)
         result_payload = child_result.get("result") if isinstance(child_result.get("result"), dict) else {}
-        child_results.append(
-            {
-                "script_id": child_id,
-                "status": child_result.get("status", "unknown"),
-                "error_bucket": child_result.get("error_bucket", "none"),
-                "summary": result_payload.get("summary", ""),
-            }
-        )
+        child_result_summary = {
+            "script_id": child_id,
+            "status": child_result.get("status", "unknown"),
+            "error_bucket": child_result.get("error_bucket", "none"),
+            "summary": result_payload.get("summary", ""),
+        }
+        history_payload = child_result_history_payload(result_payload)
+        if history_payload:
+            child_result_summary["result"] = history_payload
+        child_results.append(child_result_summary)
         if child_result.get("status") != "ok":
             continue
         try:
@@ -1329,17 +1482,27 @@ def child_service_telemetry(
             continue
         service_id = str(child_config.get("service_id", "") or script_id).strip()
         previous = previous_by_script.get(script_id, {})
-        children.append(
-            {
-                "service_id": service_id,
-                "script_id": script_id,
-                "status": str(previous.get("status", "unknown") or "unknown"),
-                "error_bucket": str(previous.get("error_bucket", "none") or "none"),
-                "summary": str(previous.get("summary", "") or ""),
-                "command_queue": stable_queue_stats(by_source.get(script_id) if isinstance(by_source.get(script_id), dict) else {}),
-            }
-        )
+        item = {
+            "service_id": service_id,
+            "script_id": script_id,
+            "status": str(previous.get("status", "unknown") or "unknown"),
+            "error_bucket": str(previous.get("error_bucket", "none") or "none"),
+            "summary": str(previous.get("summary", "") or ""),
+            "command_queue": stable_queue_stats(by_source.get(script_id) if isinstance(by_source.get(script_id), dict) else {}),
+        }
+        previous_result = previous.get("result") if isinstance(previous.get("result"), dict) else {}
+        if previous_result:
+            item["result"] = previous_result
+        children.append(item)
     return children
+
+
+def child_result_history_payload(result_payload: dict[str, Any]) -> dict[str, Any]:
+    return {
+        key: value
+        for key, value in result_payload.items()
+        if key.startswith("sos_") and isinstance(value, dict)
+    }
 
 
 def stable_queue_stats(stats: dict[str, Any]) -> dict[str, int]:

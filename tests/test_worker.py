@@ -574,6 +574,573 @@ def test_execute_sos_orchestrator_runs_integrity_child_with_existing_services(tm
     assert result["result"]["commands"][1]["kind"] == "echo"
 
 
+def test_execute_sos_orchestrator_runs_logistics_child_with_existing_services(tmp_path: Path):
+    def install_adapter(module_name: str, summary: str, command: dict[str, object]) -> None:
+        module = types.ModuleType(module_name)
+
+        def run(request):
+            return {"summary": summary, "commands": [command]}
+
+        module.run = run
+        sys.modules[module_name] = module
+
+    install_adapter("tests.sos_logistics_registry_status_child", "status ok", {"kind": "echo", "text": "status"})
+    install_adapter("tests.sos_logistics_registry_inventory_child", "inventory ok", {"kind": "echo", "text": "inventory"})
+    install_adapter("tests.sos_logistics_registry_door_child", "doors ok", {"kind": "echo", "text": "doors"})
+    data = tmp_path / "data"
+    data.mkdir()
+    (data / "sos_ships.json").write_text(
+        json.dumps(
+            {
+                "schema": "novali.client_side_pb.sos_ships.v1",
+                "ships": [
+                    {
+                        "ship_id": "ship-a",
+                        "bridge_id": "bridge-a",
+                        "display_name": "Ship A",
+                        "expected_grid_entity_id": 10,
+                        "services": [
+                            {"script_id": "bridge-a-sos_status", "service_id": "status"},
+                            {"script_id": "bridge-a-sos_integrity", "service_id": "integrity"},
+                            {"script_id": "bridge-a-sos_logistics", "service_id": "logistics"},
+                            {"script_id": "bridge-a-inventory", "service_id": "inventory"},
+                            {"script_id": "bridge-a-doors", "service_id": "doors"},
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    scripts = {
+        "bridge-a-orchestrator": WorkerScript(
+            "bridge-a-orchestrator", "script_instance", "Bridge A SOS", "", "", "", 1000, True, base_script_id="bridge_orchestrator"
+        ),
+        "bridge-a-sos_status": WorkerScript("bridge-a-sos_status", "manual", "Status", "tests.sos_logistics_registry_status_child", "", "", 1000, True),
+        "bridge-a-sos_integrity": WorkerScript(
+            "bridge-a-sos_integrity",
+            "manual",
+            "Integrity",
+            "worker.scripts.sos_integrity",
+            "",
+            "",
+            1000,
+            True,
+        ),
+        "bridge-a-sos_logistics": WorkerScript(
+            "bridge-a-sos_logistics",
+            "manual",
+            "Logistics",
+            "worker.scripts.sos_logistics",
+            "",
+            "",
+            1000,
+            True,
+        ),
+        "bridge-a-inventory": WorkerScript("bridge-a-inventory", "manual", "Inventory", "tests.sos_logistics_registry_inventory_child", "", "", 1000, True),
+        "bridge-a-doors": WorkerScript("bridge-a-doors", "manual", "Doors", "tests.sos_logistics_registry_door_child", "", "", 1000, True),
+    }
+
+    result = execute_request(
+        {
+            "schema": "novali.client_side_pb_bridge.v1",
+            "message_kind": "request",
+            "bridge_id": "bridge-a",
+            "sequence": 1,
+            "script_id": "bridge-a-orchestrator",
+            "grid_snapshot": {"schema": "novali.client_side_pb.grid_snapshot.v1", "grid_entity_id": 10, "blocks": []},
+            "state": {},
+        },
+        scripts,
+        {},
+        tmp_path,
+    )
+
+    assert result["status"] == "ok"
+    assert [child["script_id"] for child in result["result"]["child_results"]] == [
+        "bridge-a-sos_status",
+        "bridge-a-sos_integrity",
+        "bridge-a-sos_logistics",
+        "bridge-a-inventory",
+        "bridge-a-doors",
+    ]
+    logistics_child = result["result"]["child_results"][2]
+    assert logistics_child["summary"] == "SOS Logistics Ship A state=unknown snapshot=no_snapshot"
+    assert logistics_child["error_bucket"] == "none"
+    assert result["result"]["commands"][2]["kind"] == "echo"
+
+
+def test_execute_sos_orchestrator_runs_dashboard_child_with_existing_services(tmp_path: Path):
+    def install_adapter(module_name: str, summary: str, command: dict[str, object]) -> None:
+        module = types.ModuleType(module_name)
+
+        def run(request):
+            return {"summary": summary, "commands": [command]}
+
+        module.run = run
+        sys.modules[module_name] = module
+
+    install_adapter("tests.sos_dashboard_registry_status_child", "status ok", {"kind": "echo", "text": "status"})
+    install_adapter("tests.sos_dashboard_registry_integrity_child", "integrity ok", {"kind": "echo", "text": "integrity"})
+    install_adapter("tests.sos_dashboard_registry_logistics_child", "logistics ok", {"kind": "echo", "text": "logistics"})
+    install_adapter("tests.sos_dashboard_registry_inventory_child", "inventory ok", {"kind": "echo", "text": "inventory"})
+    install_adapter("tests.sos_dashboard_registry_door_child", "doors ok", {"kind": "echo", "text": "doors"})
+    data = tmp_path / "data"
+    data.mkdir()
+    (data / "sos_ships.json").write_text(
+        json.dumps(
+            {
+                "schema": "novali.client_side_pb.sos_ships.v1",
+                "ships": [
+                    {
+                        "ship_id": "ship-a",
+                        "bridge_id": "bridge-a",
+                        "display_name": "Ship A",
+                        "expected_grid_entity_id": 10,
+                        "services": [
+                            {"script_id": "bridge-a-sos_status", "service_id": "status"},
+                            {"script_id": "bridge-a-sos_dashboard", "service_id": "dashboard"},
+                            {"script_id": "bridge-a-sos_integrity", "service_id": "integrity"},
+                            {"script_id": "bridge-a-sos_logistics", "service_id": "logistics"},
+                            {"script_id": "bridge-a-inventory", "service_id": "inventory"},
+                            {"script_id": "bridge-a-doors", "service_id": "doors"},
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    scripts = {
+        "bridge-a-orchestrator": WorkerScript(
+            "bridge-a-orchestrator", "script_instance", "Bridge A SOS", "", "", "", 1000, True, base_script_id="bridge_orchestrator"
+        ),
+        "bridge-a-sos_status": WorkerScript("bridge-a-sos_status", "manual", "Status", "tests.sos_dashboard_registry_status_child", "", "", 1000, True),
+        "bridge-a-sos_dashboard": WorkerScript(
+            "bridge-a-sos_dashboard",
+            "manual",
+            "Dashboard",
+            "worker.scripts.sos_dashboard",
+            "",
+            "",
+            1000,
+            True,
+        ),
+        "bridge-a-sos_integrity": WorkerScript(
+            "bridge-a-sos_integrity",
+            "manual",
+            "Integrity",
+            "tests.sos_dashboard_registry_integrity_child",
+            "",
+            "",
+            1000,
+            True,
+        ),
+        "bridge-a-sos_logistics": WorkerScript(
+            "bridge-a-sos_logistics",
+            "manual",
+            "Logistics",
+            "tests.sos_dashboard_registry_logistics_child",
+            "",
+            "",
+            1000,
+            True,
+        ),
+        "bridge-a-inventory": WorkerScript("bridge-a-inventory", "manual", "Inventory", "tests.sos_dashboard_registry_inventory_child", "", "", 1000, True),
+        "bridge-a-doors": WorkerScript("bridge-a-doors", "manual", "Doors", "tests.sos_dashboard_registry_door_child", "", "", 1000, True),
+    }
+
+    result = execute_request(
+        {
+            "schema": "novali.client_side_pb_bridge.v1",
+            "message_kind": "request",
+            "bridge_id": "bridge-a",
+            "sequence": 1,
+            "script_id": "bridge-a-orchestrator",
+            "grid_snapshot": {"schema": "novali.client_side_pb.grid_snapshot.v1", "grid_entity_id": 10, "blocks": []},
+            "state": {},
+        },
+        scripts,
+        {},
+        tmp_path,
+    )
+
+    assert result["status"] == "ok"
+    assert [child["script_id"] for child in result["result"]["child_results"]] == [
+        "bridge-a-sos_status",
+        "bridge-a-sos_dashboard",
+        "bridge-a-sos_integrity",
+        "bridge-a-sos_logistics",
+        "bridge-a-inventory",
+        "bridge-a-doors",
+    ]
+    dashboard_child = result["result"]["child_results"][1]
+    assert dashboard_child["summary"] == "SOS Dashboard Ship A mode=Docked integrity=unknown logistics=unknown queue=0 blockers=none"
+    assert dashboard_child["error_bucket"] == "none"
+    assert result["result"]["commands"][1]["kind"] == "echo"
+
+
+def test_execute_sos_orchestrator_passes_child_payload_history_to_dashboard_request(tmp_path: Path):
+    captured: list[dict] = []
+    module = types.ModuleType("tests.sos_dashboard_capture_child")
+
+    def run(request):
+        captured.append(request)
+        return {"summary": "dashboard captured", "commands": [{"kind": "echo", "text": "dashboard"}]}
+
+    module.run = run
+    sys.modules[module.__name__] = module
+    data = tmp_path / "data"
+    data.mkdir()
+    (data / "bridge_results").mkdir()
+    (data / "bridge_results" / "bridge-a.json").write_text(
+        json.dumps(
+            {
+                "schema": "novali.client_side_pb_bridge.v1",
+                "message_kind": "result",
+                "bridge_id": "bridge-a",
+                "sequence": 7,
+                "script_id": "bridge-a-orchestrator",
+                "status": "ok",
+                "result": {
+                    "queue_pressure": {
+                        "queued": 3,
+                        "drained": 1,
+                        "remaining": 2,
+                        "by_source": {"bridge-a-sos_dashboard": {"queued": 1, "drained": 0, "remaining": 1}},
+                    },
+                    "child_results": [
+                        {
+                            "script_id": "bridge-a-sos_status",
+                            "status": "ok",
+                            "error_bucket": "none",
+                            "summary": "status ok",
+                            "result": {
+                                "sos_status": {
+                                    "mode": "Combat",
+                                    "identity_status": "ok",
+                                    "blockers": [],
+                                    "warnings": ["inventory_delayed"],
+                                }
+                            },
+                        },
+                        {
+                            "script_id": "bridge-a-sos_integrity",
+                            "status": "ok",
+                            "error_bucket": "none",
+                            "summary": "integrity degraded",
+                            "result": {
+                                "sos_integrity": {
+                                    "state": "degraded",
+                                    "snapshot_status": "ok",
+                                    "damaged_block_count": 2,
+                                    "critical_damaged_count": 1,
+                                    "warnings": ["integrity_degraded"],
+                                }
+                            },
+                        },
+                        {
+                            "script_id": "bridge-a-sos_logistics",
+                            "status": "ok",
+                            "error_bucket": "none",
+                            "summary": "logistics warning",
+                            "result": {
+                                "sos_logistics": {
+                                    "state": "warning",
+                                    "snapshot_status": "ok",
+                                    "cargo": {"state": "pressure", "usage_ratio": 0.9},
+                                    "ammo": {"state": "ok"},
+                                    "fuel": {"state": "ok"},
+                                    "production": {"state": "ok", "queue_count": 1},
+                                    "warnings": ["cargo_capacity_pressure"],
+                                }
+                            },
+                        },
+                    ],
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    (data / "sos_ships.json").write_text(
+        json.dumps(
+            {
+                "schema": "novali.client_side_pb.sos_ships.v1",
+                "ships": [
+                    {
+                        "ship_id": "ship-a",
+                        "bridge_id": "bridge-a",
+                        "expected_grid_entity_id": 10,
+                        "services": [
+                            {"script_id": "bridge-a-sos_status", "service_id": "status"},
+                            {"script_id": "bridge-a-sos_dashboard", "service_id": "dashboard"},
+                            {"script_id": "bridge-a-sos_integrity", "service_id": "integrity"},
+                            {"script_id": "bridge-a-sos_logistics", "service_id": "logistics"},
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    scripts = {
+        "bridge-a-orchestrator": WorkerScript(
+            "bridge-a-orchestrator", "script_instance", "Bridge A SOS", "", "", "", 1000, True, base_script_id="bridge_orchestrator"
+        ),
+        "bridge-a-sos_status": WorkerScript("bridge-a-sos_status", "manual", "Status", module.__name__, "", "", 1000, True),
+        "bridge-a-sos_dashboard": WorkerScript("bridge-a-sos_dashboard", "manual", "Dashboard", module.__name__, "", "", 1000, True),
+        "bridge-a-sos_integrity": WorkerScript("bridge-a-sos_integrity", "manual", "Integrity", module.__name__, "", "", 1000, True),
+        "bridge-a-sos_logistics": WorkerScript("bridge-a-sos_logistics", "manual", "Logistics", module.__name__, "", "", 1000, True),
+    }
+
+    result = execute_request(
+        {
+            "schema": "novali.client_side_pb_bridge.v1",
+            "message_kind": "request",
+            "bridge_id": "bridge-a",
+            "sequence": 8,
+            "script_id": "bridge-a-orchestrator",
+            "grid_snapshot": {"schema": "novali.client_side_pb.grid_snapshot.v1", "grid_entity_id": 10, "blocks": []},
+            "state": {},
+        },
+        scripts,
+        {},
+        tmp_path,
+    )
+
+    assert result["status"] == "ok"
+    dashboard_request = next(item for item in captured if item["script_id"] == "bridge-a-sos_dashboard")
+    telemetry = dashboard_request["runtime_telemetry"]
+    assert telemetry["queue_pressure"] == {
+        "queued": 3,
+        "drained": 1,
+        "remaining": 2,
+        "by_source": {"bridge-a-sos_dashboard": {"queued": 1, "drained": 0, "remaining": 1}},
+    }
+    assert telemetry["child_services_by_service_id"]["dashboard"]["command_queue"] == {"queued": 1, "drained": 0, "remaining": 1}
+    assert telemetry["child_services_by_service_id"]["status"]["result"]["sos_status"]["mode"] == "Combat"
+    assert telemetry["child_services_by_service_id"]["integrity"]["result"]["sos_integrity"]["state"] == "degraded"
+    assert telemetry["child_services_by_service_id"]["logistics"]["result"]["sos_logistics"]["state"] == "warning"
+
+
+def test_execute_sos_dashboard_child_degrades_gracefully_without_child_history(tmp_path: Path):
+    data = tmp_path / "data"
+    data.mkdir()
+    (data / "sos_ships.json").write_text(
+        json.dumps(
+            {
+                "schema": "novali.client_side_pb.sos_ships.v1",
+                "ships": [
+                    {
+                        "ship_id": "ship-a",
+                        "bridge_id": "bridge-a",
+                        "display_name": "Ship A",
+                        "expected_grid_entity_id": 10,
+                        "services": [{"script_id": "bridge-a-sos_dashboard", "service_id": "dashboard"}],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    scripts = {
+        "bridge-a-orchestrator": WorkerScript(
+            "bridge-a-orchestrator", "script_instance", "Bridge A SOS", "", "", "", 1000, True, base_script_id="bridge_orchestrator"
+        ),
+        "bridge-a-sos_dashboard": WorkerScript(
+            "bridge-a-sos_dashboard",
+            "manual",
+            "Dashboard",
+            "worker.scripts.sos_dashboard",
+            "",
+            "",
+            1000,
+            True,
+        ),
+    }
+
+    result = execute_request(
+        {
+            "schema": "novali.client_side_pb_bridge.v1",
+            "message_kind": "request",
+            "bridge_id": "bridge-a",
+            "sequence": 1,
+            "script_id": "bridge-a-orchestrator",
+            "grid_snapshot": {"schema": "novali.client_side_pb.grid_snapshot.v1", "grid_entity_id": 10, "blocks": []},
+            "state": {},
+        },
+        scripts,
+        {},
+        tmp_path,
+    )
+
+    assert result["status"] == "ok"
+    assert result["result"]["child_results"][0]["summary"] == (
+        "SOS Dashboard Ship A mode=Docked integrity=unknown logistics=unknown queue=0 blockers=none"
+    )
+    dashboard = result["result"]["child_results"][0]["result"]["sos_dashboard"]
+    assert dashboard["integrity"]["snapshot_status"] == "missing_child_result"
+    assert dashboard["logistics"]["snapshot_status"] == "missing_child_result"
+    assert result["result"]["commands"][0]["text"] == (
+        "SOS Dashboard Ship A mode=Docked integrity=unknown logistics=unknown queue=0 blockers=none"
+    )
+
+
+def test_execute_sos_orchestrator_passes_logistics_snapshot_from_inventory_data_to_child_request(tmp_path: Path):
+    captured: list[dict] = []
+    module = types.ModuleType("tests.sos_logistics_capture_child")
+
+    def run(request):
+        captured.append(request)
+        return {"summary": "logistics captured", "commands": [{"kind": "echo", "text": "logistics"}]}
+
+    module.run = run
+    sys.modules[module.__name__] = module
+    data = tmp_path / "data"
+    data.mkdir()
+    (data / "sos_ships.json").write_text(
+        json.dumps(
+            {
+                "schema": "novali.client_side_pb.sos_ships.v1",
+                "ships": [
+                    {
+                        "ship_id": "ship-a",
+                        "bridge_id": "bridge-a",
+                        "expected_grid_entity_id": 10,
+                        "services": [{"script_id": "bridge-a-sos_logistics", "service_id": "logistics"}],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    scripts = {
+        "bridge-a-orchestrator": WorkerScript(
+            "bridge-a-orchestrator", "script_instance", "Bridge A SOS", "", "", "", 1000, True, base_script_id="bridge_orchestrator"
+        ),
+        "bridge-a-sos_logistics": WorkerScript("bridge-a-sos_logistics", "manual", "Logistics", module.__name__, "", "", 1000, True),
+    }
+
+    result = execute_request(
+        {
+            "schema": "novali.client_side_pb_bridge.v1",
+            "message_kind": "request",
+            "bridge_id": "bridge-a",
+            "sequence": 1,
+            "script_id": "bridge-a-orchestrator",
+            "inventory_snapshot": {
+                "schema": "novali.client_side_pb.inventory_snapshot.v1",
+                "source": "plugin",
+                "blocks": [
+                    {
+                        "name": "Cargo",
+                        "type": "CargoContainer",
+                        "inventories": [
+                            {
+                                "index": 0,
+                                "current_volume": 90,
+                                "max_volume": 100,
+                                "items": [
+                                    {
+                                        "type_id": "MyObjectBuilder_AmmoMagazine",
+                                        "subtype_id": "NATO_25x184mm",
+                                        "amount": 20,
+                                    },
+                                    {"type_id": "MyObjectBuilder_Ingot", "subtype_id": "Uranium", "amount": 5},
+                                    {"type_id": "MyObjectBuilder_Ore", "subtype_id": "Ice", "amount": 100},
+                                ],
+                            }
+                        ],
+                    }
+                ],
+            },
+            "grid_snapshot": {
+                "schema": "novali.client_side_pb.grid_snapshot.v1",
+                "grid_entity_id": 10,
+                "blocks": [
+                    {
+                        "name": "Assembler",
+                        "type": "Assembler",
+                        "production_queue": [{"item": "Steel Plate", "remaining": 12}],
+                    }
+                ],
+            },
+            "state": {},
+        },
+        scripts,
+        {},
+        tmp_path,
+    )
+
+    assert result["status"] == "ok"
+    assert captured[0]["inventory_snapshot"] == {
+        "cargo": {"used_volume": 90.0, "max_volume": 100.0},
+        "ammo": [{"name": "NATO_25x184mm", "current": 20.0, "minimum": None}],
+        "fuel": {
+            "ice": {"current": 100.0, "minimum": None},
+            "uranium": {"current": 5.0, "minimum": None},
+        },
+        "production": {"queue": [{"item": "Steel Plate", "remaining": 12}], "blockers": []},
+    }
+
+
+def test_execute_sos_orchestrator_omits_logistics_snapshot_when_inventory_data_missing(tmp_path: Path):
+    captured: list[dict] = []
+    module = types.ModuleType("tests.sos_logistics_no_snapshot_child")
+
+    def run(request):
+        captured.append(request)
+        return {"summary": "logistics no snapshot", "commands": [{"kind": "echo", "text": "logistics"}]}
+
+    module.run = run
+    sys.modules[module.__name__] = module
+    data = tmp_path / "data"
+    data.mkdir()
+    (data / "sos_ships.json").write_text(
+        json.dumps(
+            {
+                "schema": "novali.client_side_pb.sos_ships.v1",
+                "ships": [
+                    {
+                        "ship_id": "ship-a",
+                        "bridge_id": "bridge-a",
+                        "expected_grid_entity_id": 10,
+                        "services": [{"script_id": "bridge-a-sos_logistics", "service_id": "logistics"}],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    scripts = {
+        "bridge-a-orchestrator": WorkerScript(
+            "bridge-a-orchestrator", "script_instance", "Bridge A SOS", "", "", "", 1000, True, base_script_id="bridge_orchestrator"
+        ),
+        "bridge-a-sos_logistics": WorkerScript("bridge-a-sos_logistics", "manual", "Logistics", module.__name__, "", "", 1000, True),
+    }
+
+    result = execute_request(
+        {
+            "schema": "novali.client_side_pb_bridge.v1",
+            "message_kind": "request",
+            "bridge_id": "bridge-a",
+            "sequence": 1,
+            "script_id": "bridge-a-orchestrator",
+            "inventory_snapshot": {"schema": "novali.client_side_pb.inventory_snapshot.v1", "source": "plugin", "blocks": []},
+            "grid_snapshot": {"schema": "novali.client_side_pb.grid_snapshot.v1", "grid_entity_id": 10, "blocks": []},
+            "state": {},
+        },
+        scripts,
+        {},
+        tmp_path,
+    )
+
+    assert result["status"] == "ok"
+    assert "inventory_snapshot" not in captured[0]
+    assert "ship_inventory" not in captured[0]
+    assert "logistics_snapshot" not in captured[0]
+
+
 def test_execute_sos_orchestrator_passes_integrity_snapshot_from_grid_snapshot_to_child_request(tmp_path: Path):
     captured: list[dict] = []
     module = types.ModuleType("tests.sos_integrity_capture_child")

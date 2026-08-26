@@ -38,10 +38,34 @@
       "enabled": true
     },
     {
+      "script_id": "sos_dashboard",
+      "source": "local_worker",
+      "display_name": "SOS Dashboard",
+      "module": "worker.scripts.sos_dashboard",
+      "runtime": "python",
+      "source_path": "",
+      "input_schema": "adapter_tick.v1",
+      "output_schema": "compact_commands.v1",
+      "timeout_ms": 1000,
+      "enabled": true
+    },
+    {
       "script_id": "sos_integrity",
       "source": "local_worker",
       "display_name": "SOS Integrity",
       "module": "worker.scripts.sos_integrity",
+      "runtime": "python",
+      "source_path": "",
+      "input_schema": "adapter_tick.v1",
+      "output_schema": "compact_commands.v1",
+      "timeout_ms": 1000,
+      "enabled": true
+    },
+    {
+      "script_id": "sos_logistics",
+      "source": "local_worker",
+      "display_name": "SOS Logistics",
+      "module": "worker.scripts.sos_logistics",
       "runtime": "python",
       "source_path": "",
       "input_schema": "adapter_tick.v1",
