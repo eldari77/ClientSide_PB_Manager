@@ -38,6 +38,7 @@ LOGISTICS_READY_KEYS = ("cargo", "cargo_containers", "ammo", "fuel", "resources"
 FUEL_SUBTYPE_KEYS = {"ice", "uranium"}
 AIRLOCK_SNAPSHOT_KEYS = ("airlock_snapshot", "door_snapshot", "ship_doors")
 AIRLOCK_READY_KEYS = ("doors", "airlocks", "vents", "compartments")
+ENVIRONMENT_SNAPSHOT_KEYS = ("environment_snapshot", "hazard_snapshot", "weather_snapshot", "external_snapshot")
 DEFAULT_LCD_QUEUE_COOLDOWN_SEQUENCES = 1
 DEFAULT_BRIDGE_STALE_SECONDS = 120
 DEFAULT_PROCESSED_REQUEST_RETENTION_SECONDS = 300
@@ -559,6 +560,11 @@ def attach_airlock_snapshot_from_grid_snapshot(request: dict[str, Any]) -> None:
         request["airlock_snapshot"] = snapshot
         return
     for key in AIRLOCK_SNAPSHOT_KEYS:
+        request.pop(key, None)
+
+
+def remove_environment_only_snapshot_aliases(request: dict[str, Any]) -> None:
+    for key in ENVIRONMENT_SNAPSHOT_KEYS:
         request.pop(key, None)
 
 
@@ -1514,9 +1520,24 @@ def execute_orchestrator_request(
         child_request["parent_script_id"] = "bridge_orchestrator"
         child_request["runtime_telemetry"] = child_runtime_telemetry
         child_service_id = str(child_config.get("service_id", "") or "").strip().lower()
+        is_environment_child = child_service_id == "environment" or "sos_environment" in child_id.lower()
+        if not is_environment_child:
+            remove_environment_only_snapshot_aliases(child_request)
         if (
             child_service_id
-            in {"integrity", "mobility", "power", "comms", "crew", "docking", "life_support", "production", "transit", "defense"}
+            in {
+                "integrity",
+                "mobility",
+                "power",
+                "comms",
+                "crew",
+                "docking",
+                "life_support",
+                "production",
+                "transit",
+                "defense",
+                "environment",
+            }
             or "sos_integrity" in child_id.lower()
             or "sos_damage" in child_id.lower()
             or "sos_mobility" in child_id.lower()
@@ -1529,6 +1550,7 @@ def execute_orchestrator_request(
             or "sos_production" in child_id.lower()
             or "sos_transit" in child_id.lower()
             or "sos_defense" in child_id.lower()
+            or "sos_environment" in child_id.lower()
         ):
             attach_integrity_snapshot_from_grid_snapshot(child_request)
         if (
