@@ -1515,7 +1515,7 @@ def execute_orchestrator_request(
         child_request["runtime_telemetry"] = child_runtime_telemetry
         child_service_id = str(child_config.get("service_id", "") or "").strip().lower()
         if (
-            child_service_id in {"integrity", "mobility", "power", "comms", "crew", "docking", "life_support", "production"}
+            child_service_id in {"integrity", "mobility", "power", "comms", "crew", "docking", "life_support", "production", "transit"}
             or "sos_integrity" in child_id.lower()
             or "sos_damage" in child_id.lower()
             or "sos_mobility" in child_id.lower()
@@ -1526,15 +1526,17 @@ def execute_orchestrator_request(
             or "sos_life_support" in child_id.lower()
             or "sos_lifesupport" in child_id.lower()
             or "sos_production" in child_id.lower()
+            or "sos_transit" in child_id.lower()
         ):
             attach_integrity_snapshot_from_grid_snapshot(child_request)
         if (
-            child_service_id in {"logistics", "power", "life_support", "production"}
+            child_service_id in {"logistics", "power", "life_support", "production", "transit"}
             or "sos_logistics" in child_id.lower()
             or "sos_power" in child_id.lower()
             or "sos_life_support" in child_id.lower()
             or "sos_lifesupport" in child_id.lower()
             or "sos_production" in child_id.lower()
+            or "sos_transit" in child_id.lower()
         ):
             attach_logistics_snapshot_from_host_snapshots(child_request)
         if child_service_id == "airlock" or "sos_airlock" in child_id.lower():

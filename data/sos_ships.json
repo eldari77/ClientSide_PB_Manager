@@ -70,6 +70,11 @@
           "enabled": true
         },
         {
+          "service_id": "transit",
+          "script_id": "pb-bridge-001-sos_transit",
+          "enabled": true
+        },
+        {
           "service_id": "inventory",
           "script_id": "pb-bridge-001-workshop_1216126863_adapter",
           "enabled": true
