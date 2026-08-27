@@ -1515,12 +1515,13 @@ def execute_orchestrator_request(
         child_request["runtime_telemetry"] = child_runtime_telemetry
         child_service_id = str(child_config.get("service_id", "") or "").strip().lower()
         if (
-            child_service_id in {"integrity", "mobility", "power", "comms"}
+            child_service_id in {"integrity", "mobility", "power", "comms", "docking"}
             or "sos_integrity" in child_id.lower()
             or "sos_damage" in child_id.lower()
             or "sos_mobility" in child_id.lower()
             or "sos_power" in child_id.lower()
             or "sos_comms" in child_id.lower()
+            or "sos_docking" in child_id.lower()
         ):
             attach_integrity_snapshot_from_grid_snapshot(child_request)
         if child_service_id in {"logistics", "power"} or "sos_logistics" in child_id.lower() or "sos_power" in child_id.lower():
