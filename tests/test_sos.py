@@ -87,6 +87,7 @@ def test_expand_sos_bridge_configs_applies_mode_policy_and_services(tmp_path: Pa
                     {"script_id": "pb-bridge-001-sos_power", "service_id": "power"},
                     {"script_id": "pb-bridge-001-sos_comms", "service_id": "comms"},
                     {"script_id": "pb-bridge-001-sos_docking", "service_id": "docking"},
+                    {"script_id": "pb-bridge-001-sos_life_support", "service_id": "life_support"},
                     {"script_id": "pb-bridge-001-workshop_1216126863_adapter", "service_id": "inventory"},
                     {"script_id": "pb-bridge-001-virtual_whip_auto_door", "service_id": "doors"},
                 ],
@@ -113,6 +114,7 @@ def test_expand_sos_bridge_configs_applies_mode_policy_and_services(tmp_path: Pa
         "pb-bridge-001-sos_power",
         "pb-bridge-001-sos_comms",
         "pb-bridge-001-sos_docking",
+        "pb-bridge-001-sos_life_support",
         "pb-bridge-001-workshop_1216126863_adapter",
         "pb-bridge-001-virtual_whip_auto_door",
     )
@@ -126,6 +128,7 @@ def test_expand_sos_bridge_configs_applies_mode_policy_and_services(tmp_path: Pa
         "pb-bridge-001-sos_power",
         "pb-bridge-001-sos_comms",
         "pb-bridge-001-sos_docking",
+        "pb-bridge-001-sos_life_support",
         "pb-bridge-001-workshop_1216126863_adapter",
         "pb-bridge-001-virtual_whip_auto_door",
     ]
@@ -149,8 +152,11 @@ def test_expand_sos_bridge_configs_applies_mode_policy_and_services(tmp_path: Pa
     assert config.child_worker_scripts[8]["service_id"] == "docking"
     assert config.child_worker_scripts[8]["budget"] == 1
     assert config.child_worker_scripts[8]["priority"] == 11
-    assert config.child_worker_scripts[9]["budget"] == 0
-    assert config.child_worker_scripts[10]["expires_after_sequences"] == 1
+    assert config.child_worker_scripts[9]["service_id"] == "life_support"
+    assert config.child_worker_scripts[9]["budget"] == 1
+    assert config.child_worker_scripts[9]["priority"] == 14
+    assert config.child_worker_scripts[10]["budget"] == 0
+    assert config.child_worker_scripts[11]["expires_after_sequences"] == 1
     assert config.child_worker_scripts[1]["budget"] == 1
 
 

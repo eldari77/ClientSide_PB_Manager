@@ -991,6 +991,68 @@ def test_execute_sos_orchestrator_passes_child_payload_history_to_dashboard_requ
                                 }
                             },
                         },
+                        {
+                            "script_id": "bridge-a-sos_life_support",
+                            "status": "ok",
+                            "error_bucket": "none",
+                            "summary": "life support warning",
+                            "result": {
+                                "sos_life_support": {
+                                    "state": "warning",
+                                    "snapshot_status": "ok",
+                                    "medical_rooms": {
+                                        "damaged_or_offline_count": 0,
+                                        "disabled_count": 0,
+                                        "ready_count": 1,
+                                        "total_count": 1,
+                                    },
+                                    "survival_kits": {
+                                        "damaged_or_offline_count": 0,
+                                        "disabled_count": 0,
+                                        "ready_count": 1,
+                                        "total_count": 1,
+                                    },
+                                    "cryo_chambers": {
+                                        "damaged_or_offline_count": 0,
+                                        "depleted_count": 0,
+                                        "disabled_count": 0,
+                                        "occupied_count": 0,
+                                        "ready_count": 1,
+                                        "total_count": 1,
+                                    },
+                                    "oxygen_tanks": {
+                                        "damaged_or_offline_count": 0,
+                                        "depleted_count": 1,
+                                        "disabled_count": 0,
+                                        "ready_count": 0,
+                                        "total_count": 1,
+                                    },
+                                    "hydrogen_tanks": {
+                                        "damaged_or_offline_count": 0,
+                                        "depleted_count": 0,
+                                        "disabled_count": 0,
+                                        "ready_count": 1,
+                                        "total_count": 1,
+                                    },
+                                    "o2_h2_generators": {
+                                        "damaged_or_offline_count": 0,
+                                        "disabled_count": 0,
+                                        "ready_count": 1,
+                                        "total_count": 1,
+                                    },
+                                    "oxygen_farms": {
+                                        "damaged_or_offline_count": 0,
+                                        "disabled_count": 0,
+                                        "ready_count": 0,
+                                        "total_count": 0,
+                                    },
+                                    "resource_hints": {"oxygen_shortage": True, "hydrogen_shortage": False},
+                                    "blocker_count": 1,
+                                    "warning_count": 2,
+                                    "warnings": ["oxygen_tank_depleted:O2 Tank", "oxygen_resource_shortage:oxygen_bottle"],
+                                }
+                            },
+                        },
                     ],
                 },
             }
@@ -1016,6 +1078,7 @@ def test_execute_sos_orchestrator_passes_child_payload_history_to_dashboard_requ
                             {"script_id": "bridge-a-sos_power", "service_id": "power"},
                             {"script_id": "bridge-a-sos_comms", "service_id": "comms"},
                             {"script_id": "bridge-a-sos_docking", "service_id": "docking"},
+                            {"script_id": "bridge-a-sos_life_support", "service_id": "life_support"},
                         ],
                     }
                 ],
@@ -1036,6 +1099,7 @@ def test_execute_sos_orchestrator_passes_child_payload_history_to_dashboard_requ
         "bridge-a-sos_power": WorkerScript("bridge-a-sos_power", "manual", "Power", module.__name__, "", "", 1000, True),
         "bridge-a-sos_comms": WorkerScript("bridge-a-sos_comms", "manual", "Comms", module.__name__, "", "", 1000, True),
         "bridge-a-sos_docking": WorkerScript("bridge-a-sos_docking", "manual", "Docking", module.__name__, "", "", 1000, True),
+        "bridge-a-sos_life_support": WorkerScript("bridge-a-sos_life_support", "manual", "Life Support", module.__name__, "", "", 1000, True),
     }
 
     result = execute_request(
@@ -1084,6 +1148,10 @@ def test_execute_sos_orchestrator_passes_child_payload_history_to_dashboard_requ
     assert docking["state"] == "warning"
     assert docking["connectors"]["damaged_or_offline_count"] == 1
     assert docking["merge_blocks"]["ready_count"] == 1
+    life_support = telemetry["child_services_by_service_id"]["life_support"]["result"]["sos_life_support"]
+    assert life_support["state"] == "warning"
+    assert life_support["oxygen_tanks"]["depleted_count"] == 1
+    assert life_support["resource_hints"]["oxygen_shortage"] is True
 
 
 def test_execute_sos_dashboard_child_degrades_gracefully_without_child_history(tmp_path: Path):
@@ -1148,6 +1216,7 @@ def test_execute_sos_dashboard_child_degrades_gracefully_without_child_history(t
     assert dashboard["power"]["snapshot_status"] == "missing_child_result"
     assert dashboard["comms"]["snapshot_status"] == "missing_child_result"
     assert dashboard["docking"]["snapshot_status"] == "missing_child_result"
+    assert dashboard["life_support"]["snapshot_status"] == "missing_child_result"
     assert result["result"]["commands"][0]["text"] == (
         "SOS Dashboard Ship A mode=Docked integrity=unknown logistics=unknown airlock=unknown mobility=unknown power=unknown comms=unknown docking=unknown queue=0 blockers=none"
     )
@@ -2341,6 +2410,270 @@ def test_execute_sos_docking_child_degrades_gracefully_without_snapshot(tmp_path
             "text": "SOS Docking Ship A state=unknown snapshot=no_snapshot",
             "source_script_id": "bridge-a-sos_docking",
             "source_priority": 11,
+            "source_order": 0,
+            "source_role": "status",
+        }
+    ]
+
+
+def test_execute_sos_orchestrator_runs_life_support_child_with_existing_services(tmp_path: Path):
+    def install_adapter(module_name: str, summary: str, command: dict[str, object]) -> None:
+        module = types.ModuleType(module_name)
+
+        def run(request):
+            return {"summary": summary, "commands": [command]}
+
+        module.run = run
+        sys.modules[module_name] = module
+
+    install_adapter("tests.sos_life_support_registry_status_child", "status ok", {"kind": "echo", "text": "status"})
+    install_adapter("tests.sos_life_support_registry_inventory_child", "inventory ok", {"kind": "echo", "text": "inventory"})
+    install_adapter("tests.sos_life_support_registry_door_child", "doors ok", {"kind": "echo", "text": "doors"})
+    data = tmp_path / "data"
+    data.mkdir()
+    (data / "sos_ships.json").write_text(
+        json.dumps(
+            {
+                "schema": "novali.client_side_pb.sos_ships.v1",
+                "ships": [
+                    {
+                        "ship_id": "ship-a",
+                        "bridge_id": "bridge-a",
+                        "display_name": "Ship A",
+                        "expected_grid_entity_id": 10,
+                        "services": [
+                            {"script_id": "bridge-a-sos_status", "service_id": "status"},
+                            {"script_id": "bridge-a-sos_life_support", "service_id": "life_support"},
+                            {"script_id": "bridge-a-inventory", "service_id": "inventory"},
+                            {"script_id": "bridge-a-doors", "service_id": "doors"},
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    scripts = {
+        "bridge-a-orchestrator": WorkerScript(
+            "bridge-a-orchestrator", "script_instance", "Bridge A SOS", "", "", "", 1000, True, base_script_id="bridge_orchestrator"
+        ),
+        "bridge-a-sos_status": WorkerScript(
+            "bridge-a-sos_status", "manual", "Status", "tests.sos_life_support_registry_status_child", "", "", 1000, True
+        ),
+        "bridge-a-sos_life_support": WorkerScript(
+            "bridge-a-sos_life_support",
+            "manual",
+            "Life Support",
+            "worker.scripts.sos_life_support",
+            "",
+            "",
+            1000,
+            True,
+        ),
+        "bridge-a-inventory": WorkerScript(
+            "bridge-a-inventory", "manual", "Inventory", "tests.sos_life_support_registry_inventory_child", "", "", 1000, True
+        ),
+        "bridge-a-doors": WorkerScript("bridge-a-doors", "manual", "Doors", "tests.sos_life_support_registry_door_child", "", "", 1000, True),
+    }
+
+    result = execute_request(
+        {
+            "schema": "novali.client_side_pb_bridge.v1",
+            "message_kind": "request",
+            "bridge_id": "bridge-a",
+            "sequence": 1,
+            "script_id": "bridge-a-orchestrator",
+            "grid_snapshot": {
+                "schema": "novali.client_side_pb.grid_snapshot.v1",
+                "grid_entity_id": 10,
+                "blocks": [
+                    {"name": "Med Bay", "type": "MedicalRoom", "functional": True},
+                    {"name": "Survival Kit", "type": "SurvivalKit", "functional": True},
+                    {"name": "Cryo Pod", "type": "CryoChamber", "functional": True},
+                    {"name": "Oxygen Tank", "type": "OxygenTank", "functional": True, "fill_ratio": 0.8},
+                    {"name": "Hydrogen Tank", "type": "HydrogenTank", "functional": True, "fill_ratio": 0.8},
+                    {"name": "O2/H2 Generator", "type": "O2H2Generator", "functional": True},
+                ],
+            },
+            "state": {},
+        },
+        scripts,
+        {},
+        tmp_path,
+    )
+
+    assert result["status"] == "ok"
+    assert [child["script_id"] for child in result["result"]["child_results"]] == [
+        "bridge-a-sos_status",
+        "bridge-a-sos_life_support",
+        "bridge-a-inventory",
+        "bridge-a-doors",
+    ]
+    life_support_child = result["result"]["child_results"][1]
+    assert life_support_child["summary"] == (
+        "SOS Life Support Ship A state=ok medical=1/1 survival=1/1 cryo=1/1 o2=1/1 h2=1/1 generators=1/1 blockers=0"
+    )
+    assert life_support_child["error_bucket"] == "none"
+    assert life_support_child["result"]["sos_life_support"]["snapshot_status"] == "ok"
+    assert {command["kind"] for command in result["result"]["commands"]} <= {"echo", "write_text_surface"}
+
+
+def test_execute_sos_orchestrator_passes_grid_integrity_and_inventory_data_to_life_support_child_only(tmp_path: Path):
+    captured: dict[str, dict] = {}
+    module = types.ModuleType("tests.sos_life_support_capture_children")
+
+    def run(request):
+        captured[request["script_id"]] = request
+        return {"summary": f"{request['script_id']} captured", "commands": [{"kind": "echo", "text": request["script_id"]}]}
+
+    module.run = run
+    sys.modules[module.__name__] = module
+    data = tmp_path / "data"
+    data.mkdir()
+    (data / "sos_ships.json").write_text(
+        json.dumps(
+            {
+                "schema": "novali.client_side_pb.sos_ships.v1",
+                "ships": [
+                    {
+                        "ship_id": "ship-a",
+                        "bridge_id": "bridge-a",
+                        "display_name": "Ship A",
+                        "expected_grid_entity_id": 10,
+                        "services": [
+                            {"script_id": "bridge-a-sos_life_support", "service_id": "life_support"},
+                            {"script_id": "bridge-a-inventory", "service_id": "inventory"},
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    scripts = {
+        "bridge-a-orchestrator": WorkerScript(
+            "bridge-a-orchestrator", "script_instance", "Bridge A SOS", "", "", "", 1000, True, base_script_id="bridge_orchestrator"
+        ),
+        "bridge-a-sos_life_support": WorkerScript("bridge-a-sos_life_support", "manual", "Life Support", module.__name__, "", "", 1000, True),
+        "bridge-a-inventory": WorkerScript("bridge-a-inventory", "manual", "Inventory", module.__name__, "", "", 1000, True),
+    }
+    grid_snapshot = {
+        "schema": "novali.client_side_pb.grid_snapshot.v1",
+        "grid_entity_id": 10,
+        "blocks": [
+            {"name": "Med Bay", "type": "MedicalRoom", "integrity_ratio": 0.91, "functional": True},
+            {"name": "Oxygen Tank", "type": "OxygenTank", "integrity_ratio": 1.0, "functional": True, "fill_ratio": 0.8},
+            {"name": "LCD", "type": "TextPanel"},
+        ],
+    }
+    logistics_snapshot = {
+        "resources": {
+            "oxygen_bottle": {"current": 1.0, "minimum": 2.0},
+            "hydrogen_bottle": {"current": 4.0, "minimum": 2.0},
+        }
+    }
+
+    result = execute_request(
+        {
+            "schema": "novali.client_side_pb_bridge.v1",
+            "message_kind": "request",
+            "bridge_id": "bridge-a",
+            "sequence": 1,
+            "script_id": "bridge-a-orchestrator",
+            "grid_snapshot": grid_snapshot,
+            "logistics_snapshot": logistics_snapshot,
+            "state": {},
+        },
+        scripts,
+        {},
+        tmp_path,
+    )
+
+    assert result["status"] == "ok"
+    assert captured["bridge-a-sos_life_support"]["grid_snapshot"] == grid_snapshot
+    assert captured["bridge-a-sos_life_support"]["integrity_snapshot"] == {
+        "blocks": [
+            {"name": "Med Bay", "type": "MedicalRoom", "integrity_ratio": 0.91, "functional": True},
+            {"name": "Oxygen Tank", "type": "OxygenTank", "integrity_ratio": 1.0, "functional": True},
+        ],
+        "critical_systems": [],
+    }
+    assert captured["bridge-a-sos_life_support"]["inventory_snapshot"] == logistics_snapshot
+    assert "life_support_snapshot" not in captured["bridge-a-sos_life_support"]
+    assert "crew_snapshot" not in captured["bridge-a-sos_life_support"]
+    assert "survival_snapshot" not in captured["bridge-a-sos_life_support"]
+    assert "life_support_snapshot" not in captured["bridge-a-inventory"]
+    assert "crew_snapshot" not in captured["bridge-a-inventory"]
+    assert "survival_snapshot" not in captured["bridge-a-inventory"]
+    assert "integrity_snapshot" not in captured["bridge-a-inventory"]
+    assert "inventory_snapshot" not in captured["bridge-a-inventory"]
+
+
+def test_execute_sos_life_support_child_degrades_gracefully_without_snapshot(tmp_path: Path):
+    data = tmp_path / "data"
+    data.mkdir()
+    (data / "sos_ships.json").write_text(
+        json.dumps(
+            {
+                "schema": "novali.client_side_pb.sos_ships.v1",
+                "ships": [
+                    {
+                        "ship_id": "ship-a",
+                        "bridge_id": "bridge-a",
+                        "display_name": "Ship A",
+                        "expected_grid_entity_id": 10,
+                        "services": [{"script_id": "bridge-a-sos_life_support", "service_id": "life_support"}],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    scripts = {
+        "bridge-a-orchestrator": WorkerScript(
+            "bridge-a-orchestrator", "script_instance", "Bridge A SOS", "", "", "", 1000, True, base_script_id="bridge_orchestrator"
+        ),
+        "bridge-a-sos_life_support": WorkerScript(
+            "bridge-a-sos_life_support",
+            "manual",
+            "Life Support",
+            "worker.scripts.sos_life_support",
+            "",
+            "",
+            1000,
+            True,
+        ),
+    }
+
+    result = execute_request(
+        {
+            "schema": "novali.client_side_pb_bridge.v1",
+            "message_kind": "request",
+            "bridge_id": "bridge-a",
+            "sequence": 1,
+            "script_id": "bridge-a-orchestrator",
+            "grid_snapshot": {
+                "schema": "novali.client_side_pb.grid_snapshot.v1",
+                "grid_entity_id": 10,
+                "blocks": [{"entity_id": 301, "name": "LCD", "type": "TextPanel"}],
+            },
+            "state": {},
+        },
+        scripts,
+        {},
+        tmp_path,
+    )
+
+    assert result["status"] == "ok"
+    life_support_child = result["result"]["child_results"][0]
+    assert life_support_child["summary"] == "SOS Life Support Ship A state=unknown snapshot=no_snapshot"
+    assert life_support_child["result"]["sos_life_support"]["snapshot_status"] == "no_snapshot"
+    assert result["result"]["commands"] == [
+        {
+            "kind": "echo",
+            "text": "SOS Life Support Ship A state=unknown snapshot=no_snapshot",
+            "source_script_id": "bridge-a-sos_life_support",
+            "source_priority": 14,
             "source_order": 0,
             "source_role": "status",
         }

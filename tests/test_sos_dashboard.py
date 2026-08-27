@@ -30,6 +30,7 @@ def test_sos_dashboard_adapter_degrades_to_missing_child_result_with_echo():
     assert result["sos_dashboard"]["power"]["snapshot_status"] == "missing_child_result"
     assert result["sos_dashboard"]["comms"]["snapshot_status"] == "missing_child_result"
     assert result["sos_dashboard"]["docking"]["snapshot_status"] == "missing_child_result"
+    assert result["sos_dashboard"]["life_support"]["snapshot_status"] == "missing_child_result"
     assert result["commands"] == [
         {
             "kind": "echo",

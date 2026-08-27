@@ -111,6 +111,16 @@
       "created_at": "2026-08-26T00:00:00Z",
       "updated_at": "2026-08-26T00:00:00Z"
     },
+    "pb-bridge-001-sos_life_support": {
+      "instance_id": "pb-bridge-001-sos_life_support",
+      "base_script_id": "sos_life_support",
+      "display_name": "Primary PB Bridge - SOS Life Support",
+      "bridge_id": "pb-bridge-001",
+      "enabled": true,
+      "config_id": "pb-bridge-001-sos_life_support",
+      "created_at": "2026-08-26T00:00:00Z",
+      "updated_at": "2026-08-26T00:00:00Z"
+    },
     "pb-bridge-001-virtual_whip_auto_door": {
       "instance_id": "pb-bridge-001-virtual_whip_auto_door",
       "base_script_id": "virtual_whip_auto_door",
