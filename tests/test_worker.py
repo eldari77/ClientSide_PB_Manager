@@ -776,7 +776,7 @@ def test_execute_sos_orchestrator_runs_dashboard_child_with_existing_services(tm
     ]
     dashboard_child = result["result"]["child_results"][1]
     assert dashboard_child["summary"] == (
-        "SOS Dashboard Ship A mode=Docked integrity=unknown logistics=unknown airlock=unknown mobility=unknown power=unknown comms=unknown queue=0 blockers=none"
+        "SOS Dashboard Ship A mode=Docked integrity=unknown logistics=unknown airlock=unknown mobility=unknown power=unknown comms=unknown docking=unknown queue=0 blockers=none"
     )
     assert dashboard_child["error_bucket"] == "none"
     assert result["result"]["commands"][1]["kind"] == "echo"
@@ -955,6 +955,42 @@ def test_execute_sos_orchestrator_passes_child_payload_history_to_dashboard_requ
                                 }
                             },
                         },
+                        {
+                            "script_id": "bridge-a-sos_docking",
+                            "status": "ok",
+                            "error_bucket": "none",
+                            "summary": "docking warning",
+                            "result": {
+                                "sos_docking": {
+                                    "state": "warning",
+                                    "snapshot_status": "ok",
+                                    "connectors": {
+                                        "connected_count": 0,
+                                        "locked_count": 0,
+                                        "ready_count": 1,
+                                        "damaged_or_offline_count": 1,
+                                        "disabled_count": 0,
+                                        "total_count": 2,
+                                    },
+                                    "landing_gear": {
+                                        "locked_count": 1,
+                                        "ready_count": 0,
+                                        "damaged_or_offline_count": 0,
+                                        "disabled_count": 0,
+                                        "total_count": 1,
+                                    },
+                                    "merge_blocks": {
+                                        "merged_count": 0,
+                                        "ready_count": 1,
+                                        "damaged_or_offline_count": 0,
+                                        "disabled_count": 0,
+                                        "total_count": 1,
+                                    },
+                                    "blocker_count": 1,
+                                    "warnings": ["connector_damaged_or_offline:Docking Connector"],
+                                }
+                            },
+                        },
                     ],
                 },
             }
@@ -979,6 +1015,7 @@ def test_execute_sos_orchestrator_passes_child_payload_history_to_dashboard_requ
                             {"script_id": "bridge-a-sos_mobility", "service_id": "mobility"},
                             {"script_id": "bridge-a-sos_power", "service_id": "power"},
                             {"script_id": "bridge-a-sos_comms", "service_id": "comms"},
+                            {"script_id": "bridge-a-sos_docking", "service_id": "docking"},
                         ],
                     }
                 ],
@@ -998,6 +1035,7 @@ def test_execute_sos_orchestrator_passes_child_payload_history_to_dashboard_requ
         "bridge-a-sos_mobility": WorkerScript("bridge-a-sos_mobility", "manual", "Mobility", module.__name__, "", "", 1000, True),
         "bridge-a-sos_power": WorkerScript("bridge-a-sos_power", "manual", "Power", module.__name__, "", "", 1000, True),
         "bridge-a-sos_comms": WorkerScript("bridge-a-sos_comms", "manual", "Comms", module.__name__, "", "", 1000, True),
+        "bridge-a-sos_docking": WorkerScript("bridge-a-sos_docking", "manual", "Docking", module.__name__, "", "", 1000, True),
     }
 
     result = execute_request(
@@ -1042,6 +1080,10 @@ def test_execute_sos_orchestrator_passes_child_payload_history_to_dashboard_requ
     assert comms["state"] == "warning"
     assert comms["antennas"]["low_or_no_range_count"] == 1
     assert comms["laser_antennas"]["disconnected_or_unlinked_count"] == 1
+    docking = telemetry["child_services_by_service_id"]["docking"]["result"]["sos_docking"]
+    assert docking["state"] == "warning"
+    assert docking["connectors"]["damaged_or_offline_count"] == 1
+    assert docking["merge_blocks"]["ready_count"] == 1
 
 
 def test_execute_sos_dashboard_child_degrades_gracefully_without_child_history(tmp_path: Path):
@@ -1097,7 +1139,7 @@ def test_execute_sos_dashboard_child_degrades_gracefully_without_child_history(t
 
     assert result["status"] == "ok"
     assert result["result"]["child_results"][0]["summary"] == (
-        "SOS Dashboard Ship A mode=Docked integrity=unknown logistics=unknown airlock=unknown mobility=unknown power=unknown comms=unknown queue=0 blockers=none"
+        "SOS Dashboard Ship A mode=Docked integrity=unknown logistics=unknown airlock=unknown mobility=unknown power=unknown comms=unknown docking=unknown queue=0 blockers=none"
     )
     dashboard = result["result"]["child_results"][0]["result"]["sos_dashboard"]
     assert dashboard["integrity"]["snapshot_status"] == "missing_child_result"
@@ -1105,8 +1147,9 @@ def test_execute_sos_dashboard_child_degrades_gracefully_without_child_history(t
     assert dashboard["mobility"]["snapshot_status"] == "missing_child_result"
     assert dashboard["power"]["snapshot_status"] == "missing_child_result"
     assert dashboard["comms"]["snapshot_status"] == "missing_child_result"
+    assert dashboard["docking"]["snapshot_status"] == "missing_child_result"
     assert result["result"]["commands"][0]["text"] == (
-        "SOS Dashboard Ship A mode=Docked integrity=unknown logistics=unknown airlock=unknown mobility=unknown power=unknown comms=unknown queue=0 blockers=none"
+        "SOS Dashboard Ship A mode=Docked integrity=unknown logistics=unknown airlock=unknown mobility=unknown power=unknown comms=unknown docking=unknown queue=0 blockers=none"
     )
 
 
