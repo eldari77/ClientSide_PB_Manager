@@ -776,7 +776,7 @@ def test_execute_sos_orchestrator_runs_dashboard_child_with_existing_services(tm
     ]
     dashboard_child = result["result"]["child_results"][1]
     assert dashboard_child["summary"] == (
-        "SOS Dashboard Ship A mode=Docked integrity=unknown logistics=unknown airlock=unknown mobility=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown production=unknown transit=unknown queue=0 blockers=none"
+        "SOS Dashboard Ship A mode=Docked integrity=unknown logistics=unknown airlock=unknown mobility=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown production=unknown transit=unknown defense=unknown queue=0 blockers=none"
     )
     assert dashboard_child["error_bucket"] == "none"
     assert result["result"]["commands"][1]["kind"] == "echo"
@@ -1154,6 +1154,34 @@ def test_execute_sos_orchestrator_passes_child_payload_history_to_dashboard_requ
                                 }
                             },
                         },
+                        {
+                            "script_id": "bridge-a-sos_defense",
+                            "status": "ok",
+                            "error_bucket": "none",
+                            "summary": "defense warning",
+                            "result": {
+                                "sos_defense": {
+                                    "state": "warning",
+                                    "snapshot_status": "ok",
+                                    "turrets": {
+                                        "ready_count": 1,
+                                        "total_count": 2,
+                                        "damaged_or_offline_count": 1,
+                                        "disabled_count": 0,
+                                    },
+                                    "decoys": {"ready_count": 0, "total_count": 1, "damaged_or_offline_count": 0},
+                                    "fixed_weapons": {"ready_count": 1, "total_count": 1, "damaged_or_offline_count": 0},
+                                    "ammo": {"state": "shortage", "shortage_count": 1, "hints": ["ammo_shortage:NATO_25x184mm"]},
+                                    "fuel": {"state": "ok", "shortage_count": 0, "hints": []},
+                                    "power": {"state": "warning", "hints": ["battery_low:Main Battery"]},
+                                    "comms_sensors": {"state": "ok", "hints": []},
+                                    "shields": {"state": "warning", "ready_count": 0, "total_count": 1},
+                                    "threats": {"hostile_count": 0, "threat_count": 1, "hints": ["threat_contact:drone"]},
+                                    "blockers": ["turret_damaged_or_offline:Dorsal Turret"],
+                                    "warnings": ["ammo_shortage:NATO_25x184mm"],
+                                }
+                            },
+                        },
                     ],
                 },
             }
@@ -1183,6 +1211,7 @@ def test_execute_sos_orchestrator_passes_child_payload_history_to_dashboard_requ
                             {"script_id": "bridge-a-sos_life_support", "service_id": "life_support"},
                             {"script_id": "bridge-a-sos_production", "service_id": "production"},
                             {"script_id": "bridge-a-sos_transit", "service_id": "transit"},
+                            {"script_id": "bridge-a-sos_defense", "service_id": "defense"},
                         ],
                     }
                 ],
@@ -1207,6 +1236,7 @@ def test_execute_sos_orchestrator_passes_child_payload_history_to_dashboard_requ
         "bridge-a-sos_life_support": WorkerScript("bridge-a-sos_life_support", "manual", "Life Support", module.__name__, "", "", 1000, True),
         "bridge-a-sos_production": WorkerScript("bridge-a-sos_production", "manual", "Production", module.__name__, "", "", 1000, True),
         "bridge-a-sos_transit": WorkerScript("bridge-a-sos_transit", "manual", "Transit", module.__name__, "", "", 1000, True),
+        "bridge-a-sos_defense": WorkerScript("bridge-a-sos_defense", "manual", "Defense", module.__name__, "", "", 1000, True),
     }
 
     result = execute_request(
@@ -1271,6 +1301,10 @@ def test_execute_sos_orchestrator_passes_child_payload_history_to_dashboard_requ
     assert transit["state"] == "warning"
     assert transit["jump_drives"]["damaged_count"] == 1
     assert transit["power"]["state"] == "warning"
+    defense = telemetry["child_services_by_service_id"]["defense"]["result"]["sos_defense"]
+    assert defense["state"] == "warning"
+    assert defense["turrets"]["damaged_or_offline_count"] == 1
+    assert defense["ammo"]["shortage_count"] == 1
 
 
 def test_execute_sos_dashboard_child_degrades_gracefully_without_child_history(tmp_path: Path):
@@ -1326,7 +1360,7 @@ def test_execute_sos_dashboard_child_degrades_gracefully_without_child_history(t
 
     assert result["status"] == "ok"
     assert result["result"]["child_results"][0]["summary"] == (
-        "SOS Dashboard Ship A mode=Docked integrity=unknown logistics=unknown airlock=unknown mobility=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown production=unknown transit=unknown queue=0 blockers=none"
+        "SOS Dashboard Ship A mode=Docked integrity=unknown logistics=unknown airlock=unknown mobility=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown production=unknown transit=unknown defense=unknown queue=0 blockers=none"
     )
     dashboard = result["result"]["child_results"][0]["result"]["sos_dashboard"]
     assert dashboard["integrity"]["snapshot_status"] == "missing_child_result"
@@ -1339,8 +1373,9 @@ def test_execute_sos_dashboard_child_degrades_gracefully_without_child_history(t
     assert dashboard["life_support"]["snapshot_status"] == "missing_child_result"
     assert dashboard["production"]["snapshot_status"] == "missing_child_result"
     assert dashboard["transit"]["snapshot_status"] == "missing_child_result"
+    assert dashboard["defense"]["snapshot_status"] == "missing_child_result"
     assert result["result"]["commands"][0]["text"] == (
-        "SOS Dashboard Ship A mode=Docked integrity=unknown logistics=unknown airlock=unknown mobility=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown production=unknown transit=unknown queue=0 blockers=none"
+        "SOS Dashboard Ship A mode=Docked integrity=unknown logistics=unknown airlock=unknown mobility=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown production=unknown transit=unknown defense=unknown queue=0 blockers=none"
     )
 
 
@@ -3567,6 +3602,262 @@ def test_execute_sos_transit_child_degrades_gracefully_without_snapshot(tmp_path
             "text": "SOS Transit Ship A state=unknown snapshot=no_snapshot",
             "source_script_id": "bridge-a-sos_transit",
             "source_priority": 11,
+            "source_order": 0,
+            "source_role": "status",
+        }
+    ]
+
+
+def test_execute_sos_orchestrator_runs_defense_child_with_existing_services(tmp_path: Path):
+    def install_adapter(module_name: str, summary: str, command: dict[str, object]) -> None:
+        module = types.ModuleType(module_name)
+
+        def run(request):
+            return {"summary": summary, "commands": [command]}
+
+        module.run = run
+        sys.modules[module_name] = module
+
+    install_adapter("tests.sos_defense_registry_status_child", "status ok", {"kind": "echo", "text": "status"})
+    install_adapter("tests.sos_defense_registry_inventory_child", "inventory ok", {"kind": "echo", "text": "inventory"})
+    install_adapter("tests.sos_defense_registry_door_child", "doors ok", {"kind": "echo", "text": "doors"})
+    data = tmp_path / "data"
+    data.mkdir()
+    (data / "sos_ships.json").write_text(
+        json.dumps(
+            {
+                "schema": "novali.client_side_pb.sos_ships.v1",
+                "ships": [
+                    {
+                        "ship_id": "ship-a",
+                        "bridge_id": "bridge-a",
+                        "display_name": "Ship A",
+                        "expected_grid_entity_id": 10,
+                        "services": [
+                            {"script_id": "bridge-a-sos_status", "service_id": "status"},
+                            {"script_id": "bridge-a-sos_defense", "service_id": "defense"},
+                            {"script_id": "bridge-a-inventory", "service_id": "inventory"},
+                            {"script_id": "bridge-a-doors", "service_id": "doors"},
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    scripts = {
+        "bridge-a-orchestrator": WorkerScript(
+            "bridge-a-orchestrator", "script_instance", "Bridge A SOS", "", "", "", 1000, True, base_script_id="bridge_orchestrator"
+        ),
+        "bridge-a-sos_status": WorkerScript(
+            "bridge-a-sos_status", "manual", "Status", "tests.sos_defense_registry_status_child", "", "", 1000, True
+        ),
+        "bridge-a-sos_defense": WorkerScript(
+            "bridge-a-sos_defense",
+            "manual",
+            "Defense",
+            "worker.scripts.sos_defense",
+            "",
+            "",
+            1000,
+            True,
+        ),
+        "bridge-a-inventory": WorkerScript(
+            "bridge-a-inventory", "manual", "Inventory", "tests.sos_defense_registry_inventory_child", "", "", 1000, True
+        ),
+        "bridge-a-doors": WorkerScript("bridge-a-doors", "manual", "Doors", "tests.sos_defense_registry_door_child", "", "", 1000, True),
+    }
+
+    result = execute_request(
+        {
+            "schema": "novali.client_side_pb_bridge.v1",
+            "message_kind": "request",
+            "bridge_id": "bridge-a",
+            "sequence": 1,
+            "script_id": "bridge-a-orchestrator",
+            "grid_snapshot": {
+                "schema": "novali.client_side_pb.grid_snapshot.v1",
+                "grid_entity_id": 10,
+                "blocks": [
+                    {"name": "Gatling Turret", "type": "LargeGatlingTurret", "functional": True, "enabled": True, "has_ammo": True},
+                    {"name": "Interior Turret", "type": "InteriorTurret", "functional": True, "enabled": True, "has_ammo": True},
+                    {"name": "Decoy", "type": "Decoy", "functional": True, "enabled": True},
+                    {"name": "Shield Controller", "type": "ShieldController", "functional": True, "enabled": True, "shield_ratio": 0.75},
+                ],
+            },
+            "state": {},
+        },
+        scripts,
+        {},
+        tmp_path,
+    )
+
+    assert result["status"] == "ok"
+    assert [child["script_id"] for child in result["result"]["child_results"]] == [
+        "bridge-a-sos_status",
+        "bridge-a-sos_defense",
+        "bridge-a-inventory",
+        "bridge-a-doors",
+    ]
+    defense_child = result["result"]["child_results"][1]
+    assert defense_child["summary"] == (
+        "SOS Defense Ship A state=ok turrets=2/2 decoys=1/1 fixed=0/0 ammo=unknown fuel=unknown power=unknown comms=unknown threats=0 snapshot=ok"
+    )
+    assert defense_child["error_bucket"] == "none"
+    assert defense_child["result"]["sos_defense"]["snapshot_status"] == "ok"
+    assert {command["kind"] for command in result["result"]["commands"]} <= {"echo", "write_text_surface"}
+
+
+def test_execute_sos_orchestrator_passes_grid_integrity_and_inventory_data_to_defense_child_only(tmp_path: Path):
+    captured: dict[str, dict] = {}
+    module = types.ModuleType("tests.sos_defense_capture_children")
+
+    def run(request):
+        captured[request["script_id"]] = request
+        return {"summary": f"{request['script_id']} captured", "commands": [{"kind": "echo", "text": request["script_id"]}]}
+
+    module.run = run
+    sys.modules[module.__name__] = module
+    data = tmp_path / "data"
+    data.mkdir()
+    (data / "sos_ships.json").write_text(
+        json.dumps(
+            {
+                "schema": "novali.client_side_pb.sos_ships.v1",
+                "ships": [
+                    {
+                        "ship_id": "ship-a",
+                        "bridge_id": "bridge-a",
+                        "display_name": "Ship A",
+                        "expected_grid_entity_id": 10,
+                        "services": [
+                            {"script_id": "bridge-a-sos_defense", "service_id": "defense"},
+                            {"script_id": "bridge-a-inventory", "service_id": "inventory"},
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    scripts = {
+        "bridge-a-orchestrator": WorkerScript(
+            "bridge-a-orchestrator", "script_instance", "Bridge A SOS", "", "", "", 1000, True, base_script_id="bridge_orchestrator"
+        ),
+        "bridge-a-sos_defense": WorkerScript("bridge-a-sos_defense", "manual", "Defense", module.__name__, "", "", 1000, True),
+        "bridge-a-inventory": WorkerScript("bridge-a-inventory", "manual", "Inventory", module.__name__, "", "", 1000, True),
+    }
+    grid_snapshot = {
+        "schema": "novali.client_side_pb.grid_snapshot.v1",
+        "grid_entity_id": 10,
+        "blocks": [
+            {"name": "Gatling Turret", "type": "LargeGatlingTurret", "integrity_ratio": 0.91, "functional": True},
+            {"name": "Decoy", "type": "Decoy", "integrity_ratio": 1.0, "functional": True},
+            {"name": "LCD", "type": "TextPanel"},
+        ],
+    }
+    logistics_snapshot = {
+        "ammo": [{"name": "NATO_25x184mm", "current": 240.0, "minimum": 120.0}],
+        "fuel": {"uranium": {"current": 5.0, "minimum": 1.0}},
+    }
+
+    result = execute_request(
+        {
+            "schema": "novali.client_side_pb_bridge.v1",
+            "message_kind": "request",
+            "bridge_id": "bridge-a",
+            "sequence": 1,
+            "script_id": "bridge-a-orchestrator",
+            "grid_snapshot": grid_snapshot,
+            "logistics_snapshot": logistics_snapshot,
+            "state": {},
+        },
+        scripts,
+        {},
+        tmp_path,
+    )
+
+    assert result["status"] == "ok"
+    assert captured["bridge-a-sos_defense"]["grid_snapshot"] == grid_snapshot
+    assert captured["bridge-a-sos_defense"]["integrity_snapshot"] == {
+        "blocks": [
+            {"name": "Gatling Turret", "type": "LargeGatlingTurret", "integrity_ratio": 0.91, "functional": True},
+            {"name": "Decoy", "type": "Decoy", "integrity_ratio": 1.0, "functional": True},
+        ],
+        "critical_systems": [],
+    }
+    assert captured["bridge-a-sos_defense"]["inventory_snapshot"] == logistics_snapshot
+    assert "defense_snapshot" not in captured["bridge-a-sos_defense"]
+    assert "threat_snapshot" not in captured["bridge-a-sos_defense"]
+    assert "weapons_snapshot" not in captured["bridge-a-sos_defense"]
+    assert "combat_snapshot" not in captured["bridge-a-sos_defense"]
+    assert "defense_snapshot" not in captured["bridge-a-inventory"]
+    assert "threat_snapshot" not in captured["bridge-a-inventory"]
+    assert "weapons_snapshot" not in captured["bridge-a-inventory"]
+    assert "combat_snapshot" not in captured["bridge-a-inventory"]
+    assert "integrity_snapshot" not in captured["bridge-a-inventory"]
+    assert "inventory_snapshot" not in captured["bridge-a-inventory"]
+
+
+def test_execute_sos_defense_child_degrades_gracefully_without_snapshot(tmp_path: Path):
+    data = tmp_path / "data"
+    data.mkdir()
+    (data / "sos_ships.json").write_text(
+        json.dumps(
+            {
+                "schema": "novali.client_side_pb.sos_ships.v1",
+                "ships": [
+                    {
+                        "ship_id": "ship-a",
+                        "bridge_id": "bridge-a",
+                        "display_name": "Ship A",
+                        "services": [{"script_id": "bridge-a-sos_defense", "service_id": "defense"}],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    scripts = {
+        "bridge-a-orchestrator": WorkerScript(
+            "bridge-a-orchestrator", "script_instance", "Bridge A SOS", "", "", "", 1000, True, base_script_id="bridge_orchestrator"
+        ),
+        "bridge-a-sos_defense": WorkerScript(
+            "bridge-a-sos_defense",
+            "manual",
+            "Defense",
+            "worker.scripts.sos_defense",
+            "",
+            "",
+            1000,
+            True,
+        ),
+    }
+
+    result = execute_request(
+        {
+            "schema": "novali.client_side_pb_bridge.v1",
+            "message_kind": "request",
+            "bridge_id": "bridge-a",
+            "sequence": 1,
+            "script_id": "bridge-a-orchestrator",
+            "state": {},
+        },
+        scripts,
+        {},
+        tmp_path,
+    )
+
+    assert result["status"] == "ok"
+    defense_child = result["result"]["child_results"][0]
+    assert defense_child["summary"] == "SOS Defense Ship A state=unknown snapshot=no_snapshot"
+    assert defense_child["result"]["sos_defense"]["snapshot_status"] == "no_snapshot"
+    assert result["result"]["commands"] == [
+        {
+            "kind": "echo",
+            "text": "SOS Defense Ship A state=unknown snapshot=no_snapshot",
+            "source_script_id": "bridge-a-sos_defense",
+            "source_priority": 13,
             "source_order": 0,
             "source_role": "status",
         }
