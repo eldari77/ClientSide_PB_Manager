@@ -50,6 +50,11 @@
           "enabled": true
         },
         {
+          "service_id": "crew",
+          "script_id": "pb-bridge-001-sos_crew",
+          "enabled": true
+        },
+        {
           "service_id": "docking",
           "script_id": "pb-bridge-001-sos_docking",
           "enabled": true
@@ -57,6 +62,11 @@
         {
           "service_id": "life_support",
           "script_id": "pb-bridge-001-sos_life_support",
+          "enabled": true
+        },
+        {
+          "service_id": "production",
+          "script_id": "pb-bridge-001-sos_production",
           "enabled": true
         },
         {

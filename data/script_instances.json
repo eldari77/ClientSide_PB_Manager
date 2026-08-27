@@ -101,6 +101,16 @@
       "created_at": "2026-08-26T00:00:00Z",
       "updated_at": "2026-08-26T00:00:00Z"
     },
+    "pb-bridge-001-sos_crew": {
+      "instance_id": "pb-bridge-001-sos_crew",
+      "base_script_id": "sos_crew",
+      "display_name": "Primary PB Bridge - SOS Crew",
+      "bridge_id": "pb-bridge-001",
+      "enabled": true,
+      "config_id": "pb-bridge-001-sos_crew",
+      "created_at": "2026-08-26T00:00:00Z",
+      "updated_at": "2026-08-26T00:00:00Z"
+    },
     "pb-bridge-001-sos_docking": {
       "instance_id": "pb-bridge-001-sos_docking",
       "base_script_id": "sos_docking",
@@ -118,6 +128,16 @@
       "bridge_id": "pb-bridge-001",
       "enabled": true,
       "config_id": "pb-bridge-001-sos_life_support",
+      "created_at": "2026-08-26T00:00:00Z",
+      "updated_at": "2026-08-26T00:00:00Z"
+    },
+    "pb-bridge-001-sos_production": {
+      "instance_id": "pb-bridge-001-sos_production",
+      "base_script_id": "sos_production",
+      "display_name": "Primary PB Bridge - SOS Production",
+      "bridge_id": "pb-bridge-001",
+      "enabled": true,
+      "config_id": "pb-bridge-001-sos_production",
       "created_at": "2026-08-26T00:00:00Z",
       "updated_at": "2026-08-26T00:00:00Z"
     },

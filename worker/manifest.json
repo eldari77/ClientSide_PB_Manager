@@ -122,6 +122,18 @@
       "enabled": true
     },
     {
+      "script_id": "sos_crew",
+      "source": "local_worker",
+      "display_name": "SOS Crew",
+      "module": "worker.scripts.sos_crew",
+      "runtime": "python",
+      "source_path": "",
+      "input_schema": "adapter_tick.v1",
+      "output_schema": "compact_commands.v1",
+      "timeout_ms": 1000,
+      "enabled": true
+    },
+    {
       "script_id": "sos_docking",
       "source": "local_worker",
       "display_name": "SOS Docking",
@@ -138,6 +150,18 @@
       "source": "local_worker",
       "display_name": "SOS Life Support",
       "module": "worker.scripts.sos_life_support",
+      "runtime": "python",
+      "source_path": "",
+      "input_schema": "adapter_tick.v1",
+      "output_schema": "compact_commands.v1",
+      "timeout_ms": 1000,
+      "enabled": true
+    },
+    {
+      "script_id": "sos_production",
+      "source": "local_worker",
+      "display_name": "SOS Production",
+      "module": "worker.scripts.sos_production",
       "runtime": "python",
       "source_path": "",
       "input_schema": "adapter_tick.v1",
