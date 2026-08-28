@@ -40,6 +40,11 @@
           "enabled": true
         },
         {
+          "service_id": "navigation",
+          "script_id": "pb-bridge-001-sos_navigation",
+          "enabled": true
+        },
+        {
           "service_id": "power",
           "script_id": "pb-bridge-001-sos_power",
           "enabled": true

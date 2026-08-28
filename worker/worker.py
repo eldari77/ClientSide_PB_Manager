@@ -39,6 +39,7 @@ FUEL_SUBTYPE_KEYS = {"ice", "uranium"}
 AIRLOCK_SNAPSHOT_KEYS = ("airlock_snapshot", "door_snapshot", "ship_doors")
 AIRLOCK_READY_KEYS = ("doors", "airlocks", "vents", "compartments")
 ENVIRONMENT_SNAPSHOT_KEYS = ("environment_snapshot", "hazard_snapshot", "weather_snapshot", "external_snapshot")
+NAVIGATION_SNAPSHOT_KEYS = ("navigation_snapshot", "nav_snapshot", "flight_snapshot", "motion_snapshot")
 DEFAULT_LCD_QUEUE_COOLDOWN_SEQUENCES = 1
 DEFAULT_BRIDGE_STALE_SECONDS = 120
 DEFAULT_PROCESSED_REQUEST_RETENTION_SECONDS = 300
@@ -565,6 +566,11 @@ def attach_airlock_snapshot_from_grid_snapshot(request: dict[str, Any]) -> None:
 
 def remove_environment_only_snapshot_aliases(request: dict[str, Any]) -> None:
     for key in ENVIRONMENT_SNAPSHOT_KEYS:
+        request.pop(key, None)
+
+
+def remove_navigation_only_snapshot_aliases(request: dict[str, Any]) -> None:
+    for key in NAVIGATION_SNAPSHOT_KEYS:
         request.pop(key, None)
 
 
@@ -1521,13 +1527,17 @@ def execute_orchestrator_request(
         child_request["runtime_telemetry"] = child_runtime_telemetry
         child_service_id = str(child_config.get("service_id", "") or "").strip().lower()
         is_environment_child = child_service_id == "environment" or "sos_environment" in child_id.lower()
-        if not is_environment_child:
+        is_navigation_child = child_service_id == "navigation" or "sos_navigation" in child_id.lower() or "sos_nav" in child_id.lower()
+        if not is_environment_child and not is_navigation_child:
             remove_environment_only_snapshot_aliases(child_request)
+        if not is_navigation_child:
+            remove_navigation_only_snapshot_aliases(child_request)
         if (
             child_service_id
             in {
                 "integrity",
                 "mobility",
+                "navigation",
                 "power",
                 "comms",
                 "crew",
@@ -1541,6 +1551,8 @@ def execute_orchestrator_request(
             or "sos_integrity" in child_id.lower()
             or "sos_damage" in child_id.lower()
             or "sos_mobility" in child_id.lower()
+            or "sos_navigation" in child_id.lower()
+            or "sos_nav" in child_id.lower()
             or "sos_power" in child_id.lower()
             or "sos_comms" in child_id.lower()
             or "sos_crew" in child_id.lower()
