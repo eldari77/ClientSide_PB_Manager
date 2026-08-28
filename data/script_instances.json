@@ -61,6 +61,16 @@
       "created_at": "2026-08-26T00:00:00Z",
       "updated_at": "2026-08-26T00:00:00Z"
     },
+    "pb-bridge-001-sos_maintenance": {
+      "instance_id": "pb-bridge-001-sos_maintenance",
+      "base_script_id": "sos_maintenance",
+      "display_name": "Primary PB Bridge - SOS Maintenance",
+      "bridge_id": "pb-bridge-001",
+      "enabled": true,
+      "config_id": "pb-bridge-001-sos_maintenance",
+      "created_at": "2026-08-26T00:00:00Z",
+      "updated_at": "2026-08-26T00:00:00Z"
+    },
     "pb-bridge-001-sos_airlock": {
       "instance_id": "pb-bridge-001-sos_airlock",
       "base_script_id": "sos_airlock",
