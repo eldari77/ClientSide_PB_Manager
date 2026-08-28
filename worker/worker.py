@@ -41,6 +41,7 @@ AIRLOCK_READY_KEYS = ("doors", "airlocks", "vents", "compartments")
 MAINTENANCE_SNAPSHOT_KEYS = ("maintenance_snapshot", "repair_snapshot", "damage_control_snapshot", "projector_snapshot")
 ENVIRONMENT_SNAPSHOT_KEYS = ("environment_snapshot", "hazard_snapshot", "weather_snapshot", "external_snapshot")
 NAVIGATION_SNAPSHOT_KEYS = ("navigation_snapshot", "nav_snapshot", "flight_snapshot", "motion_snapshot")
+MINING_SNAPSHOT_KEYS = ("mining_snapshot", "harvest_snapshot", "resource_snapshot", "ore_snapshot")
 DEFAULT_LCD_QUEUE_COOLDOWN_SEQUENCES = 1
 DEFAULT_BRIDGE_STALE_SECONDS = 120
 DEFAULT_PROCESSED_REQUEST_RETENTION_SECONDS = 300
@@ -577,6 +578,11 @@ def remove_navigation_only_snapshot_aliases(request: dict[str, Any]) -> None:
 
 def remove_maintenance_only_snapshot_aliases(request: dict[str, Any]) -> None:
     for key in MAINTENANCE_SNAPSHOT_KEYS:
+        request.pop(key, None)
+
+
+def remove_mining_only_snapshot_aliases(request: dict[str, Any]) -> None:
+    for key in MINING_SNAPSHOT_KEYS:
         request.pop(key, None)
 
 
@@ -1541,17 +1547,27 @@ def execute_orchestrator_request(
             or "sos_damage_control" in child_id.lower()
             or "sos_projector" in child_id.lower()
         )
-        if not is_environment_child and not is_navigation_child:
+        is_mining_child = (
+            child_service_id == "mining"
+            or "sos_mining" in child_id.lower()
+            or "sos_harvest" in child_id.lower()
+            or "sos_resource" in child_id.lower()
+            or "sos_ore" in child_id.lower()
+        )
+        if not is_environment_child and not is_navigation_child and not is_mining_child:
             remove_environment_only_snapshot_aliases(child_request)
         if not is_navigation_child:
             remove_navigation_only_snapshot_aliases(child_request)
         if not is_maintenance_child:
             remove_maintenance_only_snapshot_aliases(child_request)
+        if not is_mining_child:
+            remove_mining_only_snapshot_aliases(child_request)
         if (
             child_service_id
             in {
                 "integrity",
                 "maintenance",
+                "mining",
                 "mobility",
                 "navigation",
                 "power",
@@ -1570,6 +1586,10 @@ def execute_orchestrator_request(
             or "sos_repair" in child_id.lower()
             or "sos_damage_control" in child_id.lower()
             or "sos_projector" in child_id.lower()
+            or "sos_mining" in child_id.lower()
+            or "sos_harvest" in child_id.lower()
+            or "sos_resource" in child_id.lower()
+            or "sos_ore" in child_id.lower()
             or "sos_mobility" in child_id.lower()
             or "sos_navigation" in child_id.lower()
             or "sos_nav" in child_id.lower()
@@ -1586,12 +1606,16 @@ def execute_orchestrator_request(
         ):
             attach_integrity_snapshot_from_grid_snapshot(child_request)
         if (
-            child_service_id in {"logistics", "maintenance", "power", "life_support", "production", "transit", "defense"}
+            child_service_id in {"logistics", "maintenance", "mining", "power", "life_support", "production", "transit", "defense"}
             or "sos_logistics" in child_id.lower()
             or "sos_maintenance" in child_id.lower()
             or "sos_repair" in child_id.lower()
             or "sos_damage_control" in child_id.lower()
             or "sos_projector" in child_id.lower()
+            or "sos_mining" in child_id.lower()
+            or "sos_harvest" in child_id.lower()
+            or "sos_resource" in child_id.lower()
+            or "sos_ore" in child_id.lower()
             or "sos_power" in child_id.lower()
             or "sos_life_support" in child_id.lower()
             or "sos_lifesupport" in child_id.lower()

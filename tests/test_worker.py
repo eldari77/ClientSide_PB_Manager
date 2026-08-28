@@ -685,6 +685,7 @@ def test_execute_sos_orchestrator_runs_dashboard_child_with_existing_services(tm
     install_adapter("tests.sos_dashboard_registry_logistics_child", "logistics ok", {"kind": "echo", "text": "logistics"})
     install_adapter("tests.sos_dashboard_registry_maintenance_child", "maintenance ok", {"kind": "echo", "text": "maintenance"})
     install_adapter("tests.sos_dashboard_registry_navigation_child", "navigation ok", {"kind": "echo", "text": "navigation"})
+    install_adapter("tests.sos_dashboard_registry_mining_child", "mining ok", {"kind": "echo", "text": "mining"})
     install_adapter("tests.sos_dashboard_registry_inventory_child", "inventory ok", {"kind": "echo", "text": "inventory"})
     install_adapter("tests.sos_dashboard_registry_door_child", "doors ok", {"kind": "echo", "text": "doors"})
     data = tmp_path / "data"
@@ -706,6 +707,7 @@ def test_execute_sos_orchestrator_runs_dashboard_child_with_existing_services(tm
                             {"script_id": "bridge-a-sos_logistics", "service_id": "logistics"},
                             {"script_id": "bridge-a-sos_maintenance", "service_id": "maintenance"},
                             {"script_id": "bridge-a-sos_navigation", "service_id": "navigation"},
+                            {"script_id": "bridge-a-sos_mining", "service_id": "mining"},
                             {"script_id": "bridge-a-inventory", "service_id": "inventory"},
                             {"script_id": "bridge-a-doors", "service_id": "doors"},
                         ],
@@ -770,6 +772,16 @@ def test_execute_sos_orchestrator_runs_dashboard_child_with_existing_services(tm
             1000,
             True,
         ),
+        "bridge-a-sos_mining": WorkerScript(
+            "bridge-a-sos_mining",
+            "manual",
+            "Mining",
+            "tests.sos_dashboard_registry_mining_child",
+            "",
+            "",
+            1000,
+            True,
+        ),
         "bridge-a-inventory": WorkerScript("bridge-a-inventory", "manual", "Inventory", "tests.sos_dashboard_registry_inventory_child", "", "", 1000, True),
         "bridge-a-doors": WorkerScript("bridge-a-doors", "manual", "Doors", "tests.sos_dashboard_registry_door_child", "", "", 1000, True),
     }
@@ -797,12 +809,13 @@ def test_execute_sos_orchestrator_runs_dashboard_child_with_existing_services(tm
         "bridge-a-sos_logistics",
         "bridge-a-sos_maintenance",
         "bridge-a-sos_navigation",
+        "bridge-a-sos_mining",
         "bridge-a-inventory",
         "bridge-a-doors",
     ]
     dashboard_child = result["result"]["child_results"][1]
     assert dashboard_child["summary"] == (
-        "SOS Dashboard Ship A mode=Docked integrity=unknown logistics=unknown maintenance=unknown airlock=unknown mobility=unknown navigation=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown environment=unknown production=unknown transit=unknown defense=unknown queue=0 blockers=none"
+        "SOS Dashboard Ship A mode=Docked integrity=unknown logistics=unknown maintenance=unknown airlock=unknown mobility=unknown navigation=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown environment=unknown mining=unknown production=unknown transit=unknown defense=unknown queue=0 blockers=none"
     )
     assert dashboard_child["error_bucket"] == "none"
     assert result["result"]["commands"][1]["kind"] == "echo"
@@ -1222,6 +1235,39 @@ def test_execute_sos_orchestrator_passes_child_payload_history_to_dashboard_requ
                             },
                         },
                         {
+                            "script_id": "bridge-a-sos_mining",
+                            "status": "ok",
+                            "error_bucket": "none",
+                            "summary": "mining warning",
+                            "result": {
+                                "sos_mining": {
+                                    "state": "warning",
+                                    "snapshot_status": "ok",
+                                    "drills": {
+                                        "total_count": 2,
+                                        "ready_count": 1,
+                                        "active_count": 1,
+                                        "damaged_or_offline_count": 1,
+                                    },
+                                    "ore_detectors": {"total_count": 1, "ready_count": 1, "range_m": 150},
+                                    "collectors": {"total_count": 1, "ready_count": 1},
+                                    "ejectors": {"total_count": 1, "ready_count": 1},
+                                    "cargo": {"state": "pressure", "usage_ratio": 0.88},
+                                    "ore": {"state": "ok", "ore_types": ["Iron"], "ore_kg": 1200},
+                                    "dependencies": {
+                                        "power": {"state": "ok", "hints": []},
+                                        "logistics": {"state": "warning", "hints": ["cargo_pressure"]},
+                                        "refinery": {"state": "warning", "hints": ["refinery_blocked:Refinery"]},
+                                        "comms": {"state": "ok", "hints": []},
+                                        "environment": {"state": "warning", "hints": ["storm"]},
+                                        "docking": {"state": "ok", "hints": []},
+                                    },
+                                    "blockers": ["drill_damaged_or_offline:Port Drill"],
+                                    "warnings": ["cargo_pressure"],
+                                }
+                            },
+                        },
+                        {
                             "script_id": "bridge-a-sos_transit",
                             "status": "ok",
                             "error_bucket": "none",
@@ -1345,6 +1391,7 @@ def test_execute_sos_orchestrator_passes_child_payload_history_to_dashboard_requ
                             {"script_id": "bridge-a-sos_life_support", "service_id": "life_support"},
                             {"script_id": "bridge-a-sos_environment", "service_id": "environment"},
                             {"script_id": "bridge-a-sos_production", "service_id": "production"},
+                            {"script_id": "bridge-a-sos_mining", "service_id": "mining"},
                             {"script_id": "bridge-a-sos_transit", "service_id": "transit"},
                             {"script_id": "bridge-a-sos_defense", "service_id": "defense"},
                         ],
@@ -1373,6 +1420,7 @@ def test_execute_sos_orchestrator_passes_child_payload_history_to_dashboard_requ
         "bridge-a-sos_life_support": WorkerScript("bridge-a-sos_life_support", "manual", "Life Support", module.__name__, "", "", 1000, True),
         "bridge-a-sos_environment": WorkerScript("bridge-a-sos_environment", "manual", "Environment", module.__name__, "", "", 1000, True),
         "bridge-a-sos_production": WorkerScript("bridge-a-sos_production", "manual", "Production", module.__name__, "", "", 1000, True),
+        "bridge-a-sos_mining": WorkerScript("bridge-a-sos_mining", "manual", "Mining", module.__name__, "", "", 1000, True),
         "bridge-a-sos_transit": WorkerScript("bridge-a-sos_transit", "manual", "Transit", module.__name__, "", "", 1000, True),
         "bridge-a-sos_defense": WorkerScript("bridge-a-sos_defense", "manual", "Defense", module.__name__, "", "", 1000, True),
     }
@@ -1445,6 +1493,11 @@ def test_execute_sos_orchestrator_passes_child_payload_history_to_dashboard_requ
     assert production["state"] == "warning"
     assert production["assemblers"]["damaged_or_offline_count"] == 1
     assert production["queue"]["blocked_count"] == 1
+    mining = telemetry["child_services_by_service_id"]["mining"]["result"]["sos_mining"]
+    assert mining["state"] == "warning"
+    assert mining["drills"]["active_count"] == 1
+    assert mining["cargo"]["state"] == "pressure"
+    assert mining["dependencies"]["environment"]["state"] == "warning"
     transit = telemetry["child_services_by_service_id"]["transit"]["result"]["sos_transit"]
     assert transit["state"] == "warning"
     assert transit["jump_drives"]["damaged_count"] == 1
@@ -1512,7 +1565,7 @@ def test_execute_sos_dashboard_child_degrades_gracefully_without_child_history(t
 
     assert result["status"] == "ok"
     assert result["result"]["child_results"][0]["summary"] == (
-        "SOS Dashboard Ship A mode=Docked integrity=unknown logistics=unknown maintenance=unknown airlock=unknown mobility=unknown navigation=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown environment=unknown production=unknown transit=unknown defense=unknown queue=0 blockers=none"
+        "SOS Dashboard Ship A mode=Docked integrity=unknown logistics=unknown maintenance=unknown airlock=unknown mobility=unknown navigation=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown environment=unknown mining=unknown production=unknown transit=unknown defense=unknown queue=0 blockers=none"
     )
     dashboard = result["result"]["child_results"][0]["result"]["sos_dashboard"]
     assert dashboard["integrity"]["snapshot_status"] == "missing_child_result"
@@ -1526,11 +1579,12 @@ def test_execute_sos_dashboard_child_degrades_gracefully_without_child_history(t
     assert dashboard["docking"]["snapshot_status"] == "missing_child_result"
     assert dashboard["life_support"]["snapshot_status"] == "missing_child_result"
     assert dashboard["environment"]["snapshot_status"] == "missing_child_result"
+    assert dashboard["mining"]["snapshot_status"] == "missing_child_result"
     assert dashboard["production"]["snapshot_status"] == "missing_child_result"
     assert dashboard["transit"]["snapshot_status"] == "missing_child_result"
     assert dashboard["defense"]["snapshot_status"] == "missing_child_result"
     assert result["result"]["commands"][0]["text"] == (
-        "SOS Dashboard Ship A mode=Docked integrity=unknown logistics=unknown maintenance=unknown airlock=unknown mobility=unknown navigation=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown environment=unknown production=unknown transit=unknown defense=unknown queue=0 blockers=none"
+        "SOS Dashboard Ship A mode=Docked integrity=unknown logistics=unknown maintenance=unknown airlock=unknown mobility=unknown navigation=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown environment=unknown mining=unknown production=unknown transit=unknown defense=unknown queue=0 blockers=none"
     )
 
 
@@ -4786,6 +4840,267 @@ def test_execute_sos_maintenance_child_degrades_gracefully_without_snapshot(tmp_
             "text": "SOS Maintenance Ship A state=unknown snapshot=no_snapshot",
             "source_script_id": "bridge-a-sos_maintenance",
             "source_priority": 16,
+            "source_order": 0,
+            "source_role": "status",
+        }
+    ]
+
+
+def test_execute_sos_orchestrator_runs_mining_child_with_existing_services(tmp_path: Path):
+    def install_adapter(module_name: str, summary: str, command: dict[str, object]) -> None:
+        module = types.ModuleType(module_name)
+
+        def run(request):
+            return {"summary": summary, "commands": [command]}
+
+        module.run = run
+        sys.modules[module_name] = module
+
+    install_adapter("tests.sos_mining_registry_status_child", "status ok", {"kind": "echo", "text": "status"})
+    install_adapter("tests.sos_mining_registry_inventory_child", "inventory ok", {"kind": "echo", "text": "inventory"})
+    install_adapter("tests.sos_mining_registry_door_child", "doors ok", {"kind": "echo", "text": "doors"})
+    data = tmp_path / "data"
+    data.mkdir()
+    (data / "sos_ships.json").write_text(
+        json.dumps(
+            {
+                "schema": "novali.client_side_pb.sos_ships.v1",
+                "ships": [
+                    {
+                        "ship_id": "ship-a",
+                        "bridge_id": "bridge-a",
+                        "display_name": "Ship A",
+                        "expected_grid_entity_id": 10,
+                        "services": [
+                            {"script_id": "bridge-a-sos_status", "service_id": "status"},
+                            {"script_id": "bridge-a-sos_mining", "service_id": "mining"},
+                            {"script_id": "bridge-a-inventory", "service_id": "inventory"},
+                            {"script_id": "bridge-a-doors", "service_id": "doors"},
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    scripts = {
+        "bridge-a-orchestrator": WorkerScript(
+            "bridge-a-orchestrator", "script_instance", "Bridge A SOS", "", "", "", 1000, True, base_script_id="bridge_orchestrator"
+        ),
+        "bridge-a-sos_status": WorkerScript("bridge-a-sos_status", "manual", "Status", "tests.sos_mining_registry_status_child", "", "", 1000, True),
+        "bridge-a-sos_mining": WorkerScript(
+            "bridge-a-sos_mining",
+            "manual",
+            "Mining",
+            "worker.scripts.sos_mining",
+            "",
+            "",
+            1000,
+            True,
+        ),
+        "bridge-a-inventory": WorkerScript("bridge-a-inventory", "manual", "Inventory", "tests.sos_mining_registry_inventory_child", "", "", 1000, True),
+        "bridge-a-doors": WorkerScript("bridge-a-doors", "manual", "Doors", "tests.sos_mining_registry_door_child", "", "", 1000, True),
+    }
+
+    result = execute_request(
+        {
+            "schema": "novali.client_side_pb_bridge.v1",
+            "message_kind": "request",
+            "bridge_id": "bridge-a",
+            "sequence": 1,
+            "script_id": "bridge-a-orchestrator",
+            "grid_snapshot": {
+                "schema": "novali.client_side_pb.grid_snapshot.v1",
+                "grid_entity_id": 10,
+                "blocks": [
+                    {"name": "Drill", "type": "ShipDrill", "functional": True, "enabled": True, "is_working": True},
+                    {"name": "Ore Detector", "type": "OreDetector", "functional": True, "enabled": True, "range_m": 150},
+                    {"name": "Collector", "type": "Collector", "functional": True, "enabled": True},
+                    {"name": "Connector", "type": "Connector", "functional": True, "enabled": True},
+                ],
+            },
+            "state": {},
+        },
+        scripts,
+        {},
+        tmp_path,
+    )
+
+    assert result["status"] == "ok"
+    assert [child["script_id"] for child in result["result"]["child_results"]] == [
+        "bridge-a-sos_status",
+        "bridge-a-sos_mining",
+        "bridge-a-inventory",
+        "bridge-a-doors",
+    ]
+    mining_child = result["result"]["child_results"][1]
+    assert mining_child["summary"] == (
+        "SOS Mining Ship A state=ok drills=1/1 detectors=1/1 cargo=unknown ore=unknown blockers=0 snapshot=partial"
+    )
+    assert mining_child["error_bucket"] == "none"
+    assert mining_child["result"]["sos_mining"]["snapshot_status"] == "partial"
+    assert {command["kind"] for command in result["result"]["commands"]} <= {"echo", "write_text_surface"}
+
+
+def test_execute_sos_orchestrator_passes_scoped_mining_data_to_mining_child_only(tmp_path: Path):
+    captured: dict[str, dict] = {}
+    module = types.ModuleType("tests.sos_mining_capture_children")
+
+    def run(request):
+        captured[request["script_id"]] = request
+        return {"summary": f"{request['script_id']} captured", "commands": [{"kind": "echo", "text": request["script_id"]}]}
+
+    module.run = run
+    sys.modules[module.__name__] = module
+    data = tmp_path / "data"
+    data.mkdir()
+    (data / "sos_ships.json").write_text(
+        json.dumps(
+            {
+                "schema": "novali.client_side_pb.sos_ships.v1",
+                "ships": [
+                    {
+                        "ship_id": "ship-a",
+                        "bridge_id": "bridge-a",
+                        "display_name": "Ship A",
+                        "expected_grid_entity_id": 10,
+                        "services": [
+                            {"script_id": "bridge-a-sos_mining", "service_id": "mining"},
+                            {"script_id": "bridge-a-inventory", "service_id": "inventory"},
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    scripts = {
+        "bridge-a-orchestrator": WorkerScript(
+            "bridge-a-orchestrator", "script_instance", "Bridge A SOS", "", "", "", 1000, True, base_script_id="bridge_orchestrator"
+        ),
+        "bridge-a-sos_mining": WorkerScript("bridge-a-sos_mining", "manual", "Mining", module.__name__, "", "", 1000, True),
+        "bridge-a-inventory": WorkerScript("bridge-a-inventory", "manual", "Inventory", module.__name__, "", "", 1000, True),
+    }
+    grid_snapshot = {
+        "schema": "novali.client_side_pb.grid_snapshot.v1",
+        "grid_entity_id": 10,
+        "blocks": [
+            {"name": "Drill", "type": "ShipDrill", "integrity_ratio": 0.8, "functional": True},
+            {"name": "Ore Detector", "type": "OreDetector", "integrity_ratio": 0.95, "functional": True},
+            {"name": "LCD", "type": "TextPanel"},
+        ],
+    }
+    mining_snapshot = {"drills": [{"name": "Drill", "functional": True, "enabled": True}]}
+    logistics_snapshot = {"cargo": {"used_volume": 90.0, "max_volume": 100.0}, "ore": {"ores": {"Iron": 1200}}}
+    power_snapshot = {"state": "ok"}
+    production_snapshot = {"state": "warning", "queue": {"blocked_count": 1}}
+    environment_snapshot = {"state": "warning", "hazards": [{"name": "storm"}]}
+    docking_snapshot = {"state": "ok"}
+
+    result = execute_request(
+        {
+            "schema": "novali.client_side_pb_bridge.v1",
+            "message_kind": "request",
+            "bridge_id": "bridge-a",
+            "sequence": 1,
+            "script_id": "bridge-a-orchestrator",
+            "grid_snapshot": grid_snapshot,
+            "mining_snapshot": mining_snapshot,
+            "harvest_snapshot": {"collectors": [{"name": "Collector", "functional": True}]},
+            "resource_snapshot": {"ore": {"ore_types": ["Iron"]}},
+            "ore_snapshot": {"ore_types": ["Iron"]},
+            "logistics_snapshot": logistics_snapshot,
+            "power_snapshot": power_snapshot,
+            "production_snapshot": production_snapshot,
+            "environment_snapshot": environment_snapshot,
+            "docking_snapshot": docking_snapshot,
+            "state": {},
+        },
+        scripts,
+        {},
+        tmp_path,
+    )
+
+    assert result["status"] == "ok"
+    assert captured["bridge-a-sos_mining"]["grid_snapshot"] == grid_snapshot
+    assert captured["bridge-a-sos_mining"]["mining_snapshot"] == mining_snapshot
+    assert captured["bridge-a-sos_mining"]["inventory_snapshot"] == logistics_snapshot
+    assert captured["bridge-a-sos_mining"]["logistics_snapshot"] == logistics_snapshot
+    assert captured["bridge-a-sos_mining"]["power_snapshot"] == power_snapshot
+    assert captured["bridge-a-sos_mining"]["production_snapshot"] == production_snapshot
+    assert captured["bridge-a-sos_mining"]["environment_snapshot"] == environment_snapshot
+    assert captured["bridge-a-sos_mining"]["docking_snapshot"] == docking_snapshot
+    assert captured["bridge-a-sos_mining"]["integrity_snapshot"] == {
+        "blocks": [
+            {"name": "Drill", "type": "ShipDrill", "integrity_ratio": 0.8, "functional": True},
+            {"name": "Ore Detector", "type": "OreDetector", "integrity_ratio": 0.95, "functional": True},
+        ],
+        "critical_systems": [],
+    }
+    for key in ("mining_snapshot", "harvest_snapshot", "resource_snapshot", "ore_snapshot", "environment_snapshot"):
+        assert key not in captured["bridge-a-inventory"]
+    assert "integrity_snapshot" not in captured["bridge-a-inventory"]
+
+
+def test_execute_sos_mining_child_degrades_gracefully_without_snapshot(tmp_path: Path):
+    data = tmp_path / "data"
+    data.mkdir()
+    (data / "sos_ships.json").write_text(
+        json.dumps(
+            {
+                "schema": "novali.client_side_pb.sos_ships.v1",
+                "ships": [
+                    {
+                        "ship_id": "ship-a",
+                        "bridge_id": "bridge-a",
+                        "display_name": "Ship A",
+                        "services": [{"script_id": "bridge-a-sos_mining", "service_id": "mining"}],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    scripts = {
+        "bridge-a-orchestrator": WorkerScript(
+            "bridge-a-orchestrator", "script_instance", "Bridge A SOS", "", "", "", 1000, True, base_script_id="bridge_orchestrator"
+        ),
+        "bridge-a-sos_mining": WorkerScript(
+            "bridge-a-sos_mining",
+            "manual",
+            "Mining",
+            "worker.scripts.sos_mining",
+            "",
+            "",
+            1000,
+            True,
+        ),
+    }
+
+    result = execute_request(
+        {
+            "schema": "novali.client_side_pb_bridge.v1",
+            "message_kind": "request",
+            "bridge_id": "bridge-a",
+            "sequence": 1,
+            "script_id": "bridge-a-orchestrator",
+            "state": {},
+        },
+        scripts,
+        {},
+        tmp_path,
+    )
+
+    assert result["status"] == "ok"
+    mining_child = result["result"]["child_results"][0]
+    assert mining_child["summary"] == "SOS Mining Ship A state=unknown snapshot=no_snapshot"
+    assert mining_child["result"]["sos_mining"]["snapshot_status"] == "no_snapshot"
+    assert result["result"]["commands"] == [
+        {
+            "kind": "echo",
+            "text": "SOS Mining Ship A state=unknown snapshot=no_snapshot",
+            "source_script_id": "bridge-a-sos_mining",
+            "source_priority": 17,
             "source_order": 0,
             "source_role": "status",
         }

@@ -80,6 +80,11 @@
           "enabled": true
         },
         {
+          "service_id": "mining",
+          "script_id": "pb-bridge-001-sos_mining",
+          "enabled": true
+        },
+        {
           "service_id": "transit",
           "script_id": "pb-bridge-001-sos_transit",
           "enabled": true
