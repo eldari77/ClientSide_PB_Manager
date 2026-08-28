@@ -38,10 +38,11 @@ def test_sos_dashboard_adapter_degrades_to_missing_child_result_with_echo():
     assert result["sos_dashboard"]["mining"]["snapshot_status"] == "missing_child_result"
     assert result["sos_dashboard"]["transit"]["snapshot_status"] == "missing_child_result"
     assert result["sos_dashboard"]["defense"]["snapshot_status"] == "missing_child_result"
+    assert result["sos_dashboard"]["alerts"]["snapshot_status"] == "missing_child_result"
     assert result["commands"] == [
         {
             "kind": "echo",
-            "text": "SOS Dashboard Ship A mode=Docked integrity=unknown logistics=unknown maintenance=unknown airlock=unknown mobility=unknown navigation=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown environment=unknown mining=unknown production=unknown transit=unknown defense=unknown queue=none blockers=none",
+            "text": "SOS Dashboard Ship A mode=Docked integrity=unknown logistics=unknown maintenance=unknown airlock=unknown mobility=unknown navigation=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown environment=unknown mining=unknown production=unknown transit=unknown defense=unknown alerts=unknown queue=none blockers=none",
         }
     ]
 
