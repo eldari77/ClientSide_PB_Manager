@@ -314,16 +314,28 @@
       "enabled": true
     },
     {
+      "script_id": "sos_runbook",
+      "source": "local_worker",
+      "display_name": "SOS Runbook",
+      "module": "worker.scripts.sos_runbook",
+      "runtime": "python",
+      "source_path": "",
+      "input_schema": "adapter_tick.v1",
+      "output_schema": "compact_commands.v1",
+      "timeout_ms": 1000,
+      "enabled": true
+    },
+    {
       "script_id": "virtual_whip_auto_door",
       "source": "workshop_import",
-      "display_name": "Whip's Auto Door and Airlock Script (Virtual PB)",
+      "display_name": "Whip\u0027s Auto Door and Airlock Script (Virtual PB)",
       "module": "",
       "runtime": "virtual_pb_csharp",
       "source_path": "data/imports/416932930/Script.cs",
       "input_schema": "virtual_pb_tick.v1",
       "output_schema": "compact_commands.v1",
       "timeout_ms": 5000,
-      "enabled": true
+      "enabled": false
     },
     {
       "script_id": "virtual_workshop_822950976",
@@ -335,7 +347,7 @@
       "input_schema": "virtual_pb_tick.v1",
       "output_schema": "compact_commands.v1",
       "timeout_ms": 5000,
-      "enabled": true
+      "enabled": false
     },
     {
       "script_id": "workshop_2831096030_adapter",
@@ -352,15 +364,14 @@
     {
       "script_id": "workshop_1216126863_adapter",
       "source": "workshop_import",
-      "display_name": "Isy's Inventory Manager",
+      "display_name": "Isy\u0027s Inventory Manager",
       "module": "worker.scripts.workshop_1216126863_adapter",
       "runtime": "python",
       "source_path": "",
       "input_schema": "adapter_tick.v1",
       "output_schema": "compact_commands.v1",
       "timeout_ms": 1000,
-      "enabled": true,
-      "profile_id": "isy_inventory_manager"
+      "enabled": false
     }
   ]
 }

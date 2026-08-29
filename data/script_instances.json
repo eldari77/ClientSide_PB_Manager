@@ -261,6 +261,16 @@
       "created_at": "2026-08-26T00:00:00Z",
       "updated_at": "2026-08-26T00:00:00Z"
     },
+    "pb-bridge-001-sos_runbook": {
+      "instance_id": "pb-bridge-001-sos_runbook",
+      "base_script_id": "sos_runbook",
+      "display_name": "Primary PB Bridge - SOS Runbook",
+      "bridge_id": "pb-bridge-001",
+      "enabled": true,
+      "config_id": "pb-bridge-001-sos_runbook",
+      "created_at": "2026-08-26T00:00:00Z",
+      "updated_at": "2026-08-26T00:00:00Z"
+    },
     "pb-bridge-001-virtual_whip_auto_door": {
       "instance_id": "pb-bridge-001-virtual_whip_auto_door",
       "base_script_id": "virtual_whip_auto_door",
@@ -280,6 +290,256 @@
       "config_id": "pb-bridge-001-workshop_1216126863_adapter",
       "created_at": "2026-08-08T03:14:21.9528555Z",
       "updated_at": "2026-08-08T03:48:39.5025814Z"
+    },
+    "pb-bridge-002-sos_status": {
+      "instance_id": "pb-bridge-002-sos_status",
+      "base_script_id": "sos_status",
+      "display_name": "SOS-dev - SOS Status",
+      "bridge_id": "pb-bridge-002",
+      "enabled": true,
+      "config_id": "pb-bridge-002-sos_status",
+      "created_at": "2026-08-29T15:20:04.7722665Z",
+      "updated_at": "2026-08-29T15:33:47.1706506Z"
+    },
+    "pb-bridge-002-sos_alerts": {
+      "instance_id": "pb-bridge-002-sos_alerts",
+      "base_script_id": "sos_alerts",
+      "display_name": "SOS-dev - SOS Alerts",
+      "bridge_id": "pb-bridge-002",
+      "enabled": true,
+      "config_id": "pb-bridge-002-sos_alerts",
+      "created_at": "2026-08-29T15:20:04.7722727Z",
+      "updated_at": "2026-08-29T15:33:47.1706529Z"
+    },
+    "pb-bridge-002-sos_dashboard": {
+      "instance_id": "pb-bridge-002-sos_dashboard",
+      "base_script_id": "sos_dashboard",
+      "display_name": "SOS-dev - SOS Dashboard",
+      "bridge_id": "pb-bridge-002",
+      "enabled": true,
+      "config_id": "pb-bridge-002-sos_dashboard",
+      "created_at": "2026-08-29T15:20:04.7722750Z",
+      "updated_at": "2026-08-29T15:33:47.1706539Z"
+    },
+    "pb-bridge-002-sos_integrity": {
+      "instance_id": "pb-bridge-002-sos_integrity",
+      "base_script_id": "sos_integrity",
+      "display_name": "SOS-dev - SOS Integrity",
+      "bridge_id": "pb-bridge-002",
+      "enabled": true,
+      "config_id": "pb-bridge-002-sos_integrity",
+      "created_at": "2026-08-29T15:20:04.7722759Z",
+      "updated_at": "2026-08-29T15:33:47.1706548Z"
+    },
+    "pb-bridge-002-sos_logistics": {
+      "instance_id": "pb-bridge-002-sos_logistics",
+      "base_script_id": "sos_logistics",
+      "display_name": "SOS-dev - SOS Logistics",
+      "bridge_id": "pb-bridge-002",
+      "enabled": true,
+      "config_id": "pb-bridge-002-sos_logistics",
+      "created_at": "2026-08-29T15:20:04.7722767Z",
+      "updated_at": "2026-08-29T15:33:47.1706555Z"
+    },
+    "pb-bridge-002-sos_maintenance": {
+      "instance_id": "pb-bridge-002-sos_maintenance",
+      "base_script_id": "sos_maintenance",
+      "display_name": "SOS-dev - SOS Maintenance",
+      "bridge_id": "pb-bridge-002",
+      "enabled": true,
+      "config_id": "pb-bridge-002-sos_maintenance",
+      "created_at": "2026-08-29T15:20:04.7722777Z",
+      "updated_at": "2026-08-29T15:33:47.1706571Z"
+    },
+    "pb-bridge-002-sos_airlock": {
+      "instance_id": "pb-bridge-002-sos_airlock",
+      "base_script_id": "sos_airlock",
+      "display_name": "SOS-dev - SOS Airlock",
+      "bridge_id": "pb-bridge-002",
+      "enabled": true,
+      "config_id": "pb-bridge-002-sos_airlock",
+      "created_at": "2026-08-29T15:20:04.7722784Z",
+      "updated_at": "2026-08-29T15:33:47.1706578Z"
+    },
+    "pb-bridge-002-sos_mobility": {
+      "instance_id": "pb-bridge-002-sos_mobility",
+      "base_script_id": "sos_mobility",
+      "display_name": "SOS-dev - SOS Mobility",
+      "bridge_id": "pb-bridge-002",
+      "enabled": true,
+      "config_id": "pb-bridge-002-sos_mobility",
+      "created_at": "2026-08-29T15:20:04.7722792Z",
+      "updated_at": "2026-08-29T15:33:47.1706586Z"
+    },
+    "pb-bridge-002-sos_navigation": {
+      "instance_id": "pb-bridge-002-sos_navigation",
+      "base_script_id": "sos_navigation",
+      "display_name": "SOS-dev - SOS Navigation",
+      "bridge_id": "pb-bridge-002",
+      "enabled": true,
+      "config_id": "pb-bridge-002-sos_navigation",
+      "created_at": "2026-08-29T15:20:04.7722807Z",
+      "updated_at": "2026-08-29T15:33:47.1706593Z"
+    },
+    "pb-bridge-002-sos_display": {
+      "instance_id": "pb-bridge-002-sos_display",
+      "base_script_id": "sos_display",
+      "display_name": "SOS-dev - SOS Display",
+      "bridge_id": "pb-bridge-002",
+      "enabled": true,
+      "config_id": "pb-bridge-002-sos_display",
+      "created_at": "2026-08-29T15:20:04.7722832Z",
+      "updated_at": "2026-08-29T15:33:47.1706602Z"
+    },
+    "pb-bridge-002-sos_power": {
+      "instance_id": "pb-bridge-002-sos_power",
+      "base_script_id": "sos_power",
+      "display_name": "SOS-dev - SOS Power",
+      "bridge_id": "pb-bridge-002",
+      "enabled": true,
+      "config_id": "pb-bridge-002-sos_power",
+      "created_at": "2026-08-29T15:20:04.7722848Z",
+      "updated_at": "2026-08-29T15:33:47.1706609Z"
+    },
+    "pb-bridge-002-sos_comms": {
+      "instance_id": "pb-bridge-002-sos_comms",
+      "base_script_id": "sos_comms",
+      "display_name": "SOS-dev - SOS Comms",
+      "bridge_id": "pb-bridge-002",
+      "enabled": true,
+      "config_id": "pb-bridge-002-sos_comms",
+      "created_at": "2026-08-29T15:20:04.7722854Z",
+      "updated_at": "2026-08-29T15:33:47.1706616Z"
+    },
+    "pb-bridge-002-sos_crew": {
+      "instance_id": "pb-bridge-002-sos_crew",
+      "base_script_id": "sos_crew",
+      "display_name": "SOS-dev - SOS Crew",
+      "bridge_id": "pb-bridge-002",
+      "enabled": true,
+      "config_id": "pb-bridge-002-sos_crew",
+      "created_at": "2026-08-29T15:20:04.7722861Z",
+      "updated_at": "2026-08-29T15:33:47.1706625Z"
+    },
+    "pb-bridge-002-sos_docking": {
+      "instance_id": "pb-bridge-002-sos_docking",
+      "base_script_id": "sos_docking",
+      "display_name": "SOS-dev - SOS Docking",
+      "bridge_id": "pb-bridge-002",
+      "enabled": true,
+      "config_id": "pb-bridge-002-sos_docking",
+      "created_at": "2026-08-29T15:20:04.7722870Z",
+      "updated_at": "2026-08-29T15:33:47.1706638Z"
+    },
+    "pb-bridge-002-sos_life_support": {
+      "instance_id": "pb-bridge-002-sos_life_support",
+      "base_script_id": "sos_life_support",
+      "display_name": "SOS-dev - SOS Life Support",
+      "bridge_id": "pb-bridge-002",
+      "enabled": true,
+      "config_id": "pb-bridge-002-sos_life_support",
+      "created_at": "2026-08-29T15:20:04.7722884Z",
+      "updated_at": "2026-08-29T15:33:47.1706647Z"
+    },
+    "pb-bridge-002-sos_production": {
+      "instance_id": "pb-bridge-002-sos_production",
+      "base_script_id": "sos_production",
+      "display_name": "SOS-dev - SOS Production",
+      "bridge_id": "pb-bridge-002",
+      "enabled": true,
+      "config_id": "pb-bridge-002-sos_production",
+      "created_at": "2026-08-29T15:20:04.7722892Z",
+      "updated_at": "2026-08-29T15:33:47.1706655Z"
+    },
+    "pb-bridge-002-sos_mining": {
+      "instance_id": "pb-bridge-002-sos_mining",
+      "base_script_id": "sos_mining",
+      "display_name": "SOS-dev - SOS Mining",
+      "bridge_id": "pb-bridge-002",
+      "enabled": true,
+      "config_id": "pb-bridge-002-sos_mining",
+      "created_at": "2026-08-29T15:20:04.7722900Z",
+      "updated_at": "2026-08-29T15:33:47.1706663Z"
+    },
+    "pb-bridge-002-sos_transit": {
+      "instance_id": "pb-bridge-002-sos_transit",
+      "base_script_id": "sos_transit",
+      "display_name": "SOS-dev - SOS Transit",
+      "bridge_id": "pb-bridge-002",
+      "enabled": true,
+      "config_id": "pb-bridge-002-sos_transit",
+      "created_at": "2026-08-29T15:20:04.7722909Z",
+      "updated_at": "2026-08-29T15:33:47.1706672Z"
+    },
+    "pb-bridge-002-sos_defense": {
+      "instance_id": "pb-bridge-002-sos_defense",
+      "base_script_id": "sos_defense",
+      "display_name": "SOS-dev - SOS Defense",
+      "bridge_id": "pb-bridge-002",
+      "enabled": true,
+      "config_id": "pb-bridge-002-sos_defense",
+      "created_at": "2026-08-29T15:20:04.7722916Z",
+      "updated_at": "2026-08-29T15:33:47.1706681Z"
+    },
+    "pb-bridge-002-sos_environment": {
+      "instance_id": "pb-bridge-002-sos_environment",
+      "base_script_id": "sos_environment",
+      "display_name": "SOS-dev - SOS Environment",
+      "bridge_id": "pb-bridge-002",
+      "enabled": true,
+      "config_id": "pb-bridge-002-sos_environment",
+      "created_at": "2026-08-29T15:20:04.7722925Z",
+      "updated_at": "2026-08-29T15:33:47.1706691Z"
+    },
+    "pb-bridge-002-sos_readiness": {
+      "instance_id": "pb-bridge-002-sos_readiness",
+      "base_script_id": "sos_readiness",
+      "display_name": "SOS-dev - SOS Readiness",
+      "bridge_id": "pb-bridge-002",
+      "enabled": true,
+      "config_id": "pb-bridge-002-sos_readiness",
+      "created_at": "2026-08-29T15:20:04.7722934Z",
+      "updated_at": "2026-08-29T15:33:47.1706703Z"
+    },
+    "pb-bridge-002-sos_guidance": {
+      "instance_id": "pb-bridge-002-sos_guidance",
+      "base_script_id": "sos_guidance",
+      "display_name": "SOS-dev - SOS Guidance",
+      "bridge_id": "pb-bridge-002",
+      "enabled": true,
+      "config_id": "pb-bridge-002-sos_guidance",
+      "created_at": "2026-08-29T15:20:04.7722949Z",
+      "updated_at": "2026-08-29T15:33:47.1706713Z"
+    },
+    "pb-bridge-002-sos_diagnostics": {
+      "instance_id": "pb-bridge-002-sos_diagnostics",
+      "base_script_id": "sos_diagnostics",
+      "display_name": "SOS-dev - SOS Diagnostics",
+      "bridge_id": "pb-bridge-002",
+      "enabled": true,
+      "config_id": "pb-bridge-002-sos_diagnostics",
+      "created_at": "2026-08-29T15:20:04.7722959Z",
+      "updated_at": "2026-08-29T15:33:47.1706722Z"
+    },
+    "pb-bridge-002-orchestrator": {
+      "instance_id": "pb-bridge-002-orchestrator",
+      "base_script_id": "bridge_orchestrator",
+      "display_name": "SOS-dev - Orchestrator",
+      "bridge_id": "pb-bridge-002",
+      "enabled": true,
+      "config_id": "pb-bridge-002-orchestrator",
+      "created_at": "2026-08-29T15:20:04.7723943Z",
+      "updated_at": "2026-08-29T15:33:47.1706748Z"
+    },
+    "pb-bridge-002-sos_mission_profile": {
+      "instance_id": "pb-bridge-002-sos_mission_profile",
+      "base_script_id": "sos_mission_profile",
+      "display_name": "SOS-dev - SOS Mission Profile",
+      "bridge_id": "pb-bridge-002",
+      "enabled": true,
+      "config_id": "pb-bridge-002-sos_mission_profile",
+      "created_at": "2026-08-29T15:29:31.1112458Z",
+      "updated_at": "2026-08-29T15:33:47.1706735Z"
     }
   }
 }

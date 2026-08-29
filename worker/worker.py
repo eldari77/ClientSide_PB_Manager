@@ -58,6 +58,7 @@ MISSION_PROFILE_SNAPSHOT_KEYS = (
     "operating_profile_snapshot",
     "profile_snapshot",
 )
+RUNBOOK_SNAPSHOT_KEYS = ("runbook_snapshot", "checklist_snapshot", "procedure_snapshot", "operator_checklist_snapshot")
 DISPLAY_SNAPSHOT_KEYS = (
     "display_snapshot",
     "displays_snapshot",
@@ -70,6 +71,9 @@ DEFAULT_LCD_QUEUE_COOLDOWN_SEQUENCES = 1
 DEFAULT_BRIDGE_STALE_SECONDS = 120
 DEFAULT_PROCESSED_REQUEST_RETENTION_SECONDS = 300
 DEFAULT_PROCESSED_REQUEST_CLEANUP_MAX_FILES = 250
+RESULT_STORAGE_MAX_STRING_CHARS = 1000
+RESULT_STORAGE_MAX_LIST_ITEMS = 40
+RESULT_STORAGE_MAX_DEPTH = 8
 
 
 @dataclass
@@ -635,6 +639,11 @@ def remove_mission_profile_only_snapshot_aliases(request: dict[str, Any]) -> Non
         request.pop(key, None)
 
 
+def remove_runbook_only_snapshot_aliases(request: dict[str, Any]) -> None:
+    for key in RUNBOOK_SNAPSHOT_KEYS:
+        request.pop(key, None)
+
+
 def remove_display_only_snapshot_aliases(request: dict[str, Any]) -> None:
     for key in DISPLAY_SNAPSHOT_KEYS:
         request.pop(key, None)
@@ -866,6 +875,40 @@ def result_for(request: dict[str, Any], status: str, result: Any = None, error_b
         payload["runtime_telemetry"] = request["runtime_telemetry"]
         payload["limiter_state"] = str(request["runtime_telemetry"].get("limiter_state", "unknown"))
     return payload
+
+
+def compact_result_for_storage(payload: dict[str, Any]) -> dict[str, Any]:
+    changed = False
+
+    def compact(value: Any, depth: int = 0) -> Any:
+        nonlocal changed
+        if depth > RESULT_STORAGE_MAX_DEPTH:
+            changed = True
+            return {"truncated_depth": True}
+        if isinstance(value, str):
+            if len(value) <= RESULT_STORAGE_MAX_STRING_CHARS:
+                return value
+            changed = True
+            omitted = len(value) - RESULT_STORAGE_MAX_STRING_CHARS
+            return f"{value[:RESULT_STORAGE_MAX_STRING_CHARS]}... [truncated {omitted} chars]"
+        if isinstance(value, list):
+            kept = [compact(item, depth + 1) for item in value[:RESULT_STORAGE_MAX_LIST_ITEMS]]
+            if len(value) > RESULT_STORAGE_MAX_LIST_ITEMS:
+                changed = True
+                kept.append({"truncated_count": len(value) - RESULT_STORAGE_MAX_LIST_ITEMS})
+            return kept
+        if isinstance(value, dict):
+            return {key: compact(item, depth + 1) for key, item in value.items()}
+        return value
+
+    compacted = compact(payload)
+    if changed and isinstance(compacted, dict):
+        result = compacted.get("result")
+        if isinstance(result, dict):
+            result["storage_compacted"] = True
+        else:
+            compacted["storage_compacted"] = True
+    return compacted
 
 
 def request_requested_at(request: dict[str, Any]) -> datetime | None:
@@ -1643,6 +1686,13 @@ def execute_orchestrator_request(
             or "sos_operating_envelope" in child_id.lower()
             or "sos_envelope" in child_id.lower()
         )
+        is_runbook_child = (
+            child_service_id == "runbook"
+            or "sos_runbook" in child_id.lower()
+            or "sos_checklist" in child_id.lower()
+            or "sos_procedure" in child_id.lower()
+            or "sos_operator_checklist" in child_id.lower()
+        )
         is_display_child = (
             child_service_id == "display"
             or "sos_display" in child_id.lower()
@@ -1669,6 +1719,8 @@ def execute_orchestrator_request(
             remove_diagnostics_only_snapshot_aliases(child_request)
         if not is_mission_profile_child:
             remove_mission_profile_only_snapshot_aliases(child_request)
+        if not is_runbook_child:
+            remove_runbook_only_snapshot_aliases(child_request)
         if not is_display_child:
             remove_display_only_snapshot_aliases(child_request)
         if (
@@ -2219,7 +2271,8 @@ def process_pending(root: Path, scripts: dict[str, WorkerScript]) -> int:
         else:
             result = execute_request(request, scripts, bridge_configs, root)
         result_path = results_dir / f"{request_key(request_path)}.json"
-        result_path.write_text(json.dumps(result, separators=(",", ":")), encoding="utf-8")
+        result_for_storage = compact_result_for_storage(result)
+        result_path.write_text(json.dumps(result_for_storage, separators=(",", ":")), encoding="utf-8")
         if result.get("bridge_id"):
             limiter_states[str(result["bridge_id"])] = str(result.get("limiter_state", "unknown"))
         archived = processed_dir / f"{request_path.stem}-{int(time.time() * 1000)}.json"
