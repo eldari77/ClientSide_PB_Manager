@@ -134,6 +134,18 @@
       "enabled": true
     },
     {
+      "script_id": "sos_display",
+      "source": "local_worker",
+      "display_name": "SOS Display",
+      "module": "worker.scripts.sos_display",
+      "runtime": "python",
+      "source_path": "",
+      "input_schema": "adapter_tick.v1",
+      "output_schema": "compact_commands.v1",
+      "timeout_ms": 1000,
+      "enabled": true
+    },
+    {
       "script_id": "sos_power",
       "source": "local_worker",
       "display_name": "SOS Power",

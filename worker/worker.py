@@ -43,6 +43,14 @@ ENVIRONMENT_SNAPSHOT_KEYS = ("environment_snapshot", "hazard_snapshot", "weather
 NAVIGATION_SNAPSHOT_KEYS = ("navigation_snapshot", "nav_snapshot", "flight_snapshot", "motion_snapshot")
 MINING_SNAPSHOT_KEYS = ("mining_snapshot", "harvest_snapshot", "resource_snapshot", "ore_snapshot")
 ALERTS_SNAPSHOT_KEYS = ("alerts_snapshot", "notification_snapshot")
+DISPLAY_SNAPSHOT_KEYS = (
+    "display_snapshot",
+    "displays_snapshot",
+    "surface_snapshot",
+    "surfaces_snapshot",
+    "text_surface_snapshot",
+    "lcd_snapshot",
+)
 DEFAULT_LCD_QUEUE_COOLDOWN_SEQUENCES = 1
 DEFAULT_BRIDGE_STALE_SECONDS = 120
 DEFAULT_PROCESSED_REQUEST_RETENTION_SECONDS = 300
@@ -589,6 +597,11 @@ def remove_mining_only_snapshot_aliases(request: dict[str, Any]) -> None:
 
 def remove_alerts_only_snapshot_aliases(request: dict[str, Any]) -> None:
     for key in ALERTS_SNAPSHOT_KEYS:
+        request.pop(key, None)
+
+
+def remove_display_only_snapshot_aliases(request: dict[str, Any]) -> None:
+    for key in DISPLAY_SNAPSHOT_KEYS:
         request.pop(key, None)
 
 
@@ -1567,6 +1580,14 @@ def execute_orchestrator_request(
             or "sos_notifications" in child_id.lower()
             or "sos_notify" in child_id.lower()
         )
+        is_display_child = (
+            child_service_id == "display"
+            or "sos_display" in child_id.lower()
+            or "sos_displays" in child_id.lower()
+            or "sos_surfaces" in child_id.lower()
+            or "sos_lcd" in child_id.lower()
+            or "sos_status_surface" in child_id.lower()
+        )
         if not is_environment_child and not is_navigation_child and not is_mining_child:
             remove_environment_only_snapshot_aliases(child_request)
         if not is_navigation_child:
@@ -1577,6 +1598,8 @@ def execute_orchestrator_request(
             remove_mining_only_snapshot_aliases(child_request)
         if not is_alerts_child:
             remove_alerts_only_snapshot_aliases(child_request)
+        if not is_display_child:
+            remove_display_only_snapshot_aliases(child_request)
         if (
             child_service_id
             in {
@@ -1585,6 +1608,7 @@ def execute_orchestrator_request(
                 "mining",
                 "mobility",
                 "navigation",
+                "display",
                 "power",
                 "comms",
                 "crew",
@@ -1608,6 +1632,11 @@ def execute_orchestrator_request(
             or "sos_mobility" in child_id.lower()
             or "sos_navigation" in child_id.lower()
             or "sos_nav" in child_id.lower()
+            or "sos_display" in child_id.lower()
+            or "sos_displays" in child_id.lower()
+            or "sos_surfaces" in child_id.lower()
+            or "sos_lcd" in child_id.lower()
+            or "sos_status_surface" in child_id.lower()
             or "sos_power" in child_id.lower()
             or "sos_comms" in child_id.lower()
             or "sos_crew" in child_id.lower()
@@ -1752,6 +1781,7 @@ def enriched_child_runtime_telemetry(
     queue_pressure = stable_queue_pressure(previous_payload)
     child_services = child_service_telemetry(child_configs, previous_payload, queue_pressure)
     enriched["queue_pressure"] = queue_pressure
+    enriched.setdefault("command_queue", queue_pressure)
     enriched["child_services"] = child_services
     enriched["child_services_by_script_id"] = {
         item["script_id"]: item for item in child_services if str(item.get("script_id", ""))
