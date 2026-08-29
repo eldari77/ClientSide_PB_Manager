@@ -52,6 +52,12 @@ DIAGNOSTICS_SNAPSHOT_KEYS = (
     "command_analysis_snapshot",
     "child_health_snapshot",
 )
+MISSION_PROFILE_SNAPSHOT_KEYS = (
+    "mission_profile_snapshot",
+    "operating_envelope_snapshot",
+    "operating_profile_snapshot",
+    "profile_snapshot",
+)
 DISPLAY_SNAPSHOT_KEYS = (
     "display_snapshot",
     "displays_snapshot",
@@ -621,6 +627,11 @@ def remove_guidance_only_snapshot_aliases(request: dict[str, Any]) -> None:
 
 def remove_diagnostics_only_snapshot_aliases(request: dict[str, Any]) -> None:
     for key in DIAGNOSTICS_SNAPSHOT_KEYS:
+        request.pop(key, None)
+
+
+def remove_mission_profile_only_snapshot_aliases(request: dict[str, Any]) -> None:
+    for key in MISSION_PROFILE_SNAPSHOT_KEYS:
         request.pop(key, None)
 
 
@@ -1625,6 +1636,13 @@ def execute_orchestrator_request(
             or "sos_contract_health" in child_id.lower()
             or "sos_healthcheck" in child_id.lower()
         )
+        is_mission_profile_child = (
+            child_service_id == "mission_profile"
+            or "sos_mission_profile" in child_id.lower()
+            or "sos_profile" in child_id.lower()
+            or "sos_operating_envelope" in child_id.lower()
+            or "sos_envelope" in child_id.lower()
+        )
         is_display_child = (
             child_service_id == "display"
             or "sos_display" in child_id.lower()
@@ -1649,6 +1667,8 @@ def execute_orchestrator_request(
             remove_guidance_only_snapshot_aliases(child_request)
         if not is_diagnostics_child:
             remove_diagnostics_only_snapshot_aliases(child_request)
+        if not is_mission_profile_child:
+            remove_mission_profile_only_snapshot_aliases(child_request)
         if not is_display_child:
             remove_display_only_snapshot_aliases(child_request)
         if (
