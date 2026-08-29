@@ -45,6 +45,13 @@ MINING_SNAPSHOT_KEYS = ("mining_snapshot", "harvest_snapshot", "resource_snapsho
 ALERTS_SNAPSHOT_KEYS = ("alerts_snapshot", "notification_snapshot")
 READINESS_SNAPSHOT_KEYS = ("readiness_snapshot", "operator_readiness_snapshot")
 GUIDANCE_SNAPSHOT_KEYS = ("guidance_snapshot", "operator_guidance_snapshot", "watch_snapshot", "priorities_snapshot")
+DIAGNOSTICS_SNAPSHOT_KEYS = (
+    "contract_snapshot",
+    "diagnostics_snapshot",
+    "contract_health_snapshot",
+    "command_analysis_snapshot",
+    "child_health_snapshot",
+)
 DISPLAY_SNAPSHOT_KEYS = (
     "display_snapshot",
     "displays_snapshot",
@@ -609,6 +616,11 @@ def remove_readiness_only_snapshot_aliases(request: dict[str, Any]) -> None:
 
 def remove_guidance_only_snapshot_aliases(request: dict[str, Any]) -> None:
     for key in GUIDANCE_SNAPSHOT_KEYS:
+        request.pop(key, None)
+
+
+def remove_diagnostics_only_snapshot_aliases(request: dict[str, Any]) -> None:
+    for key in DIAGNOSTICS_SNAPSHOT_KEYS:
         request.pop(key, None)
 
 
@@ -1606,6 +1618,13 @@ def execute_orchestrator_request(
             or "sos_watch" in child_id.lower()
             or "sos_priorities" in child_id.lower()
         )
+        is_diagnostics_child = (
+            child_service_id == "diagnostics"
+            or "sos_diagnostics" in child_id.lower()
+            or "sos_diagnostic" in child_id.lower()
+            or "sos_contract_health" in child_id.lower()
+            or "sos_healthcheck" in child_id.lower()
+        )
         is_display_child = (
             child_service_id == "display"
             or "sos_display" in child_id.lower()
@@ -1628,6 +1647,8 @@ def execute_orchestrator_request(
             remove_readiness_only_snapshot_aliases(child_request)
         if not is_guidance_child:
             remove_guidance_only_snapshot_aliases(child_request)
+        if not is_diagnostics_child:
+            remove_diagnostics_only_snapshot_aliases(child_request)
         if not is_display_child:
             remove_display_only_snapshot_aliases(child_request)
         if (

@@ -100,6 +100,7 @@ def test_expand_sos_bridge_configs_applies_mode_policy_and_services(tmp_path: Pa
                     {"script_id": "pb-bridge-001-sos_environment", "service_id": "environment"},
                     {"script_id": "pb-bridge-001-sos_guidance", "service_id": "guidance"},
                     {"script_id": "pb-bridge-001-sos_readiness", "service_id": "readiness"},
+                    {"script_id": "pb-bridge-001-sos_diagnostics", "service_id": "diagnostics"},
                     {"script_id": "pb-bridge-001-workshop_1216126863_adapter", "service_id": "inventory"},
                     {"script_id": "pb-bridge-001-virtual_whip_auto_door", "service_id": "doors"},
                 ],
@@ -139,6 +140,7 @@ def test_expand_sos_bridge_configs_applies_mode_policy_and_services(tmp_path: Pa
         "pb-bridge-001-sos_environment",
         "pb-bridge-001-sos_guidance",
         "pb-bridge-001-sos_readiness",
+        "pb-bridge-001-sos_diagnostics",
         "pb-bridge-001-workshop_1216126863_adapter",
         "pb-bridge-001-virtual_whip_auto_door",
     )
@@ -165,6 +167,7 @@ def test_expand_sos_bridge_configs_applies_mode_policy_and_services(tmp_path: Pa
         "pb-bridge-001-sos_environment",
         "pb-bridge-001-sos_guidance",
         "pb-bridge-001-sos_readiness",
+        "pb-bridge-001-sos_diagnostics",
         "pb-bridge-001-workshop_1216126863_adapter",
         "pb-bridge-001-virtual_whip_auto_door",
     ]
@@ -226,8 +229,11 @@ def test_expand_sos_bridge_configs_applies_mode_policy_and_services(tmp_path: Pa
     assert config.child_worker_scripts[21]["service_id"] == "readiness"
     assert config.child_worker_scripts[21]["budget"] == 1
     assert config.child_worker_scripts[21]["priority"] == 4
-    assert config.child_worker_scripts[22]["budget"] == 0
-    assert config.child_worker_scripts[23]["expires_after_sequences"] == 1
+    assert config.child_worker_scripts[22]["service_id"] == "diagnostics"
+    assert config.child_worker_scripts[22]["budget"] == 1
+    assert config.child_worker_scripts[22]["priority"] == 4
+    assert config.child_worker_scripts[23]["budget"] == 0
+    assert config.child_worker_scripts[24]["expires_after_sequences"] == 1
     assert config.child_worker_scripts[1]["budget"] == 1
 
 

@@ -687,6 +687,7 @@ def test_execute_sos_orchestrator_runs_dashboard_child_with_existing_services(tm
     install_adapter("tests.sos_dashboard_registry_navigation_child", "navigation ok", {"kind": "echo", "text": "navigation"})
     install_adapter("tests.sos_dashboard_registry_mining_child", "mining ok", {"kind": "echo", "text": "mining"})
     install_adapter("tests.sos_dashboard_registry_alerts_child", "alerts ok", {"kind": "echo", "text": "alerts"})
+    install_adapter("tests.sos_dashboard_registry_diagnostics_child", "diagnostics ok", {"kind": "echo", "text": "diagnostics"})
     install_adapter("tests.sos_dashboard_registry_inventory_child", "inventory ok", {"kind": "echo", "text": "inventory"})
     install_adapter("tests.sos_dashboard_registry_door_child", "doors ok", {"kind": "echo", "text": "doors"})
     data = tmp_path / "data"
@@ -711,6 +712,7 @@ def test_execute_sos_orchestrator_runs_dashboard_child_with_existing_services(tm
                             {"script_id": "bridge-a-sos_display", "service_id": "display"},
                             {"script_id": "bridge-a-sos_mining", "service_id": "mining"},
                             {"script_id": "bridge-a-sos_readiness", "service_id": "readiness"},
+                            {"script_id": "bridge-a-sos_diagnostics", "service_id": "diagnostics"},
                             {"script_id": "bridge-a-sos_alerts", "service_id": "alerts"},
                             {"script_id": "bridge-a-inventory", "service_id": "inventory"},
                             {"script_id": "bridge-a-doors", "service_id": "doors"},
@@ -796,6 +798,16 @@ def test_execute_sos_orchestrator_runs_dashboard_child_with_existing_services(tm
             1000,
             True,
         ),
+        "bridge-a-sos_diagnostics": WorkerScript(
+            "bridge-a-sos_diagnostics",
+            "manual",
+            "Diagnostics",
+            "tests.sos_dashboard_registry_diagnostics_child",
+            "",
+            "",
+            1000,
+            True,
+        ),
         "bridge-a-sos_display": WorkerScript(
             "bridge-a-sos_display",
             "manual",
@@ -846,13 +858,14 @@ def test_execute_sos_orchestrator_runs_dashboard_child_with_existing_services(tm
         "bridge-a-sos_display",
         "bridge-a-sos_mining",
         "bridge-a-sos_readiness",
+        "bridge-a-sos_diagnostics",
         "bridge-a-sos_alerts",
         "bridge-a-inventory",
         "bridge-a-doors",
     ]
     dashboard_child = result["result"]["child_results"][1]
     assert dashboard_child["summary"] == (
-        "SOS Dashboard Ship A mode=Docked guidance=unknown readiness=unknown integrity=unknown logistics=unknown maintenance=unknown airlock=unknown mobility=unknown navigation=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown environment=unknown display=unknown mining=unknown production=unknown transit=unknown defense=unknown alerts=unknown queue=0 blockers=none"
+        "SOS Dashboard Ship A mode=Docked guidance=unknown readiness=unknown diagnostics=unknown integrity=unknown logistics=unknown maintenance=unknown airlock=unknown mobility=unknown navigation=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown environment=unknown display=unknown mining=unknown production=unknown transit=unknown defense=unknown alerts=unknown queue=0 blockers=none"
     )
     assert dashboard_child["error_bucket"] == "none"
     assert result["result"]["commands"][1]["kind"] == "echo"
@@ -1446,6 +1459,31 @@ def test_execute_sos_orchestrator_passes_child_payload_history_to_dashboard_requ
                             },
                         },
                         {
+                            "script_id": "bridge-a-sos_diagnostics",
+                            "status": "ok",
+                            "error_bucket": "none",
+                            "summary": "diagnostics warning",
+                            "result": {
+                                "sos_diagnostics": {
+                                    "state": "warning",
+                                    "summary": "warning missing=1 errors=1 queue=7 unexpected=1 blockers=0 warnings=3",
+                                    "snapshot_status": "ok",
+                                    "missing_child_results": [{"service_id": "power", "script_id": "bridge-a-sos_power"}],
+                                    "child_errors": [
+                                        {
+                                            "service_id": "status",
+                                            "script_id": "bridge-a-sos_status",
+                                            "error_bucket": "script_exception",
+                                        }
+                                    ],
+                                    "queue_pressure": {"queued": 8, "drained": 1, "remaining": 7, "state": "high"},
+                                    "unexpected_command_kinds": ["status:set_block_enabled"],
+                                    "warnings": ["queue_pressure_high:7"],
+                                    "blockers": [],
+                                }
+                            },
+                        },
+                        {
                             "script_id": "bridge-a-sos_display",
                             "status": "ok",
                             "error_bucket": "none",
@@ -1533,6 +1571,7 @@ def test_execute_sos_orchestrator_passes_child_payload_history_to_dashboard_requ
                             {"script_id": "bridge-a-sos_defense", "service_id": "defense"},
                             {"script_id": "bridge-a-sos_guidance", "service_id": "guidance"},
                             {"script_id": "bridge-a-sos_readiness", "service_id": "readiness"},
+                            {"script_id": "bridge-a-sos_diagnostics", "service_id": "diagnostics"},
                             {"script_id": "bridge-a-sos_alerts", "service_id": "alerts"},
                         ],
                     }
@@ -1566,6 +1605,7 @@ def test_execute_sos_orchestrator_passes_child_payload_history_to_dashboard_requ
         "bridge-a-sos_defense": WorkerScript("bridge-a-sos_defense", "manual", "Defense", module.__name__, "", "", 1000, True),
         "bridge-a-sos_guidance": WorkerScript("bridge-a-sos_guidance", "manual", "Guidance", module.__name__, "", "", 1000, True),
         "bridge-a-sos_readiness": WorkerScript("bridge-a-sos_readiness", "manual", "Readiness", module.__name__, "", "", 1000, True),
+        "bridge-a-sos_diagnostics": WorkerScript("bridge-a-sos_diagnostics", "manual", "Diagnostics", module.__name__, "", "", 1000, True),
         "bridge-a-sos_alerts": WorkerScript("bridge-a-sos_alerts", "manual", "Alerts", module.__name__, "", "", 1000, True),
     }
 
@@ -1662,6 +1702,10 @@ def test_execute_sos_orchestrator_passes_child_payload_history_to_dashboard_requ
     assert guidance["state"] == "warning"
     assert guidance["priorities"][0]["service_id"] == "power"
     assert guidance["source_services"] == ["readiness", "alerts"]
+    diagnostics = telemetry["child_services_by_service_id"]["diagnostics"]["result"]["sos_diagnostics"]
+    assert diagnostics["state"] == "warning"
+    assert diagnostics["queue_pressure"]["remaining"] == 7
+    assert diagnostics["unexpected_command_kinds"] == ["status:set_block_enabled"]
     display = telemetry["child_services_by_service_id"]["display"]["result"]["sos_display"]
     assert display["state"] == "warning"
     assert display["write_queue"]["state"] == "high"
@@ -1725,7 +1769,7 @@ def test_execute_sos_dashboard_child_degrades_gracefully_without_child_history(t
 
     assert result["status"] == "ok"
     assert result["result"]["child_results"][0]["summary"] == (
-        "SOS Dashboard Ship A mode=Docked guidance=unknown readiness=unknown integrity=unknown logistics=unknown maintenance=unknown airlock=unknown mobility=unknown navigation=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown environment=unknown display=unknown mining=unknown production=unknown transit=unknown defense=unknown alerts=unknown queue=0 blockers=none"
+        "SOS Dashboard Ship A mode=Docked guidance=unknown readiness=unknown diagnostics=unknown integrity=unknown logistics=unknown maintenance=unknown airlock=unknown mobility=unknown navigation=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown environment=unknown display=unknown mining=unknown production=unknown transit=unknown defense=unknown alerts=unknown queue=0 blockers=none"
     )
     dashboard = result["result"]["child_results"][0]["result"]["sos_dashboard"]
     assert dashboard["integrity"]["snapshot_status"] == "missing_child_result"
@@ -1747,8 +1791,9 @@ def test_execute_sos_dashboard_child_degrades_gracefully_without_child_history(t
     assert dashboard["alerts"]["snapshot_status"] == "missing_child_result"
     assert dashboard["readiness"]["snapshot_status"] == "missing_child_result"
     assert dashboard["guidance"]["snapshot_status"] == "missing_child_result"
+    assert dashboard["diagnostics"]["snapshot_status"] == "missing_child_result"
     assert result["result"]["commands"][0]["text"] == (
-        "SOS Dashboard Ship A mode=Docked guidance=unknown readiness=unknown integrity=unknown logistics=unknown maintenance=unknown airlock=unknown mobility=unknown navigation=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown environment=unknown display=unknown mining=unknown production=unknown transit=unknown defense=unknown alerts=unknown queue=0 blockers=none"
+        "SOS Dashboard Ship A mode=Docked guidance=unknown readiness=unknown diagnostics=unknown integrity=unknown logistics=unknown maintenance=unknown airlock=unknown mobility=unknown navigation=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown environment=unknown display=unknown mining=unknown production=unknown transit=unknown defense=unknown alerts=unknown queue=0 blockers=none"
     )
 
 
@@ -2320,6 +2365,223 @@ def test_execute_sos_orchestrator_passes_alert_snapshot_aliases_to_alerts_child_
     assert captured["bridge-a-sos_alerts"]["notification_snapshot"] == {"alerts": ["operator_page_pending"]}
     assert "alerts_snapshot" not in captured["bridge-a-inventory"]
     assert "notification_snapshot" not in captured["bridge-a-inventory"]
+
+
+def test_execute_sos_orchestrator_runs_diagnostics_child_with_existing_services(tmp_path: Path):
+    def install_adapter(module_name: str, summary: str, command: dict[str, object]) -> None:
+        module = types.ModuleType(module_name)
+
+        def run(request):
+            return {"summary": summary, "commands": [command]}
+
+        module.run = run
+        sys.modules[module_name] = module
+
+    install_adapter("tests.sos_diagnostics_registry_status_child", "status ok", {"kind": "echo", "text": "status"})
+    install_adapter("tests.sos_diagnostics_registry_inventory_child", "inventory ok", {"kind": "echo", "text": "inventory"})
+    install_adapter("tests.sos_diagnostics_registry_door_child", "doors ok", {"kind": "echo", "text": "doors"})
+    data = tmp_path / "data"
+    data.mkdir()
+    (data / "sos_ships.json").write_text(
+        json.dumps(
+            {
+                "schema": "novali.client_side_pb.sos_ships.v1",
+                "ships": [
+                    {
+                        "ship_id": "ship-a",
+                        "bridge_id": "bridge-a",
+                        "display_name": "Ship A",
+                        "services": [
+                            {"script_id": "bridge-a-sos_status", "service_id": "status"},
+                            {"script_id": "bridge-a-sos_diagnostics", "service_id": "diagnostics"},
+                            {"script_id": "bridge-a-inventory", "service_id": "inventory"},
+                            {"script_id": "bridge-a-doors", "service_id": "doors"},
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    scripts = {
+        "bridge-a-orchestrator": WorkerScript(
+            "bridge-a-orchestrator", "script_instance", "Bridge A SOS", "", "", "", 1000, True, base_script_id="bridge_orchestrator"
+        ),
+        "bridge-a-sos_status": WorkerScript("bridge-a-sos_status", "manual", "Status", "tests.sos_diagnostics_registry_status_child", "", "", 1000, True),
+        "bridge-a-sos_diagnostics": WorkerScript(
+            "bridge-a-sos_diagnostics",
+            "manual",
+            "Diagnostics",
+            "worker.scripts.sos_diagnostics",
+            "",
+            "",
+            1000,
+            True,
+        ),
+        "bridge-a-inventory": WorkerScript("bridge-a-inventory", "manual", "Inventory", "tests.sos_diagnostics_registry_inventory_child", "", "", 1000, True),
+        "bridge-a-doors": WorkerScript("bridge-a-doors", "manual", "Doors", "tests.sos_diagnostics_registry_door_child", "", "", 1000, True),
+    }
+
+    result = execute_request(
+        {
+            "schema": "novali.client_side_pb_bridge.v1",
+            "message_kind": "request",
+            "bridge_id": "bridge-a",
+            "sequence": 1,
+            "script_id": "bridge-a-orchestrator",
+            "state": {},
+        },
+        scripts,
+        {},
+        tmp_path,
+    )
+
+    assert result["status"] == "ok"
+    assert [child["script_id"] for child in result["result"]["child_results"]] == [
+        "bridge-a-sos_status",
+        "bridge-a-sos_diagnostics",
+        "bridge-a-inventory",
+        "bridge-a-doors",
+    ]
+    diagnostics_child = result["result"]["child_results"][1]
+    assert diagnostics_child["summary"] == (
+        "SOS Diagnostics Ship A state=ok missing=0 errors=0 queue=0 unexpected=0 blockers=0 warnings=0"
+    )
+    assert diagnostics_child["error_bucket"] == "none"
+    assert diagnostics_child["result"]["sos_diagnostics"]["snapshot_status"] == "ok"
+    assert {command["kind"] for command in result["result"]["commands"]} <= {"echo", "write_text_surface"}
+
+
+def test_execute_sos_orchestrator_passes_diagnostics_context_history_and_aliases_to_diagnostics_only(tmp_path: Path):
+    captured: dict[str, dict] = {}
+    module = types.ModuleType("tests.sos_diagnostics_capture_children")
+
+    def run(request):
+        captured[request["script_id"]] = request
+        return {"summary": f"{request['script_id']} captured", "commands": [{"kind": "echo", "text": request["script_id"]}]}
+
+    module.run = run
+    sys.modules[module.__name__] = module
+    data = tmp_path / "data"
+    data.mkdir()
+    (data / "bridge_results").mkdir()
+    (data / "bridge_results" / "bridge-a.json").write_text(
+        json.dumps(
+            {
+                "schema": "novali.client_side_pb_bridge.v1",
+                "message_kind": "result",
+                "bridge_id": "bridge-a",
+                "sequence": 7,
+                "script_id": "bridge-a-orchestrator",
+                "status": "ok",
+                "result": {
+                    "queue_pressure": {
+                        "queued": 8,
+                        "drained": 1,
+                        "remaining": 7,
+                        "by_source": {"bridge-a-sos_diagnostics": {"queued": 4, "drained": 1, "remaining": 3}},
+                    },
+                    "child_results": [
+                        {
+                            "script_id": "bridge-a-sos_status",
+                            "status": "ok",
+                            "error_bucket": "none",
+                            "summary": "status ok",
+                            "result": {"sos_status": {"mode": "Combat", "warnings": []}},
+                        },
+                        {
+                            "script_id": "bridge-a-sos_alerts",
+                            "status": "ok",
+                            "error_bucket": "none",
+                            "summary": "alerts warning",
+                            "result": {
+                                "sos_alerts": {
+                                    "state": "warning",
+                                    "snapshot_status": "ok",
+                                    "warnings": ["operator_route_pending"],
+                                }
+                            },
+                        },
+                    ],
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    (data / "sos_ships.json").write_text(
+        json.dumps(
+            {
+                "schema": "novali.client_side_pb.sos_ships.v1",
+                "ships": [
+                    {
+                        "ship_id": "ship-a",
+                        "bridge_id": "bridge-a",
+                        "display_name": "Ship A",
+                        "services": [
+                            {"script_id": "bridge-a-sos_status", "service_id": "status"},
+                            {"script_id": "bridge-a-sos_diagnostics", "service_id": "diagnostics"},
+                            {"script_id": "bridge-a-sos_alerts", "service_id": "alerts"},
+                            {"script_id": "bridge-a-inventory", "service_id": "inventory"},
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    scripts = {
+        "bridge-a-orchestrator": WorkerScript(
+            "bridge-a-orchestrator", "script_instance", "Bridge A SOS", "", "", "", 1000, True, base_script_id="bridge_orchestrator"
+        ),
+        "bridge-a-sos_status": WorkerScript("bridge-a-sos_status", "manual", "Status", module.__name__, "", "", 1000, True),
+        "bridge-a-sos_diagnostics": WorkerScript("bridge-a-sos_diagnostics", "manual", "Diagnostics", module.__name__, "", "", 1000, True),
+        "bridge-a-sos_alerts": WorkerScript("bridge-a-sos_alerts", "manual", "Alerts", module.__name__, "", "", 1000, True),
+        "bridge-a-inventory": WorkerScript("bridge-a-inventory", "manual", "Inventory", module.__name__, "", "", 1000, True),
+    }
+    contract_snapshot = {"contract": "nominal"}
+    diagnostics_snapshot = {"operator_checks": ["review_child_errors"]}
+
+    result = execute_request(
+        {
+            "schema": "novali.client_side_pb_bridge.v1",
+            "message_kind": "request",
+            "bridge_id": "bridge-a",
+            "sequence": 8,
+            "script_id": "bridge-a-orchestrator",
+            "runtime_telemetry": {"limiter_state": "ok"},
+            "contract_snapshot": contract_snapshot,
+            "diagnostics_snapshot": diagnostics_snapshot,
+            "state": {},
+        },
+        scripts,
+        {},
+        tmp_path,
+    )
+
+    assert result["status"] == "ok"
+    diagnostics_request = captured["bridge-a-sos_diagnostics"]
+    assert diagnostics_request["sos_ship"]["ship_id"] == "ship-a"
+    assert diagnostics_request["contract_snapshot"] == contract_snapshot
+    assert diagnostics_request["diagnostics_snapshot"] == diagnostics_snapshot
+    telemetry = diagnostics_request["runtime_telemetry"]
+    assert telemetry["limiter_state"] == "ok"
+    assert telemetry["queue_pressure"] == {
+        "queued": 8,
+        "drained": 1,
+        "remaining": 7,
+        "by_source": {"bridge-a-sos_diagnostics": {"queued": 4, "drained": 1, "remaining": 3}},
+    }
+    assert telemetry["command_queue"] == telemetry["queue_pressure"]
+    assert telemetry["child_services_by_service_id"]["status"]["result"]["sos_status"]["mode"] == "Combat"
+    assert telemetry["child_services_by_service_id"]["alerts"]["result"]["sos_alerts"]["state"] == "warning"
+    assert telemetry["child_services_by_script_id"]["bridge-a-sos_diagnostics"]["command_queue"] == {
+        "queued": 4,
+        "drained": 1,
+        "remaining": 3,
+    }
+    for sibling in ("bridge-a-sos_status", "bridge-a-sos_alerts", "bridge-a-inventory"):
+        assert "contract_snapshot" not in captured[sibling]
+        assert "diagnostics_snapshot" not in captured[sibling]
 
 
 def test_execute_sos_orchestrator_passes_readiness_context_history_and_queue_to_readiness_only(tmp_path: Path):
