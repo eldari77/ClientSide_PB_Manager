@@ -43,6 +43,7 @@ ENVIRONMENT_SNAPSHOT_KEYS = ("environment_snapshot", "hazard_snapshot", "weather
 NAVIGATION_SNAPSHOT_KEYS = ("navigation_snapshot", "nav_snapshot", "flight_snapshot", "motion_snapshot")
 MINING_SNAPSHOT_KEYS = ("mining_snapshot", "harvest_snapshot", "resource_snapshot", "ore_snapshot")
 ALERTS_SNAPSHOT_KEYS = ("alerts_snapshot", "notification_snapshot")
+READINESS_SNAPSHOT_KEYS = ("readiness_snapshot", "operator_readiness_snapshot")
 DISPLAY_SNAPSHOT_KEYS = (
     "display_snapshot",
     "displays_snapshot",
@@ -597,6 +598,11 @@ def remove_mining_only_snapshot_aliases(request: dict[str, Any]) -> None:
 
 def remove_alerts_only_snapshot_aliases(request: dict[str, Any]) -> None:
     for key in ALERTS_SNAPSHOT_KEYS:
+        request.pop(key, None)
+
+
+def remove_readiness_only_snapshot_aliases(request: dict[str, Any]) -> None:
+    for key in READINESS_SNAPSHOT_KEYS:
         request.pop(key, None)
 
 
@@ -1580,6 +1586,13 @@ def execute_orchestrator_request(
             or "sos_notifications" in child_id.lower()
             or "sos_notify" in child_id.lower()
         )
+        is_readiness_child = (
+            child_service_id == "readiness"
+            or "sos_readiness" in child_id.lower()
+            or "sos_operator_readiness" in child_id.lower()
+            or "sos_ship_readiness" in child_id.lower()
+            or "sos_ops_readiness" in child_id.lower()
+        )
         is_display_child = (
             child_service_id == "display"
             or "sos_display" in child_id.lower()
@@ -1598,6 +1611,8 @@ def execute_orchestrator_request(
             remove_mining_only_snapshot_aliases(child_request)
         if not is_alerts_child:
             remove_alerts_only_snapshot_aliases(child_request)
+        if not is_readiness_child:
+            remove_readiness_only_snapshot_aliases(child_request)
         if not is_display_child:
             remove_display_only_snapshot_aliases(child_request)
         if (

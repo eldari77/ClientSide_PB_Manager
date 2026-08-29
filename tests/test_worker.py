@@ -710,6 +710,7 @@ def test_execute_sos_orchestrator_runs_dashboard_child_with_existing_services(tm
                             {"script_id": "bridge-a-sos_navigation", "service_id": "navigation"},
                             {"script_id": "bridge-a-sos_display", "service_id": "display"},
                             {"script_id": "bridge-a-sos_mining", "service_id": "mining"},
+                            {"script_id": "bridge-a-sos_readiness", "service_id": "readiness"},
                             {"script_id": "bridge-a-sos_alerts", "service_id": "alerts"},
                             {"script_id": "bridge-a-inventory", "service_id": "inventory"},
                             {"script_id": "bridge-a-doors", "service_id": "doors"},
@@ -785,6 +786,16 @@ def test_execute_sos_orchestrator_runs_dashboard_child_with_existing_services(tm
             1000,
             True,
         ),
+        "bridge-a-sos_readiness": WorkerScript(
+            "bridge-a-sos_readiness",
+            "manual",
+            "Readiness",
+            "worker.scripts.sos_readiness",
+            "",
+            "",
+            1000,
+            True,
+        ),
         "bridge-a-sos_display": WorkerScript(
             "bridge-a-sos_display",
             "manual",
@@ -834,13 +845,14 @@ def test_execute_sos_orchestrator_runs_dashboard_child_with_existing_services(tm
         "bridge-a-sos_navigation",
         "bridge-a-sos_display",
         "bridge-a-sos_mining",
+        "bridge-a-sos_readiness",
         "bridge-a-sos_alerts",
         "bridge-a-inventory",
         "bridge-a-doors",
     ]
     dashboard_child = result["result"]["child_results"][1]
     assert dashboard_child["summary"] == (
-        "SOS Dashboard Ship A mode=Docked integrity=unknown logistics=unknown maintenance=unknown airlock=unknown mobility=unknown navigation=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown environment=unknown display=unknown mining=unknown production=unknown transit=unknown defense=unknown alerts=unknown queue=0 blockers=none"
+        "SOS Dashboard Ship A mode=Docked readiness=unknown integrity=unknown logistics=unknown maintenance=unknown airlock=unknown mobility=unknown navigation=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown environment=unknown display=unknown mining=unknown production=unknown transit=unknown defense=unknown alerts=unknown queue=0 blockers=none"
     )
     assert dashboard_child["error_bucket"] == "none"
     assert result["result"]["commands"][1]["kind"] == "echo"
@@ -1386,6 +1398,28 @@ def test_execute_sos_orchestrator_passes_child_payload_history_to_dashboard_requ
                             },
                         },
                         {
+                            "script_id": "bridge-a-sos_readiness",
+                            "status": "ok",
+                            "error_bucket": "none",
+                            "summary": "readiness warning",
+                            "result": {
+                                "sos_readiness": {
+                                    "state": "degraded",
+                                    "summary": "degraded score=10/14 warnings=1 blockers=0",
+                                    "snapshot_status": "ok",
+                                    "score": 10,
+                                    "max_score": 14,
+                                    "readiness_ratio": 0.714,
+                                    "critical_sources": [],
+                                    "warning_sources": ["power"],
+                                    "unknown_sources": ["display"],
+                                    "operator_action": "monitor_limited",
+                                    "warnings": ["power:battery_low_charge:Main Battery"],
+                                    "blockers": [],
+                                }
+                            },
+                        },
+                        {
                             "script_id": "bridge-a-sos_display",
                             "status": "ok",
                             "error_bucket": "none",
@@ -1471,6 +1505,7 @@ def test_execute_sos_orchestrator_passes_child_payload_history_to_dashboard_requ
                             {"script_id": "bridge-a-sos_mining", "service_id": "mining"},
                             {"script_id": "bridge-a-sos_transit", "service_id": "transit"},
                             {"script_id": "bridge-a-sos_defense", "service_id": "defense"},
+                            {"script_id": "bridge-a-sos_readiness", "service_id": "readiness"},
                             {"script_id": "bridge-a-sos_alerts", "service_id": "alerts"},
                         ],
                     }
@@ -1502,6 +1537,7 @@ def test_execute_sos_orchestrator_passes_child_payload_history_to_dashboard_requ
         "bridge-a-sos_mining": WorkerScript("bridge-a-sos_mining", "manual", "Mining", module.__name__, "", "", 1000, True),
         "bridge-a-sos_transit": WorkerScript("bridge-a-sos_transit", "manual", "Transit", module.__name__, "", "", 1000, True),
         "bridge-a-sos_defense": WorkerScript("bridge-a-sos_defense", "manual", "Defense", module.__name__, "", "", 1000, True),
+        "bridge-a-sos_readiness": WorkerScript("bridge-a-sos_readiness", "manual", "Readiness", module.__name__, "", "", 1000, True),
         "bridge-a-sos_alerts": WorkerScript("bridge-a-sos_alerts", "manual", "Alerts", module.__name__, "", "", 1000, True),
     }
 
@@ -1590,6 +1626,10 @@ def test_execute_sos_orchestrator_passes_child_payload_history_to_dashboard_requ
     assert environment["state"] == "warning"
     assert environment["hazards"]["critical_count"] == 1
     assert environment["compartments"]["depressurized_count"] == 1
+    readiness = telemetry["child_services_by_service_id"]["readiness"]["result"]["sos_readiness"]
+    assert readiness["state"] == "degraded"
+    assert readiness["score"] == 10
+    assert readiness["warning_sources"] == ["power"]
     display = telemetry["child_services_by_service_id"]["display"]["result"]["sos_display"]
     assert display["state"] == "warning"
     assert display["write_queue"]["state"] == "high"
@@ -1653,7 +1693,7 @@ def test_execute_sos_dashboard_child_degrades_gracefully_without_child_history(t
 
     assert result["status"] == "ok"
     assert result["result"]["child_results"][0]["summary"] == (
-        "SOS Dashboard Ship A mode=Docked integrity=unknown logistics=unknown maintenance=unknown airlock=unknown mobility=unknown navigation=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown environment=unknown display=unknown mining=unknown production=unknown transit=unknown defense=unknown alerts=unknown queue=0 blockers=none"
+        "SOS Dashboard Ship A mode=Docked readiness=unknown integrity=unknown logistics=unknown maintenance=unknown airlock=unknown mobility=unknown navigation=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown environment=unknown display=unknown mining=unknown production=unknown transit=unknown defense=unknown alerts=unknown queue=0 blockers=none"
     )
     dashboard = result["result"]["child_results"][0]["result"]["sos_dashboard"]
     assert dashboard["integrity"]["snapshot_status"] == "missing_child_result"
@@ -1673,8 +1713,9 @@ def test_execute_sos_dashboard_child_degrades_gracefully_without_child_history(t
     assert dashboard["transit"]["snapshot_status"] == "missing_child_result"
     assert dashboard["defense"]["snapshot_status"] == "missing_child_result"
     assert dashboard["alerts"]["snapshot_status"] == "missing_child_result"
+    assert dashboard["readiness"]["snapshot_status"] == "missing_child_result"
     assert result["result"]["commands"][0]["text"] == (
-        "SOS Dashboard Ship A mode=Docked integrity=unknown logistics=unknown maintenance=unknown airlock=unknown mobility=unknown navigation=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown environment=unknown display=unknown mining=unknown production=unknown transit=unknown defense=unknown alerts=unknown queue=0 blockers=none"
+        "SOS Dashboard Ship A mode=Docked readiness=unknown integrity=unknown logistics=unknown maintenance=unknown airlock=unknown mobility=unknown navigation=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown environment=unknown display=unknown mining=unknown production=unknown transit=unknown defense=unknown alerts=unknown queue=0 blockers=none"
     )
 
 
@@ -2246,6 +2287,205 @@ def test_execute_sos_orchestrator_passes_alert_snapshot_aliases_to_alerts_child_
     assert captured["bridge-a-sos_alerts"]["notification_snapshot"] == {"alerts": ["operator_page_pending"]}
     assert "alerts_snapshot" not in captured["bridge-a-inventory"]
     assert "notification_snapshot" not in captured["bridge-a-inventory"]
+
+
+def test_execute_sos_orchestrator_passes_readiness_context_history_and_queue_to_readiness_only(tmp_path: Path):
+    captured: dict[str, dict] = {}
+    module = types.ModuleType("tests.sos_readiness_capture_children")
+
+    def run(request):
+        captured[request["script_id"]] = request
+        return {"summary": f"{request['script_id']} captured", "commands": [{"kind": "echo", "text": request["script_id"]}]}
+
+    module.run = run
+    sys.modules[module.__name__] = module
+    data = tmp_path / "data"
+    data.mkdir()
+    (data / "bridge_results").mkdir()
+    (data / "bridge_results" / "bridge-a.json").write_text(
+        json.dumps(
+            {
+                "schema": "novali.client_side_pb_bridge.v1",
+                "message_kind": "result",
+                "bridge_id": "bridge-a",
+                "sequence": 7,
+                "script_id": "bridge-a-orchestrator",
+                "status": "ok",
+                "result": {
+                    "command_queue": {
+                        "queued": 9,
+                        "drained": 2,
+                        "remaining": 7,
+                        "by_source": {"bridge-a-sos_readiness": {"queued": 3, "drained": 1, "remaining": 2}},
+                    },
+                    "child_results": [
+                        {
+                            "script_id": "bridge-a-sos_status",
+                            "status": "ok",
+                            "error_bucket": "none",
+                            "summary": "status ok",
+                            "result": {"sos_status": {"mode": "Combat", "warnings": []}},
+                        },
+                        {
+                            "script_id": "bridge-a-sos_power",
+                            "status": "ok",
+                            "error_bucket": "none",
+                            "summary": "power warning",
+                            "result": {
+                                "sos_power": {
+                                    "state": "warning",
+                                    "snapshot_status": "ok",
+                                    "warnings": ["battery_low_charge:Main Battery"],
+                                }
+                            },
+                        },
+                    ],
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    (data / "sos_ships.json").write_text(
+        json.dumps(
+            {
+                "schema": "novali.client_side_pb.sos_ships.v1",
+                "ships": [
+                    {
+                        "ship_id": "ship-a",
+                        "bridge_id": "bridge-a",
+                        "display_name": "Ship A",
+                        "mode": "Combat",
+                        "services": [
+                            {"script_id": "bridge-a-sos_status", "service_id": "status"},
+                            {"script_id": "bridge-a-sos_readiness", "service_id": "readiness"},
+                            {"script_id": "bridge-a-sos_power", "service_id": "power"},
+                            {"script_id": "bridge-a-inventory", "service_id": "inventory"},
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    scripts = {
+        "bridge-a-orchestrator": WorkerScript(
+            "bridge-a-orchestrator", "script_instance", "Bridge A SOS", "", "", "", 1000, True, base_script_id="bridge_orchestrator"
+        ),
+        "bridge-a-sos_status": WorkerScript("bridge-a-sos_status", "manual", "Status", module.__name__, "", "", 1000, True),
+        "bridge-a-sos_readiness": WorkerScript("bridge-a-sos_readiness", "manual", "Readiness", module.__name__, "", "", 1000, True),
+        "bridge-a-sos_power": WorkerScript("bridge-a-sos_power", "manual", "Power", module.__name__, "", "", 1000, True),
+        "bridge-a-inventory": WorkerScript("bridge-a-inventory", "manual", "Inventory", module.__name__, "", "", 1000, True),
+    }
+    readiness_snapshot = {"operator_verdict": "review"}
+
+    result = execute_request(
+        {
+            "schema": "novali.client_side_pb_bridge.v1",
+            "message_kind": "request",
+            "bridge_id": "bridge-a",
+            "sequence": 8,
+            "script_id": "bridge-a-orchestrator",
+            "runtime_telemetry": {"limiter_state": "ok"},
+            "readiness_snapshot": readiness_snapshot,
+            "operator_readiness_snapshot": {"operator": "bridge"},
+            "state": {},
+        },
+        scripts,
+        {},
+        tmp_path,
+    )
+
+    assert result["status"] == "ok"
+    readiness_request = captured["bridge-a-sos_readiness"]
+    assert readiness_request["sos_ship"]["ship_id"] == "ship-a"
+    assert readiness_request["readiness_snapshot"] == readiness_snapshot
+    assert readiness_request["operator_readiness_snapshot"] == {"operator": "bridge"}
+    telemetry = readiness_request["runtime_telemetry"]
+    assert any(item["service_id"] == "readiness" for item in telemetry["child_services"])
+    assert telemetry["limiter_state"] == "ok"
+    assert telemetry["queue_pressure"] == {
+        "queued": 9,
+        "drained": 2,
+        "remaining": 7,
+        "by_source": {"bridge-a-sos_readiness": {"queued": 3, "drained": 1, "remaining": 2}},
+    }
+    assert telemetry["command_queue"] == telemetry["queue_pressure"]
+    assert telemetry["child_services_by_service_id"]["status"]["result"]["sos_status"]["mode"] == "Combat"
+    assert telemetry["child_services_by_service_id"]["power"]["result"]["sos_power"]["state"] == "warning"
+    assert telemetry["child_services_by_script_id"]["bridge-a-sos_readiness"]["command_queue"] == {
+        "queued": 3,
+        "drained": 1,
+        "remaining": 2,
+    }
+    for sibling in ("bridge-a-sos_status", "bridge-a-sos_power", "bridge-a-inventory"):
+        assert "readiness_snapshot" not in captured[sibling]
+        assert "operator_readiness_snapshot" not in captured[sibling]
+
+
+def test_execute_sos_readiness_child_degrades_gracefully_without_child_history(tmp_path: Path):
+    data = tmp_path / "data"
+    data.mkdir()
+    (data / "sos_ships.json").write_text(
+        json.dumps(
+            {
+                "schema": "novali.client_side_pb.sos_ships.v1",
+                "ships": [
+                    {
+                        "ship_id": "ship-a",
+                        "bridge_id": "bridge-a",
+                        "display_name": "Ship A",
+                        "expected_grid_entity_id": 10,
+                        "services": [{"script_id": "bridge-a-sos_readiness", "service_id": "readiness"}],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    scripts = {
+        "bridge-a-orchestrator": WorkerScript(
+            "bridge-a-orchestrator", "script_instance", "Bridge A SOS", "", "", "", 1000, True, base_script_id="bridge_orchestrator"
+        ),
+        "bridge-a-sos_readiness": WorkerScript(
+            "bridge-a-sos_readiness",
+            "manual",
+            "Readiness",
+            "worker.scripts.sos_readiness",
+            "",
+            "",
+            1000,
+            True,
+        ),
+    }
+
+    result = execute_request(
+        {
+            "schema": "novali.client_side_pb_bridge.v1",
+            "message_kind": "request",
+            "bridge_id": "bridge-a",
+            "sequence": 1,
+            "script_id": "bridge-a-orchestrator",
+            "grid_snapshot": {"schema": "novali.client_side_pb.grid_snapshot.v1", "grid_entity_id": 10, "blocks": []},
+            "state": {},
+        },
+        scripts,
+        {},
+        tmp_path,
+    )
+
+    assert result["status"] == "ok"
+    readiness_child = result["result"]["child_results"][0]
+    assert readiness_child["summary"] == "SOS Readiness Ship A state=degraded score=0/12 action=review_warnings"
+    assert readiness_child["result"]["sos_readiness"]["snapshot_status"] == "ok"
+    assert readiness_child["result"]["sos_readiness"]["unknown_sources"] == [
+        "logistics",
+        "production",
+        "maintenance",
+        "power",
+        "display",
+        "alerts",
+    ]
+    assert {command["kind"] for command in result["result"]["commands"]} <= {"echo", "write_text_surface"}
 
 
 def test_execute_sos_orchestrator_passes_airlock_snapshot_only_to_airlock_child(tmp_path: Path):
