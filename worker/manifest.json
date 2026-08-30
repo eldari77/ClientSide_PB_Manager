@@ -302,6 +302,18 @@
       "enabled": true
     },
     {
+      "script_id": "sos_watch_log",
+      "source": "local_worker",
+      "display_name": "SOS Watch Log",
+      "module": "worker.scripts.sos_watch_log",
+      "runtime": "python",
+      "source_path": "",
+      "input_schema": "adapter_tick.v1",
+      "output_schema": "compact_commands.v1",
+      "timeout_ms": 1000,
+      "enabled": true
+    },
+    {
       "script_id": "sos_mission_profile",
       "source": "local_worker",
       "display_name": "SOS Mission Profile",

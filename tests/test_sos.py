@@ -101,6 +101,7 @@ def test_expand_sos_bridge_configs_applies_mode_policy_and_services(tmp_path: Pa
                     {"script_id": "pb-bridge-001-sos_guidance", "service_id": "guidance"},
                     {"script_id": "pb-bridge-001-sos_readiness", "service_id": "readiness"},
                     {"script_id": "pb-bridge-001-sos_diagnostics", "service_id": "diagnostics"},
+                    {"script_id": "pb-bridge-001-sos_watch_log", "service_id": "watch_log"},
                     {"script_id": "pb-bridge-001-sos_mission_profile", "service_id": "mission_profile"},
                     {"script_id": "pb-bridge-001-sos_runbook", "service_id": "runbook"},
                     {"script_id": "pb-bridge-001-workshop_1216126863_adapter", "service_id": "inventory"},
@@ -143,6 +144,7 @@ def test_expand_sos_bridge_configs_applies_mode_policy_and_services(tmp_path: Pa
         "pb-bridge-001-sos_guidance",
         "pb-bridge-001-sos_readiness",
         "pb-bridge-001-sos_diagnostics",
+        "pb-bridge-001-sos_watch_log",
         "pb-bridge-001-sos_mission_profile",
         "pb-bridge-001-sos_runbook",
         "pb-bridge-001-workshop_1216126863_adapter",
@@ -172,6 +174,7 @@ def test_expand_sos_bridge_configs_applies_mode_policy_and_services(tmp_path: Pa
         "pb-bridge-001-sos_guidance",
         "pb-bridge-001-sos_readiness",
         "pb-bridge-001-sos_diagnostics",
+        "pb-bridge-001-sos_watch_log",
         "pb-bridge-001-sos_mission_profile",
         "pb-bridge-001-sos_runbook",
         "pb-bridge-001-workshop_1216126863_adapter",
@@ -238,14 +241,17 @@ def test_expand_sos_bridge_configs_applies_mode_policy_and_services(tmp_path: Pa
     assert config.child_worker_scripts[22]["service_id"] == "diagnostics"
     assert config.child_worker_scripts[22]["budget"] == 1
     assert config.child_worker_scripts[22]["priority"] == 4
-    assert config.child_worker_scripts[23]["service_id"] == "mission_profile"
+    assert config.child_worker_scripts[23]["service_id"] == "watch_log"
     assert config.child_worker_scripts[23]["budget"] == 1
-    assert config.child_worker_scripts[23]["priority"] == 5
-    assert config.child_worker_scripts[24]["service_id"] == "runbook"
+    assert config.child_worker_scripts[23]["priority"] == 4
+    assert config.child_worker_scripts[24]["service_id"] == "mission_profile"
     assert config.child_worker_scripts[24]["budget"] == 1
     assert config.child_worker_scripts[24]["priority"] == 5
-    assert config.child_worker_scripts[25]["budget"] == 0
-    assert config.child_worker_scripts[26]["expires_after_sequences"] == 1
+    assert config.child_worker_scripts[25]["service_id"] == "runbook"
+    assert config.child_worker_scripts[25]["budget"] == 1
+    assert config.child_worker_scripts[25]["priority"] == 5
+    assert config.child_worker_scripts[26]["budget"] == 0
+    assert config.child_worker_scripts[27]["expires_after_sequences"] == 1
     assert config.child_worker_scripts[1]["budget"] == 1
 
 
