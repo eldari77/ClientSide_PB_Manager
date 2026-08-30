@@ -92,6 +92,7 @@ def test_expand_sos_bridge_configs_applies_mode_policy_and_services(tmp_path: Pa
                     {"script_id": "pb-bridge-001-sos_comms", "service_id": "comms"},
                     {"script_id": "pb-bridge-001-sos_crew", "service_id": "crew"},
                     {"script_id": "pb-bridge-001-sos_docking", "service_id": "docking"},
+                    {"script_id": "pb-bridge-001-sos_endurance", "service_id": "endurance"},
                     {"script_id": "pb-bridge-001-sos_life_support", "service_id": "life_support"},
                     {"script_id": "pb-bridge-001-sos_production", "service_id": "production"},
                     {"script_id": "pb-bridge-001-sos_mining", "service_id": "mining"},
@@ -135,6 +136,7 @@ def test_expand_sos_bridge_configs_applies_mode_policy_and_services(tmp_path: Pa
         "pb-bridge-001-sos_comms",
         "pb-bridge-001-sos_crew",
         "pb-bridge-001-sos_docking",
+        "pb-bridge-001-sos_endurance",
         "pb-bridge-001-sos_life_support",
         "pb-bridge-001-sos_production",
         "pb-bridge-001-sos_mining",
@@ -165,6 +167,7 @@ def test_expand_sos_bridge_configs_applies_mode_policy_and_services(tmp_path: Pa
         "pb-bridge-001-sos_comms",
         "pb-bridge-001-sos_crew",
         "pb-bridge-001-sos_docking",
+        "pb-bridge-001-sos_endurance",
         "pb-bridge-001-sos_life_support",
         "pb-bridge-001-sos_production",
         "pb-bridge-001-sos_mining",
@@ -214,44 +217,47 @@ def test_expand_sos_bridge_configs_applies_mode_policy_and_services(tmp_path: Pa
     assert config.child_worker_scripts[13]["service_id"] == "docking"
     assert config.child_worker_scripts[13]["budget"] == 1
     assert config.child_worker_scripts[13]["priority"] == 11
-    assert config.child_worker_scripts[14]["service_id"] == "life_support"
+    assert config.child_worker_scripts[14]["service_id"] == "endurance"
     assert config.child_worker_scripts[14]["budget"] == 1
-    assert config.child_worker_scripts[14]["priority"] == 14
-    assert config.child_worker_scripts[15]["service_id"] == "production"
+    assert config.child_worker_scripts[14]["priority"] == 18
+    assert config.child_worker_scripts[15]["service_id"] == "life_support"
     assert config.child_worker_scripts[15]["budget"] == 1
-    assert config.child_worker_scripts[15]["priority"] == 17
-    assert config.child_worker_scripts[16]["service_id"] == "mining"
+    assert config.child_worker_scripts[15]["priority"] == 14
+    assert config.child_worker_scripts[16]["service_id"] == "production"
     assert config.child_worker_scripts[16]["budget"] == 1
     assert config.child_worker_scripts[16]["priority"] == 17
-    assert config.child_worker_scripts[17]["service_id"] == "transit"
+    assert config.child_worker_scripts[17]["service_id"] == "mining"
     assert config.child_worker_scripts[17]["budget"] == 1
-    assert config.child_worker_scripts[17]["priority"] == 11
-    assert config.child_worker_scripts[18]["service_id"] == "defense"
+    assert config.child_worker_scripts[17]["priority"] == 17
+    assert config.child_worker_scripts[18]["service_id"] == "transit"
     assert config.child_worker_scripts[18]["budget"] == 1
-    assert config.child_worker_scripts[18]["priority"] == 13
-    assert config.child_worker_scripts[19]["service_id"] == "environment"
+    assert config.child_worker_scripts[18]["priority"] == 11
+    assert config.child_worker_scripts[19]["service_id"] == "defense"
     assert config.child_worker_scripts[19]["budget"] == 1
-    assert config.child_worker_scripts[19]["priority"] == 14
-    assert config.child_worker_scripts[20]["service_id"] == "guidance"
+    assert config.child_worker_scripts[19]["priority"] == 13
+    assert config.child_worker_scripts[20]["service_id"] == "environment"
     assert config.child_worker_scripts[20]["budget"] == 1
-    assert config.child_worker_scripts[20]["priority"] == 4
-    assert config.child_worker_scripts[21]["service_id"] == "readiness"
+    assert config.child_worker_scripts[20]["priority"] == 14
+    assert config.child_worker_scripts[21]["service_id"] == "guidance"
     assert config.child_worker_scripts[21]["budget"] == 1
     assert config.child_worker_scripts[21]["priority"] == 4
-    assert config.child_worker_scripts[22]["service_id"] == "diagnostics"
+    assert config.child_worker_scripts[22]["service_id"] == "readiness"
     assert config.child_worker_scripts[22]["budget"] == 1
     assert config.child_worker_scripts[22]["priority"] == 4
-    assert config.child_worker_scripts[23]["service_id"] == "watch_log"
+    assert config.child_worker_scripts[23]["service_id"] == "diagnostics"
     assert config.child_worker_scripts[23]["budget"] == 1
     assert config.child_worker_scripts[23]["priority"] == 4
-    assert config.child_worker_scripts[24]["service_id"] == "mission_profile"
+    assert config.child_worker_scripts[24]["service_id"] == "watch_log"
     assert config.child_worker_scripts[24]["budget"] == 1
-    assert config.child_worker_scripts[24]["priority"] == 5
-    assert config.child_worker_scripts[25]["service_id"] == "runbook"
+    assert config.child_worker_scripts[24]["priority"] == 4
+    assert config.child_worker_scripts[25]["service_id"] == "mission_profile"
     assert config.child_worker_scripts[25]["budget"] == 1
     assert config.child_worker_scripts[25]["priority"] == 5
-    assert config.child_worker_scripts[26]["budget"] == 0
-    assert config.child_worker_scripts[27]["expires_after_sequences"] == 1
+    assert config.child_worker_scripts[26]["service_id"] == "runbook"
+    assert config.child_worker_scripts[26]["budget"] == 1
+    assert config.child_worker_scripts[26]["priority"] == 5
+    assert config.child_worker_scripts[27]["budget"] == 0
+    assert config.child_worker_scripts[28]["expires_after_sequences"] == 1
     assert config.child_worker_scripts[1]["budget"] == 1
 
 

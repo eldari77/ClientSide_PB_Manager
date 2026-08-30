@@ -65,6 +65,13 @@ MISSION_PROFILE_SNAPSHOT_KEYS = (
     "operating_profile_snapshot",
     "profile_snapshot",
 )
+ENDURANCE_SNAPSHOT_KEYS = (
+    "endurance_snapshot",
+    "consumables_snapshot",
+    "resource_forecast_snapshot",
+    "supply_snapshot",
+    "runway_snapshot",
+)
 RUNBOOK_SNAPSHOT_KEYS = ("runbook_snapshot", "checklist_snapshot", "procedure_snapshot", "operator_checklist_snapshot")
 DISPLAY_SNAPSHOT_KEYS = (
     "display_snapshot",
@@ -648,6 +655,11 @@ def remove_watch_log_only_snapshot_aliases(request: dict[str, Any]) -> None:
 
 def remove_mission_profile_only_snapshot_aliases(request: dict[str, Any]) -> None:
     for key in MISSION_PROFILE_SNAPSHOT_KEYS:
+        request.pop(key, None)
+
+
+def remove_endurance_only_snapshot_aliases(request: dict[str, Any]) -> None:
+    for key in ENDURANCE_SNAPSHOT_KEYS:
         request.pop(key, None)
 
 
@@ -1706,6 +1718,14 @@ def execute_orchestrator_request(
             or "sos_operating_envelope" in child_id.lower()
             or "sos_envelope" in child_id.lower()
         )
+        is_endurance_child = (
+            child_service_id == "endurance"
+            or "sos_endurance" in child_id.lower()
+            or "sos_consumables" in child_id.lower()
+            or "sos_resource_forecast" in child_id.lower()
+            or "sos_supply" in child_id.lower()
+            or "sos_runway" in child_id.lower()
+        )
         is_runbook_child = (
             child_service_id == "runbook"
             or "sos_runbook" in child_id.lower()
@@ -1727,7 +1747,7 @@ def execute_orchestrator_request(
             remove_navigation_only_snapshot_aliases(child_request)
         if not is_maintenance_child:
             remove_maintenance_only_snapshot_aliases(child_request)
-        if not is_mining_child:
+        if not is_mining_child and not is_endurance_child:
             remove_mining_only_snapshot_aliases(child_request)
         if not is_alerts_child:
             remove_alerts_only_snapshot_aliases(child_request)
@@ -1741,6 +1761,8 @@ def execute_orchestrator_request(
             remove_watch_log_only_snapshot_aliases(child_request)
         if not is_mission_profile_child:
             remove_mission_profile_only_snapshot_aliases(child_request)
+        if not is_endurance_child:
+            remove_endurance_only_snapshot_aliases(child_request)
         if not is_runbook_child:
             remove_runbook_only_snapshot_aliases(child_request)
         if not is_display_child:
@@ -1758,6 +1780,7 @@ def execute_orchestrator_request(
                 "comms",
                 "crew",
                 "docking",
+                "endurance",
                 "life_support",
                 "production",
                 "transit",
@@ -1786,6 +1809,11 @@ def execute_orchestrator_request(
             or "sos_comms" in child_id.lower()
             or "sos_crew" in child_id.lower()
             or "sos_docking" in child_id.lower()
+            or "sos_endurance" in child_id.lower()
+            or "sos_consumables" in child_id.lower()
+            or "sos_resource_forecast" in child_id.lower()
+            or "sos_supply" in child_id.lower()
+            or "sos_runway" in child_id.lower()
             or "sos_life_support" in child_id.lower()
             or "sos_lifesupport" in child_id.lower()
             or "sos_production" in child_id.lower()
@@ -1795,7 +1823,8 @@ def execute_orchestrator_request(
         ):
             attach_integrity_snapshot_from_grid_snapshot(child_request)
         if (
-            child_service_id in {"logistics", "maintenance", "mining", "power", "life_support", "production", "transit", "defense"}
+            child_service_id
+            in {"logistics", "maintenance", "mining", "power", "life_support", "production", "transit", "defense", "endurance"}
             or "sos_logistics" in child_id.lower()
             or "sos_maintenance" in child_id.lower()
             or "sos_repair" in child_id.lower()
@@ -1806,6 +1835,11 @@ def execute_orchestrator_request(
             or "sos_resource" in child_id.lower()
             or "sos_ore" in child_id.lower()
             or "sos_power" in child_id.lower()
+            or "sos_endurance" in child_id.lower()
+            or "sos_consumables" in child_id.lower()
+            or "sos_resource_forecast" in child_id.lower()
+            or "sos_supply" in child_id.lower()
+            or "sos_runway" in child_id.lower()
             or "sos_life_support" in child_id.lower()
             or "sos_lifesupport" in child_id.lower()
             or "sos_production" in child_id.lower()

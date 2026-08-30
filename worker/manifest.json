@@ -194,6 +194,18 @@
       "enabled": true
     },
     {
+      "script_id": "sos_endurance",
+      "source": "local_worker",
+      "display_name": "SOS Endurance",
+      "module": "worker.scripts.sos_endurance",
+      "runtime": "python",
+      "source_path": "",
+      "input_schema": "adapter_tick.v1",
+      "output_schema": "compact_commands.v1",
+      "timeout_ms": 1000,
+      "enabled": true
+    },
+    {
       "script_id": "sos_life_support",
       "source": "local_worker",
       "display_name": "SOS Life Support",
