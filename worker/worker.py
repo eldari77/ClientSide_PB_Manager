@@ -2076,10 +2076,43 @@ def child_service_telemetry(
 
 def child_result_history_payload(result_payload: dict[str, Any]) -> dict[str, Any]:
     return {
-        key: value
+        key: compact_sos_child_history_payload(key, value)
         for key, value in result_payload.items()
         if key.startswith("sos_") and isinstance(value, dict)
     }
+
+
+def compact_sos_child_history_payload(key: str, value: dict[str, Any]) -> dict[str, Any]:
+    if key != "sos_dashboard":
+        return value
+    compacted: dict[str, Any] = {}
+    for field in ("mode", "posture"):
+        if field in value:
+            compacted[field] = value[field]
+    for service_id, payload in value.items():
+        if not isinstance(payload, dict) or service_id in {"identity", "service_health", "queue_pressure", "mode_effects"}:
+            continue
+        item: dict[str, Any] = {}
+        for field in ("state", "snapshot_status", "summary"):
+            if field in payload:
+                item[field] = payload[field]
+        for field in (
+            "warning_count",
+            "blocker_count",
+            "missing_child_result_count",
+            "child_error_count",
+            "queue_remaining",
+        ):
+            if field in payload:
+                item[field] = payload[field]
+        warnings = payload.get("warnings")
+        if isinstance(warnings, list):
+            item["warnings"] = warnings[:10]
+            if len(warnings) > 10:
+                item["warnings"].append({"truncated_count": len(warnings) - 10})
+        if item:
+            compacted[service_id] = item
+    return compacted
 
 
 def stable_queue_stats(stats: dict[str, Any]) -> dict[str, int]:
