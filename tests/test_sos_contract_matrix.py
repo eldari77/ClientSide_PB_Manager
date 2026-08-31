@@ -48,6 +48,7 @@ DASHBOARD_COMPOSED_SERVICES = {
     "power",
     "production",
     "readiness",
+    "redundancy",
     "runbook",
     "transit",
     "watch_log",
@@ -264,8 +265,9 @@ def test_enriched_runtime_telemetry_exposes_child_history_in_all_supported_shape
 
 def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_path: Path) -> None:
     captured: dict[str, set[str]] = {}
-    service_ids = ("endurance", "watch_log", "runbook", "readiness", "diagnostics", "maintenance", "status")
+    service_ids = ("redundancy", "endurance", "watch_log", "runbook", "readiness", "diagnostics", "maintenance", "status")
     service_specific_aliases = {
+        "redundancy_snapshot",
         "endurance_snapshot",
         "watch_log_snapshot",
         "runbook_snapshot",
@@ -312,6 +314,7 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
         )
 
     request = _request("bridge-a", "bridge-a-orchestrator") | {
+        "redundancy_snapshot": {"capabilities": {"power": {"primary_count": 1, "backup_count": 1}}},
         "endurance_snapshot": {"cargo": {"used_volume": 10, "max_volume": 100}},
         "watch_log_snapshot": {"events": [{"message": "watch"}]},
         "runbook_snapshot": {"procedure": "Cruise Watch"},
@@ -322,6 +325,7 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
     result = execute_request(request, scripts, {}, tmp_path)
 
     assert result["status"] == "ok"
+    assert "redundancy_snapshot" in captured["redundancy"]
     assert "endurance_snapshot" in captured["endurance"]
     assert "watch_log_snapshot" in captured["watch_log"]
     assert "runbook_snapshot" in captured["runbook"]
@@ -329,6 +333,8 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
     assert "diagnostics_snapshot" in captured["diagnostics"]
     assert "maintenance_snapshot" in captured["maintenance"]
     assert captured["status"].isdisjoint(service_specific_aliases)
+    assert "endurance_snapshot" not in captured["redundancy"]
+    assert "redundancy_snapshot" not in captured["endurance"]
     assert "watch_log_snapshot" not in captured["endurance"]
     assert "runbook_snapshot" not in captured["watch_log"]
     assert "watch_log_snapshot" not in captured["runbook"]

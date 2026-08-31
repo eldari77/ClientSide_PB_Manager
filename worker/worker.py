@@ -44,6 +44,13 @@ NAVIGATION_SNAPSHOT_KEYS = ("navigation_snapshot", "nav_snapshot", "flight_snaps
 MINING_SNAPSHOT_KEYS = ("mining_snapshot", "harvest_snapshot", "resource_snapshot", "ore_snapshot")
 ALERTS_SNAPSHOT_KEYS = ("alerts_snapshot", "notification_snapshot")
 READINESS_SNAPSHOT_KEYS = ("readiness_snapshot", "operator_readiness_snapshot")
+REDUNDANCY_SNAPSHOT_KEYS = (
+    "redundancy_snapshot",
+    "failover_snapshot",
+    "critical_systems_snapshot",
+    "coverage_snapshot",
+    "resilience_snapshot",
+)
 GUIDANCE_SNAPSHOT_KEYS = ("guidance_snapshot", "operator_guidance_snapshot", "watch_snapshot", "priorities_snapshot")
 DIAGNOSTICS_SNAPSHOT_KEYS = (
     "contract_snapshot",
@@ -635,6 +642,11 @@ def remove_alerts_only_snapshot_aliases(request: dict[str, Any]) -> None:
 
 def remove_readiness_only_snapshot_aliases(request: dict[str, Any]) -> None:
     for key in READINESS_SNAPSHOT_KEYS:
+        request.pop(key, None)
+
+
+def remove_redundancy_only_snapshot_aliases(request: dict[str, Any]) -> None:
+    for key in REDUNDANCY_SNAPSHOT_KEYS:
         request.pop(key, None)
 
 
@@ -1689,6 +1701,14 @@ def execute_orchestrator_request(
             or "sos_ship_readiness" in child_id.lower()
             or "sos_ops_readiness" in child_id.lower()
         )
+        is_redundancy_child = (
+            child_service_id == "redundancy"
+            or "sos_redundancy" in child_id.lower()
+            or "sos_failover" in child_id.lower()
+            or "sos_critical_systems" in child_id.lower()
+            or "sos_coverage" in child_id.lower()
+            or "sos_resilience" in child_id.lower()
+        )
         is_guidance_child = (
             child_service_id == "guidance"
             or "sos_guidance" in child_id.lower()
@@ -1753,6 +1773,8 @@ def execute_orchestrator_request(
             remove_alerts_only_snapshot_aliases(child_request)
         if not is_readiness_child:
             remove_readiness_only_snapshot_aliases(child_request)
+        if not is_redundancy_child:
+            remove_redundancy_only_snapshot_aliases(child_request)
         if not is_guidance_child:
             remove_guidance_only_snapshot_aliases(child_request)
         if not is_diagnostics_child:
@@ -1765,7 +1787,7 @@ def execute_orchestrator_request(
             remove_endurance_only_snapshot_aliases(child_request)
         if not is_runbook_child:
             remove_runbook_only_snapshot_aliases(child_request)
-        if not is_display_child:
+        if not is_display_child and not is_redundancy_child:
             remove_display_only_snapshot_aliases(child_request)
         if (
             child_service_id
@@ -1781,6 +1803,7 @@ def execute_orchestrator_request(
                 "crew",
                 "docking",
                 "endurance",
+                "redundancy",
                 "life_support",
                 "production",
                 "transit",
@@ -1814,6 +1837,11 @@ def execute_orchestrator_request(
             or "sos_resource_forecast" in child_id.lower()
             or "sos_supply" in child_id.lower()
             or "sos_runway" in child_id.lower()
+            or "sos_redundancy" in child_id.lower()
+            or "sos_failover" in child_id.lower()
+            or "sos_critical_systems" in child_id.lower()
+            or "sos_coverage" in child_id.lower()
+            or "sos_resilience" in child_id.lower()
             or "sos_life_support" in child_id.lower()
             or "sos_lifesupport" in child_id.lower()
             or "sos_production" in child_id.lower()
@@ -1824,7 +1852,18 @@ def execute_orchestrator_request(
             attach_integrity_snapshot_from_grid_snapshot(child_request)
         if (
             child_service_id
-            in {"logistics", "maintenance", "mining", "power", "life_support", "production", "transit", "defense", "endurance"}
+            in {
+                "logistics",
+                "maintenance",
+                "mining",
+                "power",
+                "life_support",
+                "production",
+                "transit",
+                "defense",
+                "endurance",
+                "redundancy",
+            }
             or "sos_logistics" in child_id.lower()
             or "sos_maintenance" in child_id.lower()
             or "sos_repair" in child_id.lower()
@@ -1840,6 +1879,11 @@ def execute_orchestrator_request(
             or "sos_resource_forecast" in child_id.lower()
             or "sos_supply" in child_id.lower()
             or "sos_runway" in child_id.lower()
+            or "sos_redundancy" in child_id.lower()
+            or "sos_failover" in child_id.lower()
+            or "sos_critical_systems" in child_id.lower()
+            or "sos_coverage" in child_id.lower()
+            or "sos_resilience" in child_id.lower()
             or "sos_life_support" in child_id.lower()
             or "sos_lifesupport" in child_id.lower()
             or "sos_production" in child_id.lower()
