@@ -44,6 +44,12 @@ NAVIGATION_SNAPSHOT_KEYS = ("navigation_snapshot", "nav_snapshot", "flight_snaps
 MINING_SNAPSHOT_KEYS = ("mining_snapshot", "harvest_snapshot", "resource_snapshot", "ore_snapshot")
 ALERTS_SNAPSHOT_KEYS = ("alerts_snapshot", "notification_snapshot")
 READINESS_SNAPSHOT_KEYS = ("readiness_snapshot", "operator_readiness_snapshot")
+CAPABILITIES_SNAPSHOT_KEYS = (
+    "capability_snapshot",
+    "capabilities_snapshot",
+    "ship_capabilities_snapshot",
+    "role_snapshot",
+)
 REDUNDANCY_SNAPSHOT_KEYS = (
     "redundancy_snapshot",
     "failover_snapshot",
@@ -93,6 +99,7 @@ DEFAULT_BRIDGE_STALE_SECONDS = 120
 DEFAULT_PROCESSED_REQUEST_RETENTION_SECONDS = 300
 DEFAULT_PROCESSED_REQUEST_CLEANUP_MAX_FILES = 250
 RESULT_STORAGE_MAX_STRING_CHARS = 1000
+RESULT_STORAGE_MAX_COMMAND_TEXT_CHARS = 48
 RESULT_STORAGE_MAX_LIST_ITEMS = 40
 RESULT_STORAGE_MAX_DEPTH = 8
 
@@ -645,6 +652,11 @@ def remove_readiness_only_snapshot_aliases(request: dict[str, Any]) -> None:
         request.pop(key, None)
 
 
+def remove_capabilities_only_snapshot_aliases(request: dict[str, Any]) -> None:
+    for key in CAPABILITIES_SNAPSHOT_KEYS:
+        request.pop(key, None)
+
+
 def remove_redundancy_only_snapshot_aliases(request: dict[str, Any]) -> None:
     for key in REDUNDANCY_SNAPSHOT_KEYS:
         request.pop(key, None)
@@ -916,17 +928,21 @@ def result_for(request: dict[str, Any], status: str, result: Any = None, error_b
 def compact_result_for_storage(payload: dict[str, Any]) -> dict[str, Any]:
     changed = False
 
+    def truncated_string(value: str, max_chars: int) -> str:
+        nonlocal changed
+        if len(value) <= max_chars:
+            return value
+        changed = True
+        omitted = len(value) - max_chars
+        return f"{value[:max_chars]}... [truncated {omitted} chars]"
+
     def compact(value: Any, depth: int = 0) -> Any:
         nonlocal changed
         if depth > RESULT_STORAGE_MAX_DEPTH:
             changed = True
             return {"truncated_depth": True}
         if isinstance(value, str):
-            if len(value) <= RESULT_STORAGE_MAX_STRING_CHARS:
-                return value
-            changed = True
-            omitted = len(value) - RESULT_STORAGE_MAX_STRING_CHARS
-            return f"{value[:RESULT_STORAGE_MAX_STRING_CHARS]}... [truncated {omitted} chars]"
+            return truncated_string(value, RESULT_STORAGE_MAX_STRING_CHARS)
         if isinstance(value, list):
             kept = [compact(item, depth + 1) for item in value[:RESULT_STORAGE_MAX_LIST_ITEMS]]
             if len(value) > RESULT_STORAGE_MAX_LIST_ITEMS:
@@ -934,6 +950,11 @@ def compact_result_for_storage(payload: dict[str, Any]) -> dict[str, Any]:
                 kept.append({"truncated_count": len(value) - RESULT_STORAGE_MAX_LIST_ITEMS})
             return kept
         if isinstance(value, dict):
+            if isinstance(value.get("kind"), str) and isinstance(value.get("text"), str):
+                return {
+                    key: truncated_string(item, RESULT_STORAGE_MAX_COMMAND_TEXT_CHARS) if key == "text" else compact(item, depth + 1)
+                    for key, item in value.items()
+                }
             return {key: compact(item, depth + 1) for key, item in value.items()}
         return value
 
@@ -1701,6 +1722,13 @@ def execute_orchestrator_request(
             or "sos_ship_readiness" in child_id.lower()
             or "sos_ops_readiness" in child_id.lower()
         )
+        is_capabilities_child = (
+            child_service_id == "capabilities"
+            or "sos_capabilities" in child_id.lower()
+            or "sos_capability_inventory" in child_id.lower()
+            or "sos_ship_capabilities" in child_id.lower()
+            or "sos_role_fit" in child_id.lower()
+        )
         is_redundancy_child = (
             child_service_id == "redundancy"
             or "sos_redundancy" in child_id.lower()
@@ -1773,6 +1801,8 @@ def execute_orchestrator_request(
             remove_alerts_only_snapshot_aliases(child_request)
         if not is_readiness_child:
             remove_readiness_only_snapshot_aliases(child_request)
+        if not is_capabilities_child:
+            remove_capabilities_only_snapshot_aliases(child_request)
         if not is_redundancy_child:
             remove_redundancy_only_snapshot_aliases(child_request)
         if not is_guidance_child:
@@ -1804,6 +1834,7 @@ def execute_orchestrator_request(
                 "docking",
                 "endurance",
                 "redundancy",
+                "capabilities",
                 "life_support",
                 "production",
                 "transit",
@@ -1842,6 +1873,10 @@ def execute_orchestrator_request(
             or "sos_critical_systems" in child_id.lower()
             or "sos_coverage" in child_id.lower()
             or "sos_resilience" in child_id.lower()
+            or "sos_capabilities" in child_id.lower()
+            or "sos_capability_inventory" in child_id.lower()
+            or "sos_ship_capabilities" in child_id.lower()
+            or "sos_role_fit" in child_id.lower()
             or "sos_life_support" in child_id.lower()
             or "sos_lifesupport" in child_id.lower()
             or "sos_production" in child_id.lower()

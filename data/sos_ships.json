@@ -20,6 +20,11 @@
           "enabled": true
         },
         {
+          "service_id": "capabilities",
+          "script_id": "pb-bridge-001-sos_capabilities",
+          "enabled": true
+        },
+        {
           "service_id": "dashboard",
           "script_id": "pb-bridge-001-sos_dashboard",
           "enabled": true
