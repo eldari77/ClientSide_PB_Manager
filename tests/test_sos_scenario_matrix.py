@@ -43,6 +43,7 @@ DASHBOARD_TOKEN_SERVICES = {
     "production",
     "readiness",
     "redundancy",
+    "topology",
     "runbook",
     "transit",
     "watch_log",
@@ -191,6 +192,19 @@ def _payload(service_id: str, state: str = "ok", warnings: list[str] | None = No
                 "unknown_coverage_count": 1 if warnings else 0,
             }
         )
+    elif service_id == "topology":
+        payload.update(
+            {
+                "dependency_count": 3,
+                "degraded_dependency_count": 1 if warnings else 0,
+                "blocked_dependency_count": 0,
+                "unknown_dependency_count": 0,
+                "critical_chain_count": 0,
+                "blast_radius": {"state": state, "affected_families": ["mobility"] if warnings else [], "hints": []},
+                "dependency_chains": [],
+                "source_services": ["power", "mobility"],
+            }
+        )
     return payload
 
 
@@ -315,6 +329,7 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
         "diagnostics",
         "endurance",
         "redundancy",
+        "topology",
         "maintenance",
         "mining",
         "display",
@@ -393,6 +408,7 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
         "diagnostics_snapshot": {"checked_services": ["status"]},
         "endurance_snapshot": {"cargo": {"used_volume": 10, "max_volume": 100}},
         "redundancy_snapshot": {"capabilities": {"transit_jump": {"primary_count": 1, "backup_count": 0}}},
+        "topology_snapshot": {"dependencies": [{"source": "power", "target": "mobility", "state": "ok"}]},
         "maintenance_snapshot": {"projectors": [{"name": "Repair Plan"}]},
         "mining_snapshot": {"drills": [{"name": "Drill A"}]},
         "display_snapshot": {"available_surfaces": 1},
@@ -407,6 +423,7 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
         "diagnostics_snapshot",
         "endurance_snapshot",
         "redundancy_snapshot",
+        "topology_snapshot",
         "maintenance_snapshot",
         "mining_snapshot",
         "display_snapshot",
@@ -420,6 +437,7 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
     assert "diagnostics_snapshot" in captured["diagnostics"]
     assert "endurance_snapshot" in captured["endurance"]
     assert "redundancy_snapshot" in captured["redundancy"]
+    assert "topology_snapshot" in captured["topology"]
     assert "maintenance_snapshot" in captured["maintenance"]
     assert "mining_snapshot" in captured["mining"]
     assert "display_snapshot" in captured["display"]
@@ -428,6 +446,8 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
     assert captured["dashboard"].isdisjoint(service_specific_aliases)
     assert "endurance_snapshot" not in captured["redundancy"]
     assert "redundancy_snapshot" not in captured["endurance"]
+    assert "topology_snapshot" not in captured["redundancy"]
+    assert "redundancy_snapshot" not in captured["topology"]
     assert "mining_snapshot" in captured["endurance"]
     assert "mining_snapshot" not in captured["maintenance"]
     assert "maintenance_snapshot" not in captured["mining"]

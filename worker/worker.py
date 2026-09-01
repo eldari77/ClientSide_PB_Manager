@@ -50,6 +50,12 @@ CAPABILITIES_SNAPSHOT_KEYS = (
     "ship_capabilities_snapshot",
     "role_snapshot",
 )
+TOPOLOGY_SNAPSHOT_KEYS = (
+    "topology_snapshot",
+    "dependency_snapshot",
+    "dependency_map_snapshot",
+    "blast_radius_snapshot",
+)
 REDUNDANCY_SNAPSHOT_KEYS = (
     "redundancy_snapshot",
     "failover_snapshot",
@@ -100,6 +106,7 @@ DEFAULT_PROCESSED_REQUEST_RETENTION_SECONDS = 300
 DEFAULT_PROCESSED_REQUEST_CLEANUP_MAX_FILES = 250
 RESULT_STORAGE_MAX_STRING_CHARS = 1000
 RESULT_STORAGE_MAX_COMMAND_TEXT_CHARS = 48
+RESULT_STORAGE_MAX_COMMAND_ITEMS = 16
 RESULT_STORAGE_MAX_LIST_ITEMS = 40
 RESULT_STORAGE_MAX_DEPTH = 8
 
@@ -657,6 +664,11 @@ def remove_capabilities_only_snapshot_aliases(request: dict[str, Any]) -> None:
         request.pop(key, None)
 
 
+def remove_topology_only_snapshot_aliases(request: dict[str, Any]) -> None:
+    for key in TOPOLOGY_SNAPSHOT_KEYS:
+        request.pop(key, None)
+
+
 def remove_redundancy_only_snapshot_aliases(request: dict[str, Any]) -> None:
     for key in REDUNDANCY_SNAPSHOT_KEYS:
         request.pop(key, None)
@@ -955,7 +967,17 @@ def compact_result_for_storage(payload: dict[str, Any]) -> dict[str, Any]:
                     key: truncated_string(item, RESULT_STORAGE_MAX_COMMAND_TEXT_CHARS) if key == "text" else compact(item, depth + 1)
                     for key, item in value.items()
                 }
-            return {key: compact(item, depth + 1) for key, item in value.items()}
+            compacted_dict: dict[str, Any] = {}
+            for key, item in value.items():
+                if key == "commands" and isinstance(item, list):
+                    kept = [compact(command, depth + 1) for command in item[:RESULT_STORAGE_MAX_COMMAND_ITEMS]]
+                    if len(item) > RESULT_STORAGE_MAX_COMMAND_ITEMS:
+                        changed = True
+                        kept.append({"truncated_count": len(item) - RESULT_STORAGE_MAX_COMMAND_ITEMS})
+                    compacted_dict[key] = kept
+                else:
+                    compacted_dict[key] = compact(item, depth + 1)
+            return compacted_dict
         return value
 
     compacted = compact(payload)
@@ -1729,6 +1751,13 @@ def execute_orchestrator_request(
             or "sos_ship_capabilities" in child_id.lower()
             or "sos_role_fit" in child_id.lower()
         )
+        is_topology_child = (
+            child_service_id == "topology"
+            or "sos_topology" in child_id.lower()
+            or "sos_dependency_topology" in child_id.lower()
+            or "sos_dependency_map" in child_id.lower()
+            or "sos_blast_radius" in child_id.lower()
+        )
         is_redundancy_child = (
             child_service_id == "redundancy"
             or "sos_redundancy" in child_id.lower()
@@ -1803,6 +1832,8 @@ def execute_orchestrator_request(
             remove_readiness_only_snapshot_aliases(child_request)
         if not is_capabilities_child:
             remove_capabilities_only_snapshot_aliases(child_request)
+        if not is_topology_child:
+            remove_topology_only_snapshot_aliases(child_request)
         if not is_redundancy_child:
             remove_redundancy_only_snapshot_aliases(child_request)
         if not is_guidance_child:
@@ -1835,6 +1866,7 @@ def execute_orchestrator_request(
                 "endurance",
                 "redundancy",
                 "capabilities",
+                "topology",
                 "life_support",
                 "production",
                 "transit",
@@ -1877,6 +1909,10 @@ def execute_orchestrator_request(
             or "sos_capability_inventory" in child_id.lower()
             or "sos_ship_capabilities" in child_id.lower()
             or "sos_role_fit" in child_id.lower()
+            or "sos_topology" in child_id.lower()
+            or "sos_dependency_topology" in child_id.lower()
+            or "sos_dependency_map" in child_id.lower()
+            or "sos_blast_radius" in child_id.lower()
             or "sos_life_support" in child_id.lower()
             or "sos_lifesupport" in child_id.lower()
             or "sos_production" in child_id.lower()

@@ -79,6 +79,7 @@ def test_expand_sos_bridge_configs_applies_mode_policy_and_services(tmp_path: Pa
                 "mode": "Docked",
                 "services": [
                     {"script_id": "pb-bridge-001-sos_status", "service_id": "status"},
+                    {"script_id": "pb-bridge-001-sos_topology", "service_id": "topology"},
                     {"script_id": "pb-bridge-001-sos_alerts", "service_id": "alerts"},
                     {"script_id": "pb-bridge-001-sos_capabilities", "service_id": "capabilities"},
                     {"script_id": "pb-bridge-001-sos_dashboard", "service_id": "dashboard"},
@@ -125,6 +126,7 @@ def test_expand_sos_bridge_configs_applies_mode_policy_and_services(tmp_path: Pa
     assert config.allowed_worker_scripts == (
         "pb-bridge-001-orchestrator",
         "pb-bridge-001-sos_status",
+        "pb-bridge-001-sos_topology",
         "pb-bridge-001-sos_alerts",
         "pb-bridge-001-sos_capabilities",
         "pb-bridge-001-sos_dashboard",
@@ -158,6 +160,7 @@ def test_expand_sos_bridge_configs_applies_mode_policy_and_services(tmp_path: Pa
     )
     assert [child["script_id"] for child in config.child_worker_scripts] == [
         "pb-bridge-001-sos_status",
+        "pb-bridge-001-sos_topology",
         "pb-bridge-001-sos_alerts",
         "pb-bridge-001-sos_capabilities",
         "pb-bridge-001-sos_dashboard",
@@ -192,6 +195,8 @@ def test_expand_sos_bridge_configs_applies_mode_policy_and_services(tmp_path: Pa
     by_service = {child["service_id"]: child for child in config.child_worker_scripts}
     assert by_service["status"]["role"] == "status"
     assert by_service["status"]["priority"] == 5
+    assert by_service["topology"]["budget"] == 1
+    assert by_service["topology"]["priority"] == 18
     assert by_service["alerts"]["budget"] == 1
     assert by_service["alerts"]["priority"] == 4
     assert by_service["capabilities"]["budget"] == 1

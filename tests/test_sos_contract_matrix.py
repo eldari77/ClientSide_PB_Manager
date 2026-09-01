@@ -50,6 +50,7 @@ DASHBOARD_COMPOSED_SERVICES = {
     "production",
     "readiness",
     "redundancy",
+    "topology",
     "runbook",
     "transit",
     "watch_log",
@@ -269,6 +270,7 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
     service_ids = (
         "capabilities",
         "redundancy",
+        "topology",
         "endurance",
         "watch_log",
         "runbook",
@@ -283,6 +285,10 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
         "ship_capabilities_snapshot",
         "role_snapshot",
         "redundancy_snapshot",
+        "topology_snapshot",
+        "dependency_snapshot",
+        "dependency_map_snapshot",
+        "blast_radius_snapshot",
         "endurance_snapshot",
         "watch_log_snapshot",
         "runbook_snapshot",
@@ -334,6 +340,10 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
         "ship_capabilities_snapshot": {"capabilities": {"display": {"state": "present"}}},
         "role_snapshot": {"declared_role": "miner"},
         "redundancy_snapshot": {"capabilities": {"power": {"primary_count": 1, "backup_count": 1}}},
+        "topology_snapshot": {"dependencies": [{"source": "power", "target": "mobility", "state": "ok"}]},
+        "dependency_snapshot": {"chains": [{"source": "power", "target": "mobility", "state": "ok"}]},
+        "dependency_map_snapshot": {"dependencies": [{"source_service": "power", "target_service": "mobility", "state": "ok"}]},
+        "blast_radius_snapshot": {"affected_families": ["mobility"], "state": "ok"},
         "endurance_snapshot": {"cargo": {"used_volume": 10, "max_volume": 100}},
         "watch_log_snapshot": {"events": [{"message": "watch"}]},
         "runbook_snapshot": {"procedure": "Cruise Watch"},
@@ -349,6 +359,10 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
     assert "ship_capabilities_snapshot" in captured["capabilities"]
     assert "role_snapshot" in captured["capabilities"]
     assert "redundancy_snapshot" in captured["redundancy"]
+    assert "topology_snapshot" in captured["topology"]
+    assert "dependency_snapshot" in captured["topology"]
+    assert "dependency_map_snapshot" in captured["topology"]
+    assert "blast_radius_snapshot" in captured["topology"]
     assert "endurance_snapshot" in captured["endurance"]
     assert "watch_log_snapshot" in captured["watch_log"]
     assert "runbook_snapshot" in captured["runbook"]
@@ -358,7 +372,13 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
     assert captured["status"].isdisjoint(service_specific_aliases)
     assert "capability_snapshot" not in captured["redundancy"]
     assert "role_snapshot" not in captured["redundancy"]
+    assert "topology_snapshot" not in captured["redundancy"]
+    assert "dependency_snapshot" not in captured["redundancy"]
+    assert "dependency_map_snapshot" not in captured["redundancy"]
+    assert "blast_radius_snapshot" not in captured["redundancy"]
     assert "endurance_snapshot" not in captured["redundancy"]
+    assert "redundancy_snapshot" not in captured["topology"]
+    assert "capability_snapshot" not in captured["topology"]
     assert "redundancy_snapshot" not in captured["endurance"]
     assert "watch_log_snapshot" not in captured["endurance"]
     assert "runbook_snapshot" not in captured["watch_log"]
