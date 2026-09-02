@@ -49,6 +49,7 @@ DASHBOARD_COMPOSED_SERVICES = {
     "power",
     "production",
     "readiness",
+    "telemetry_quality",
     "redundancy",
     "topology",
     "runbook",
@@ -269,6 +270,7 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
     captured: dict[str, set[str]] = {}
     service_ids = (
         "capabilities",
+        "telemetry_quality",
         "redundancy",
         "topology",
         "endurance",
@@ -284,6 +286,10 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
         "capabilities_snapshot",
         "ship_capabilities_snapshot",
         "role_snapshot",
+        "telemetry_quality_snapshot",
+        "evidence_snapshot",
+        "data_quality_snapshot",
+        "signal_quality_snapshot",
         "redundancy_snapshot",
         "topology_snapshot",
         "dependency_snapshot",
@@ -339,6 +345,10 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
         "capabilities_snapshot": {"capabilities": {"power": {"state": "present"}}},
         "ship_capabilities_snapshot": {"capabilities": {"display": {"state": "present"}}},
         "role_snapshot": {"declared_role": "miner"},
+        "telemetry_quality_snapshot": {"sources": [{"service_id": "status", "confidence": 0.99}]},
+        "evidence_snapshot": {"evidence": [{"source": "grid_snapshot", "fresh": True}]},
+        "data_quality_snapshot": {"services": {"status": {"state": "ok"}}},
+        "signal_quality_snapshot": {"signals": [{"name": "grid_snapshot", "quality": "high"}]},
         "redundancy_snapshot": {"capabilities": {"power": {"primary_count": 1, "backup_count": 1}}},
         "topology_snapshot": {"dependencies": [{"source": "power", "target": "mobility", "state": "ok"}]},
         "dependency_snapshot": {"chains": [{"source": "power", "target": "mobility", "state": "ok"}]},
@@ -358,6 +368,10 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
     assert "capabilities_snapshot" in captured["capabilities"]
     assert "ship_capabilities_snapshot" in captured["capabilities"]
     assert "role_snapshot" in captured["capabilities"]
+    assert "telemetry_quality_snapshot" in captured["telemetry_quality"]
+    assert "evidence_snapshot" in captured["telemetry_quality"]
+    assert "data_quality_snapshot" in captured["telemetry_quality"]
+    assert "signal_quality_snapshot" in captured["telemetry_quality"]
     assert "redundancy_snapshot" in captured["redundancy"]
     assert "topology_snapshot" in captured["topology"]
     assert "dependency_snapshot" in captured["topology"]
@@ -372,11 +386,17 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
     assert captured["status"].isdisjoint(service_specific_aliases)
     assert "capability_snapshot" not in captured["redundancy"]
     assert "role_snapshot" not in captured["redundancy"]
+    assert "telemetry_quality_snapshot" not in captured["redundancy"]
+    assert "evidence_snapshot" not in captured["redundancy"]
+    assert "data_quality_snapshot" not in captured["redundancy"]
+    assert "signal_quality_snapshot" not in captured["redundancy"]
     assert "topology_snapshot" not in captured["redundancy"]
     assert "dependency_snapshot" not in captured["redundancy"]
     assert "dependency_map_snapshot" not in captured["redundancy"]
     assert "blast_radius_snapshot" not in captured["redundancy"]
     assert "endurance_snapshot" not in captured["redundancy"]
+    assert "capability_snapshot" not in captured["telemetry_quality"]
+    assert "redundancy_snapshot" not in captured["telemetry_quality"]
     assert "redundancy_snapshot" not in captured["topology"]
     assert "capability_snapshot" not in captured["topology"]
     assert "redundancy_snapshot" not in captured["endurance"]

@@ -42,6 +42,7 @@ DASHBOARD_TOKEN_SERVICES = {
     "power",
     "production",
     "readiness",
+    "telemetry_quality",
     "redundancy",
     "topology",
     "runbook",
@@ -150,6 +151,21 @@ def _payload(service_id: str, state: str = "ok", warnings: list[str] | None = No
         payload.update({"profile": "Docked", "profile_source": "snapshot", "required_services": [], "mismatches": []})
     elif service_id == "readiness":
         payload.update({"source_count": 1, "ready_source_count": 1, "critical_sources": [], "warning_sources": []})
+    elif service_id == "telemetry_quality":
+        payload.update(
+            {
+                "confidence": 0.8,
+                "confidence_label": "high",
+                "evaluated_service_count": 3,
+                "missing_service_count": 1 if warnings else 0,
+                "unknown_heavy_service_count": 0,
+                "stale_service_count": 0,
+                "blocked_service_count": 0,
+                "warning_service_count": 1 if warnings else 0,
+                "queue_pressure_state": "none",
+                "source_services": ["status", "integrity", "logistics"],
+            }
+        )
     elif service_id == "guidance":
         payload.update({"priorities": [{"service_id": "power", "severity": "warning", "reason": item} for item in warnings]})
     elif service_id == "diagnostics":
@@ -328,6 +344,7 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
         "watch_log",
         "diagnostics",
         "endurance",
+        "telemetry_quality",
         "redundancy",
         "topology",
         "maintenance",
@@ -407,6 +424,7 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
         "watch_log_snapshot": {"events": [{"message": "jump prep"}]},
         "diagnostics_snapshot": {"checked_services": ["status"]},
         "endurance_snapshot": {"cargo": {"used_volume": 10, "max_volume": 100}},
+        "telemetry_quality_snapshot": {"sources": [{"service_id": "status", "confidence": 0.99}]},
         "redundancy_snapshot": {"capabilities": {"transit_jump": {"primary_count": 1, "backup_count": 0}}},
         "topology_snapshot": {"dependencies": [{"source": "power", "target": "mobility", "state": "ok"}]},
         "maintenance_snapshot": {"projectors": [{"name": "Repair Plan"}]},
@@ -422,6 +440,7 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
         "watch_log_snapshot",
         "diagnostics_snapshot",
         "endurance_snapshot",
+        "telemetry_quality_snapshot",
         "redundancy_snapshot",
         "topology_snapshot",
         "maintenance_snapshot",
@@ -436,6 +455,7 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
     assert "watch_log_snapshot" in captured["watch_log"]
     assert "diagnostics_snapshot" in captured["diagnostics"]
     assert "endurance_snapshot" in captured["endurance"]
+    assert "telemetry_quality_snapshot" in captured["telemetry_quality"]
     assert "redundancy_snapshot" in captured["redundancy"]
     assert "topology_snapshot" in captured["topology"]
     assert "maintenance_snapshot" in captured["maintenance"]
@@ -445,6 +465,8 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
     assert captured["status"].isdisjoint(service_specific_aliases)
     assert captured["dashboard"].isdisjoint(service_specific_aliases)
     assert "endurance_snapshot" not in captured["redundancy"]
+    assert "telemetry_quality_snapshot" not in captured["redundancy"]
+    assert "redundancy_snapshot" not in captured["telemetry_quality"]
     assert "redundancy_snapshot" not in captured["endurance"]
     assert "topology_snapshot" not in captured["redundancy"]
     assert "redundancy_snapshot" not in captured["topology"]

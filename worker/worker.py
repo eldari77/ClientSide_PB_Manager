@@ -50,6 +50,12 @@ CAPABILITIES_SNAPSHOT_KEYS = (
     "ship_capabilities_snapshot",
     "role_snapshot",
 )
+TELEMETRY_QUALITY_SNAPSHOT_KEYS = (
+    "telemetry_quality_snapshot",
+    "evidence_snapshot",
+    "data_quality_snapshot",
+    "signal_quality_snapshot",
+)
 TOPOLOGY_SNAPSHOT_KEYS = (
     "topology_snapshot",
     "dependency_snapshot",
@@ -107,7 +113,7 @@ DEFAULT_PROCESSED_REQUEST_CLEANUP_MAX_FILES = 250
 RESULT_STORAGE_MAX_STRING_CHARS = 1000
 RESULT_STORAGE_MAX_COMMAND_TEXT_CHARS = 48
 RESULT_STORAGE_MAX_COMMAND_ITEMS = 16
-RESULT_STORAGE_MAX_LIST_ITEMS = 40
+RESULT_STORAGE_MAX_LIST_ITEMS = 28
 RESULT_STORAGE_MAX_DEPTH = 8
 
 
@@ -661,6 +667,11 @@ def remove_readiness_only_snapshot_aliases(request: dict[str, Any]) -> None:
 
 def remove_capabilities_only_snapshot_aliases(request: dict[str, Any]) -> None:
     for key in CAPABILITIES_SNAPSHOT_KEYS:
+        request.pop(key, None)
+
+
+def remove_telemetry_quality_only_snapshot_aliases(request: dict[str, Any]) -> None:
+    for key in TELEMETRY_QUALITY_SNAPSHOT_KEYS:
         request.pop(key, None)
 
 
@@ -1751,6 +1762,13 @@ def execute_orchestrator_request(
             or "sos_ship_capabilities" in child_id.lower()
             or "sos_role_fit" in child_id.lower()
         )
+        is_telemetry_quality_child = (
+            child_service_id == "telemetry_quality"
+            or "sos_telemetry_quality" in child_id.lower()
+            or "sos_evidence_quality" in child_id.lower()
+            or "sos_data_quality" in child_id.lower()
+            or "sos_signal_quality" in child_id.lower()
+        )
         is_topology_child = (
             child_service_id == "topology"
             or "sos_topology" in child_id.lower()
@@ -1832,6 +1850,8 @@ def execute_orchestrator_request(
             remove_readiness_only_snapshot_aliases(child_request)
         if not is_capabilities_child:
             remove_capabilities_only_snapshot_aliases(child_request)
+        if not is_telemetry_quality_child:
+            remove_telemetry_quality_only_snapshot_aliases(child_request)
         if not is_topology_child:
             remove_topology_only_snapshot_aliases(child_request)
         if not is_redundancy_child:
