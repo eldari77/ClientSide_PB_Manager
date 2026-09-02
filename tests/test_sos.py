@@ -106,6 +106,7 @@ def test_expand_sos_bridge_configs_applies_mode_policy_and_services(tmp_path: Pa
                     {"script_id": "pb-bridge-001-sos_readiness", "service_id": "readiness"},
                     {"script_id": "pb-bridge-001-sos_redundancy", "service_id": "redundancy"},
                     {"script_id": "pb-bridge-001-sos_diagnostics", "service_id": "diagnostics"},
+                    {"script_id": "pb-bridge-001-sos_config_drift", "service_id": "config_drift"},
                     {"script_id": "pb-bridge-001-sos_watch_log", "service_id": "watch_log"},
                     {"script_id": "pb-bridge-001-sos_mission_profile", "service_id": "mission_profile"},
                     {"script_id": "pb-bridge-001-sos_runbook", "service_id": "runbook"},
@@ -154,6 +155,7 @@ def test_expand_sos_bridge_configs_applies_mode_policy_and_services(tmp_path: Pa
         "pb-bridge-001-sos_readiness",
         "pb-bridge-001-sos_redundancy",
         "pb-bridge-001-sos_diagnostics",
+        "pb-bridge-001-sos_config_drift",
         "pb-bridge-001-sos_watch_log",
         "pb-bridge-001-sos_mission_profile",
         "pb-bridge-001-sos_runbook",
@@ -189,6 +191,7 @@ def test_expand_sos_bridge_configs_applies_mode_policy_and_services(tmp_path: Pa
         "pb-bridge-001-sos_readiness",
         "pb-bridge-001-sos_redundancy",
         "pb-bridge-001-sos_diagnostics",
+        "pb-bridge-001-sos_config_drift",
         "pb-bridge-001-sos_watch_log",
         "pb-bridge-001-sos_mission_profile",
         "pb-bridge-001-sos_runbook",
@@ -246,6 +249,8 @@ def test_expand_sos_bridge_configs_applies_mode_policy_and_services(tmp_path: Pa
     assert by_service["redundancy"]["priority"] == 18
     assert by_service["diagnostics"]["budget"] == 1
     assert by_service["diagnostics"]["priority"] == 4
+    assert by_service["config_drift"]["budget"] == 1
+    assert by_service["config_drift"]["priority"] == 4
     assert by_service["watch_log"]["budget"] == 1
     assert by_service["watch_log"]["priority"] == 4
     assert by_service["mission_profile"]["budget"] == 1

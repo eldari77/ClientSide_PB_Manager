@@ -26,6 +26,7 @@ DASHBOARD_TOKEN_SERVICES = {
     "crew",
     "defense",
     "diagnostics",
+    "config_drift",
     "display",
     "docking",
     "endurance",
@@ -175,6 +176,19 @@ def _payload(service_id: str, state: str = "ok", warnings: list[str] | None = No
                 "child_errors": [],
                 "queue_pressure": {"queued": 0, "drained": 0, "remaining": 0, "state": "none"},
                 "unexpected_command_kinds": [],
+            }
+        )
+    elif service_id == "config_drift":
+        payload.update(
+            {
+                "expected_service_count": 3,
+                "observed_service_count": 3,
+                "missing_service_count": 1 if warnings else 0,
+                "unknown_service_count": 0,
+                "mismatched_service_count": 0,
+                "duplicate_service_count": 0,
+                "drift_count": 1 if warnings else 0,
+                "source_services": ["status", "dashboard"],
             }
         )
     elif service_id == "watch_log":
@@ -343,6 +357,7 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
         "runbook",
         "watch_log",
         "diagnostics",
+        "config_drift",
         "endurance",
         "telemetry_quality",
         "redundancy",
@@ -423,6 +438,8 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
         "runbook_snapshot": {"procedure": "Transit Watch"},
         "watch_log_snapshot": {"events": [{"message": "jump prep"}]},
         "diagnostics_snapshot": {"checked_services": ["status"]},
+        "config_drift_snapshot": {"expected_services": [{"service_id": "status"}]},
+        "contract_snapshot": {"commands": [{"kind": "echo"}]},
         "endurance_snapshot": {"cargo": {"used_volume": 10, "max_volume": 100}},
         "telemetry_quality_snapshot": {"sources": [{"service_id": "status", "confidence": 0.99}]},
         "redundancy_snapshot": {"capabilities": {"transit_jump": {"primary_count": 1, "backup_count": 0}}},
@@ -439,6 +456,8 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
         "runbook_snapshot",
         "watch_log_snapshot",
         "diagnostics_snapshot",
+        "config_drift_snapshot",
+        "contract_snapshot",
         "endurance_snapshot",
         "telemetry_quality_snapshot",
         "redundancy_snapshot",
@@ -454,6 +473,8 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
     assert "runbook_snapshot" in captured["runbook"]
     assert "watch_log_snapshot" in captured["watch_log"]
     assert "diagnostics_snapshot" in captured["diagnostics"]
+    assert "config_drift_snapshot" in captured["config_drift"]
+    assert "contract_snapshot" in captured["config_drift"]
     assert "endurance_snapshot" in captured["endurance"]
     assert "telemetry_quality_snapshot" in captured["telemetry_quality"]
     assert "redundancy_snapshot" in captured["redundancy"]
@@ -470,6 +491,8 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
     assert "redundancy_snapshot" not in captured["endurance"]
     assert "topology_snapshot" not in captured["redundancy"]
     assert "redundancy_snapshot" not in captured["topology"]
+    assert "config_drift_snapshot" not in captured["redundancy"]
+    assert "redundancy_snapshot" not in captured["config_drift"]
     assert "mining_snapshot" in captured["endurance"]
     assert "mining_snapshot" not in captured["maintenance"]
     assert "maintenance_snapshot" not in captured["mining"]

@@ -56,6 +56,17 @@ TELEMETRY_QUALITY_SNAPSHOT_KEYS = (
     "data_quality_snapshot",
     "signal_quality_snapshot",
 )
+CONFIG_DRIFT_SNAPSHOT_KEYS = (
+    "config_drift_snapshot",
+    "configuration_snapshot",
+    "contract_snapshot",
+    "registry_snapshot",
+    "ship_registry_snapshot",
+    "template_snapshot",
+    "host_manifest_snapshot",
+    "script_instances_snapshot",
+)
+CONFIG_DRIFT_SHARED_DIAGNOSTICS_KEYS = ("contract_snapshot",)
 TOPOLOGY_SNAPSHOT_KEYS = (
     "topology_snapshot",
     "dependency_snapshot",
@@ -670,9 +681,42 @@ def remove_capabilities_only_snapshot_aliases(request: dict[str, Any]) -> None:
         request.pop(key, None)
 
 
+def remove_snapshot_aliases(request: dict[str, Any], keys: tuple[str, ...], preserve: tuple[str, ...] = ()) -> None:
+    for key in keys:
+        if key not in preserve:
+            request.pop(key, None)
+
+
 def remove_telemetry_quality_only_snapshot_aliases(request: dict[str, Any]) -> None:
-    for key in TELEMETRY_QUALITY_SNAPSHOT_KEYS:
-        request.pop(key, None)
+    remove_snapshot_aliases(request, TELEMETRY_QUALITY_SNAPSHOT_KEYS)
+
+
+def remove_config_drift_only_snapshot_aliases(request: dict[str, Any], preserve: tuple[str, ...] = ()) -> None:
+    remove_snapshot_aliases(request, CONFIG_DRIFT_SNAPSHOT_KEYS, preserve)
+
+
+def attach_config_drift_host_snapshots(request: dict[str, Any], root: Path) -> None:
+    ship_registry = json_file_snapshot(root / "data" / "sos_ships.json")
+    if ship_registry and not isinstance(request.get("ship_registry_snapshot"), dict):
+        request["ship_registry_snapshot"] = ship_registry
+    if ship_registry and not isinstance(request.get("registry_snapshot"), dict):
+        request["registry_snapshot"] = ship_registry
+
+    host_manifest = json_file_snapshot(root / "worker" / "manifest.json")
+    if host_manifest and not isinstance(request.get("host_manifest_snapshot"), dict):
+        request["host_manifest_snapshot"] = host_manifest
+
+    script_instances = json_file_snapshot(root / "data" / "script_instances.json")
+    if script_instances and not isinstance(request.get("script_instances_snapshot"), dict):
+        request["script_instances_snapshot"] = script_instances
+
+
+def json_file_snapshot(path: Path) -> dict[str, Any]:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8-sig"))
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return payload if isinstance(payload, dict) else {}
 
 
 def remove_topology_only_snapshot_aliases(request: dict[str, Any]) -> None:
@@ -690,9 +734,8 @@ def remove_guidance_only_snapshot_aliases(request: dict[str, Any]) -> None:
         request.pop(key, None)
 
 
-def remove_diagnostics_only_snapshot_aliases(request: dict[str, Any]) -> None:
-    for key in DIAGNOSTICS_SNAPSHOT_KEYS:
-        request.pop(key, None)
+def remove_diagnostics_only_snapshot_aliases(request: dict[str, Any], preserve: tuple[str, ...] = ()) -> None:
+    remove_snapshot_aliases(request, DIAGNOSTICS_SNAPSHOT_KEYS, preserve)
 
 
 def remove_watch_log_only_snapshot_aliases(request: dict[str, Any]) -> None:
@@ -1769,6 +1812,13 @@ def execute_orchestrator_request(
             or "sos_data_quality" in child_id.lower()
             or "sos_signal_quality" in child_id.lower()
         )
+        is_config_drift_child = (
+            child_service_id == "config_drift"
+            or "sos_config_drift" in child_id.lower()
+            or "sos_configuration_drift" in child_id.lower()
+            or "sos_contract_drift" in child_id.lower()
+            or "sos_registry_drift" in child_id.lower()
+        )
         is_topology_child = (
             child_service_id == "topology"
             or "sos_topology" in child_id.lower()
@@ -1852,6 +1902,9 @@ def execute_orchestrator_request(
             remove_capabilities_only_snapshot_aliases(child_request)
         if not is_telemetry_quality_child:
             remove_telemetry_quality_only_snapshot_aliases(child_request)
+        if not is_config_drift_child:
+            preserve = CONFIG_DRIFT_SHARED_DIAGNOSTICS_KEYS if is_diagnostics_child else ()
+            remove_config_drift_only_snapshot_aliases(child_request, preserve)
         if not is_topology_child:
             remove_topology_only_snapshot_aliases(child_request)
         if not is_redundancy_child:
@@ -1859,7 +1912,8 @@ def execute_orchestrator_request(
         if not is_guidance_child:
             remove_guidance_only_snapshot_aliases(child_request)
         if not is_diagnostics_child:
-            remove_diagnostics_only_snapshot_aliases(child_request)
+            preserve = CONFIG_DRIFT_SHARED_DIAGNOSTICS_KEYS if is_config_drift_child else ()
+            remove_diagnostics_only_snapshot_aliases(child_request, preserve)
         if not is_watch_log_child:
             remove_watch_log_only_snapshot_aliases(child_request)
         if not is_mission_profile_child:
@@ -1870,6 +1924,8 @@ def execute_orchestrator_request(
             remove_runbook_only_snapshot_aliases(child_request)
         if not is_display_child and not is_redundancy_child:
             remove_display_only_snapshot_aliases(child_request)
+        if is_config_drift_child:
+            attach_config_drift_host_snapshots(child_request, root)
         if (
             child_service_id
             in {

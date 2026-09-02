@@ -33,6 +33,7 @@ DASHBOARD_COMPOSED_SERVICES = {
     "crew",
     "defense",
     "diagnostics",
+    "config_drift",
     "display",
     "docking",
     "endurance",
@@ -278,6 +279,7 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
         "runbook",
         "readiness",
         "diagnostics",
+        "config_drift",
         "maintenance",
         "status",
     )
@@ -300,6 +302,14 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
         "runbook_snapshot",
         "readiness_snapshot",
         "diagnostics_snapshot",
+        "config_drift_snapshot",
+        "configuration_snapshot",
+        "contract_snapshot",
+        "registry_snapshot",
+        "ship_registry_snapshot",
+        "template_snapshot",
+        "host_manifest_snapshot",
+        "script_instances_snapshot",
         "maintenance_snapshot",
     }
     services_payload = [{"script_id": f"bridge-a-sos_{service_id}", "service_id": service_id} for service_id in service_ids]
@@ -359,6 +369,14 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
         "runbook_snapshot": {"procedure": "Cruise Watch"},
         "readiness_snapshot": {"sources": [{"service_id": "power", "state": "ok"}]},
         "diagnostics_snapshot": {"checked_services": ["status"]},
+        "config_drift_snapshot": {"expected_services": [{"service_id": "status", "script_id": "bridge-a-sos_status"}]},
+        "configuration_snapshot": {"services": [{"service_id": "status", "script_id": "bridge-a-sos_status"}]},
+        "contract_snapshot": {"commands": [{"kind": "echo"}]},
+        "registry_snapshot": {"services": [{"service_id": "status", "script_id": "bridge-a-sos_status"}]},
+        "ship_registry_snapshot": {"ships": [{"ship_id": "ship-a", "services": [{"service_id": "status"}]}]},
+        "template_snapshot": {"services": [{"service_id": "status"}]},
+        "host_manifest_snapshot": {"scripts": [{"script_id": "sos_status"}]},
+        "script_instances_snapshot": {"instances": {"bridge-a-sos_status": {"base_script_id": "sos_status"}}},
         "maintenance_snapshot": {"projectors": [{"name": "Projector"}]},
     }
     result = execute_request(request, scripts, {}, tmp_path)
@@ -382,6 +400,14 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
     assert "runbook_snapshot" in captured["runbook"]
     assert "readiness_snapshot" in captured["readiness"]
     assert "diagnostics_snapshot" in captured["diagnostics"]
+    assert "config_drift_snapshot" in captured["config_drift"]
+    assert "configuration_snapshot" in captured["config_drift"]
+    assert "contract_snapshot" in captured["config_drift"]
+    assert "registry_snapshot" in captured["config_drift"]
+    assert "ship_registry_snapshot" in captured["config_drift"]
+    assert "template_snapshot" in captured["config_drift"]
+    assert "host_manifest_snapshot" in captured["config_drift"]
+    assert "script_instances_snapshot" in captured["config_drift"]
     assert "maintenance_snapshot" in captured["maintenance"]
     assert captured["status"].isdisjoint(service_specific_aliases)
     assert "capability_snapshot" not in captured["redundancy"]
@@ -400,6 +426,9 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
     assert "redundancy_snapshot" not in captured["topology"]
     assert "capability_snapshot" not in captured["topology"]
     assert "redundancy_snapshot" not in captured["endurance"]
+    assert "config_drift_snapshot" not in captured["redundancy"]
+    assert "registry_snapshot" not in captured["redundancy"]
+    assert "topology_snapshot" not in captured["config_drift"]
     assert "watch_log_snapshot" not in captured["endurance"]
     assert "runbook_snapshot" not in captured["watch_log"]
     assert "watch_log_snapshot" not in captured["runbook"]
