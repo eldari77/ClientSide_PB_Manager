@@ -63,6 +63,12 @@ AUTOMATION_SNAPSHOT_KEYS = (
     "pb_snapshot",
     "programmable_block_snapshot",
 )
+CONVEYOR_SNAPSHOT_KEYS = (
+    "conveyor_snapshot",
+    "conveyor_network_snapshot",
+    "inventory_network_snapshot",
+    "resource_routing_snapshot",
+)
 CONFIG_DRIFT_SNAPSHOT_KEYS = (
     "config_drift_snapshot",
     "configuration_snapshot",
@@ -704,6 +710,10 @@ def remove_telemetry_quality_only_snapshot_aliases(request: dict[str, Any]) -> N
 
 def remove_automation_only_snapshot_aliases(request: dict[str, Any]) -> None:
     remove_snapshot_aliases(request, AUTOMATION_SNAPSHOT_KEYS)
+
+
+def remove_conveyor_only_snapshot_aliases(request: dict[str, Any]) -> None:
+    remove_snapshot_aliases(request, CONVEYOR_SNAPSHOT_KEYS)
 
 
 def remove_config_drift_only_snapshot_aliases(request: dict[str, Any], preserve: tuple[str, ...] = ()) -> None:
@@ -1939,6 +1949,13 @@ def execute_orchestrator_request(
             or "sos_script_health" in child_id.lower()
             or "sos_programmable_block" in child_id.lower()
         )
+        is_conveyor_child = (
+            child_service_id == "conveyor"
+            or "sos_conveyor" in child_id.lower()
+            or "sos_conveyors" in child_id.lower()
+            or "sos_routing" in child_id.lower()
+            or "sos_resource_routing" in child_id.lower()
+        )
         is_config_drift_child = (
             child_service_id == "config_drift"
             or "sos_config_drift" in child_id.lower()
@@ -2031,6 +2048,8 @@ def execute_orchestrator_request(
             remove_telemetry_quality_only_snapshot_aliases(child_request)
         if not is_automation_child:
             remove_automation_only_snapshot_aliases(child_request)
+        if not is_conveyor_child:
+            remove_conveyor_only_snapshot_aliases(child_request)
         if not is_config_drift_child:
             preserve = CONFIG_DRIFT_SHARED_DIAGNOSTICS_KEYS if is_diagnostics_child else ()
             remove_config_drift_only_snapshot_aliases(child_request, preserve)
@@ -2078,6 +2097,7 @@ def execute_orchestrator_request(
                 "defense",
                 "environment",
                 "automation",
+                "conveyor",
             }
             or "sos_integrity" in child_id.lower()
             or "sos_damage" in child_id.lower()
@@ -2129,6 +2149,10 @@ def execute_orchestrator_request(
             or "sos_control_logic" in child_id.lower()
             or "sos_script_health" in child_id.lower()
             or "sos_programmable_block" in child_id.lower()
+            or "sos_conveyor" in child_id.lower()
+            or "sos_conveyors" in child_id.lower()
+            or "sos_routing" in child_id.lower()
+            or "sos_resource_routing" in child_id.lower()
         ):
             attach_integrity_snapshot_from_grid_snapshot(child_request)
         if (
@@ -2144,6 +2168,7 @@ def execute_orchestrator_request(
                 "defense",
                 "endurance",
                 "redundancy",
+                "conveyor",
             }
             or "sos_logistics" in child_id.lower()
             or "sos_maintenance" in child_id.lower()
@@ -2170,6 +2195,10 @@ def execute_orchestrator_request(
             or "sos_production" in child_id.lower()
             or "sos_transit" in child_id.lower()
             or "sos_defense" in child_id.lower()
+            or "sos_conveyor" in child_id.lower()
+            or "sos_conveyors" in child_id.lower()
+            or "sos_routing" in child_id.lower()
+            or "sos_resource_routing" in child_id.lower()
         ):
             attach_logistics_snapshot_from_host_snapshots(child_request)
         if child_service_id == "airlock" or "sos_airlock" in child_id.lower():
@@ -2373,20 +2402,21 @@ def compact_sos_child_history_payload(key: str, value: dict[str, Any]) -> dict[s
     for service_id, payload in value.items():
         if not isinstance(payload, dict) or service_id in {"identity", "service_health", "queue_pressure", "mode_effects"}:
             continue
-        item: dict[str, Any] = {}
-        for field in ("state", "snapshot_status"):
-            if field in payload:
-                item[field] = payload[field]
-        for field in (
+        warnings = payload.get("warnings")
+        count_fields = (
             "warning_count",
             "blocker_count",
             "missing_child_result_count",
             "child_error_count",
             "queue_remaining",
-        ):
+        )
+        item: dict[str, Any] = {}
+        for field in ("state", "snapshot_status"):
             if field in payload:
                 item[field] = payload[field]
-        warnings = payload.get("warnings")
+        for field in count_fields:
+            if field in payload:
+                item[field] = payload[field]
         if isinstance(warnings, list) and warnings:
             item["warnings"] = warnings[:10]
             if len(warnings) > 10:

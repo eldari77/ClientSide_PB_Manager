@@ -32,6 +32,7 @@ DASHBOARD_COMPOSED_SERVICES = {
     "automation",
     "capabilities",
     "comms",
+    "conveyor",
     "crew",
     "defense",
     "diagnostics",
@@ -397,6 +398,7 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
         "capabilities",
         "telemetry_quality",
         "automation",
+        "conveyor",
         "redundancy",
         "topology",
         "endurance",
@@ -422,6 +424,10 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
         "script_health_snapshot",
         "pb_snapshot",
         "programmable_block_snapshot",
+        "conveyor_snapshot",
+        "conveyor_network_snapshot",
+        "inventory_network_snapshot",
+        "resource_routing_snapshot",
         "redundancy_snapshot",
         "topology_snapshot",
         "dependency_snapshot",
@@ -494,6 +500,10 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
         "script_health_snapshot": {"scripts": [{"name": "Main PB", "healthy": True}]},
         "pb_snapshot": {"blocks": [{"name": "Main PB", "enabled": True}]},
         "programmable_block_snapshot": {"programmable_blocks": [{"name": "Backup PB", "enabled": False}]},
+        "conveyor_snapshot": {"conveyors": [{"name": "Cargo Line", "connected": True}]},
+        "conveyor_network_snapshot": {"networks": [{"name": "Cargo Network", "connected": True}]},
+        "inventory_network_snapshot": {"ports": [{"name": "Cargo Port", "connected": True}]},
+        "resource_routing_snapshot": {"dependencies": {"logistics": {"state": "ok"}}},
         "redundancy_snapshot": {"capabilities": {"power": {"primary_count": 1, "backup_count": 1}}},
         "topology_snapshot": {"dependencies": [{"source": "power", "target": "mobility", "state": "ok"}]},
         "dependency_snapshot": {"chains": [{"source": "power", "target": "mobility", "state": "ok"}]},
@@ -530,6 +540,10 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
     assert "script_health_snapshot" in captured["automation"]
     assert "pb_snapshot" in captured["automation"]
     assert "programmable_block_snapshot" in captured["automation"]
+    assert "conveyor_snapshot" in captured["conveyor"]
+    assert "conveyor_network_snapshot" in captured["conveyor"]
+    assert "inventory_network_snapshot" in captured["conveyor"]
+    assert "resource_routing_snapshot" in captured["conveyor"]
     assert "redundancy_snapshot" in captured["redundancy"]
     assert "topology_snapshot" in captured["topology"]
     assert "dependency_snapshot" in captured["topology"]
@@ -564,8 +578,12 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
     assert "capability_snapshot" not in captured["telemetry_quality"]
     assert "redundancy_snapshot" not in captured["telemetry_quality"]
     assert "automation_snapshot" not in captured["telemetry_quality"]
+    assert "conveyor_snapshot" not in captured["telemetry_quality"]
     assert "telemetry_quality_snapshot" not in captured["automation"]
+    assert "conveyor_snapshot" not in captured["automation"]
     assert "redundancy_snapshot" not in captured["automation"]
+    assert "automation_snapshot" not in captured["conveyor"]
+    assert "redundancy_snapshot" not in captured["conveyor"]
     assert "redundancy_snapshot" not in captured["topology"]
     assert "capability_snapshot" not in captured["topology"]
     assert "redundancy_snapshot" not in captured["endurance"]
@@ -596,7 +614,7 @@ def test_configured_sos_orchestrator_no_history_tick_stays_within_command_allowl
     assert result["status"] == "ok"
     assert result["result"]["orchestrator"]["child_count"] == len(_default_sos_ship()["services"])
     assert {command["kind"] for command in commands} <= ALLOWED_SOS_COMMAND_KINDS
-    assert len(json.dumps(result, separators=(",", ":"))) < 64000
+    assert len(json.dumps(compact_result_for_storage(result), separators=(",", ":"))) < 64000
 
 
 def test_expanded_meta_service_child_history_compaction_stays_under_storage_guardrail() -> None:

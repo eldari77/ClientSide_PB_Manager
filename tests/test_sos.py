@@ -87,6 +87,7 @@ def test_expand_sos_bridge_configs_applies_mode_policy_and_services(tmp_path: Pa
                     {"script_id": "pb-bridge-001-sos_dashboard", "service_id": "dashboard"},
                     {"script_id": "pb-bridge-001-sos_integrity", "service_id": "integrity"},
                     {"script_id": "pb-bridge-001-sos_logistics", "service_id": "logistics"},
+                    {"script_id": "pb-bridge-001-sos_conveyor", "service_id": "conveyor"},
                     {"script_id": "pb-bridge-001-sos_maintenance", "service_id": "maintenance"},
                     {"script_id": "pb-bridge-001-sos_airlock", "service_id": "airlock"},
                     {"script_id": "pb-bridge-001-sos_mobility", "service_id": "mobility"},
@@ -137,6 +138,7 @@ def test_expand_sos_bridge_configs_applies_mode_policy_and_services(tmp_path: Pa
         "pb-bridge-001-sos_dashboard",
         "pb-bridge-001-sos_integrity",
         "pb-bridge-001-sos_logistics",
+        "pb-bridge-001-sos_conveyor",
         "pb-bridge-001-sos_maintenance",
         "pb-bridge-001-sos_airlock",
         "pb-bridge-001-sos_mobility",
@@ -174,6 +176,7 @@ def test_expand_sos_bridge_configs_applies_mode_policy_and_services(tmp_path: Pa
         "pb-bridge-001-sos_dashboard",
         "pb-bridge-001-sos_integrity",
         "pb-bridge-001-sos_logistics",
+        "pb-bridge-001-sos_conveyor",
         "pb-bridge-001-sos_maintenance",
         "pb-bridge-001-sos_airlock",
         "pb-bridge-001-sos_mobility",
@@ -217,6 +220,8 @@ def test_expand_sos_bridge_configs_applies_mode_policy_and_services(tmp_path: Pa
     assert by_service["dashboard"]["priority"] == 4
     assert by_service["integrity"]["budget"] == 1
     assert by_service["logistics"]["budget"] == 1
+    assert by_service["conveyor"]["budget"] == 1
+    assert by_service["conveyor"]["priority"] == 16
     assert by_service["maintenance"]["budget"] == 1
     assert by_service["maintenance"]["priority"] == 16
     assert by_service["airlock"]["budget"] == 1

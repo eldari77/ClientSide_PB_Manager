@@ -24,6 +24,7 @@ DASHBOARD_TOKEN_SERVICES = {
     "airlock",
     "automation",
     "comms",
+    "conveyor",
     "crew",
     "defense",
     "diagnostics",
@@ -387,6 +388,7 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
         "endurance",
         "telemetry_quality",
         "automation",
+        "conveyor",
         "redundancy",
         "topology",
         "maintenance",
@@ -470,6 +472,7 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
         "endurance_snapshot": {"cargo": {"used_volume": 10, "max_volume": 100}},
         "telemetry_quality_snapshot": {"sources": [{"service_id": "status", "confidence": 0.99}]},
         "automation_snapshot": {"programmable_blocks": [{"name": "Main PB", "enabled": True}]},
+        "conveyor_snapshot": {"conveyors": [{"name": "Cargo Line", "connected": True}]},
         "redundancy_snapshot": {"capabilities": {"transit_jump": {"primary_count": 1, "backup_count": 0}}},
         "topology_snapshot": {"dependencies": [{"source": "power", "target": "mobility", "state": "ok"}]},
         "maintenance_snapshot": {"projectors": [{"name": "Repair Plan"}]},
@@ -489,6 +492,7 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
         "endurance_snapshot",
         "telemetry_quality_snapshot",
         "automation_snapshot",
+        "conveyor_snapshot",
         "redundancy_snapshot",
         "topology_snapshot",
         "maintenance_snapshot",
@@ -507,6 +511,7 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
     assert "endurance_snapshot" in captured["endurance"]
     assert "telemetry_quality_snapshot" in captured["telemetry_quality"]
     assert "automation_snapshot" in captured["automation"]
+    assert "conveyor_snapshot" in captured["conveyor"]
     assert "redundancy_snapshot" in captured["redundancy"]
     assert "topology_snapshot" in captured["topology"]
     assert "maintenance_snapshot" in captured["maintenance"]
@@ -524,6 +529,8 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
     assert "config_drift_snapshot" not in captured["redundancy"]
     assert "redundancy_snapshot" not in captured["config_drift"]
     assert "automation_snapshot" not in captured["redundancy"]
+    assert "conveyor_snapshot" not in captured["redundancy"]
+    assert "automation_snapshot" not in captured["conveyor"]
     assert "redundancy_snapshot" not in captured["automation"]
     assert "mining_snapshot" in captured["endurance"]
     assert "mining_snapshot" not in captured["maintenance"]
