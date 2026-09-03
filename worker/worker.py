@@ -63,6 +63,12 @@ AUTOMATION_SNAPSHOT_KEYS = (
     "pb_snapshot",
     "programmable_block_snapshot",
 )
+AUTOMATION_PLAN_SNAPSHOT_KEYS = (
+    "automation_plan_snapshot",
+    "automation_intent_snapshot",
+    "operator_approval_snapshot",
+    "control_intent_snapshot",
+)
 CONVEYOR_SNAPSHOT_KEYS = (
     "conveyor_snapshot",
     "conveyor_network_snapshot",
@@ -141,7 +147,7 @@ RESULT_STORAGE_MAX_LIST_ITEMS = 28
 RESULT_STORAGE_MAX_DEPTH = 8
 RESULT_STORAGE_MAX_BYTES = 64000
 RESULT_STORAGE_COMPACT_WARNING_ITEMS = 3
-RESULT_STORAGE_COMPACT_SOURCE_ITEMS = 8
+RESULT_STORAGE_COMPACT_SOURCE_ITEMS = 4
 RESULT_STORAGE_COMPACT_TEXT_CHARS = 180
 
 
@@ -710,6 +716,10 @@ def remove_telemetry_quality_only_snapshot_aliases(request: dict[str, Any]) -> N
 
 def remove_automation_only_snapshot_aliases(request: dict[str, Any]) -> None:
     remove_snapshot_aliases(request, AUTOMATION_SNAPSHOT_KEYS)
+
+
+def remove_automation_plan_only_snapshot_aliases(request: dict[str, Any]) -> None:
+    remove_snapshot_aliases(request, AUTOMATION_PLAN_SNAPSHOT_KEYS)
 
 
 def remove_conveyor_only_snapshot_aliases(request: dict[str, Any]) -> None:
@@ -1942,7 +1952,14 @@ def execute_orchestrator_request(
             or "sos_data_quality" in child_id.lower()
             or "sos_signal_quality" in child_id.lower()
         )
-        is_automation_child = (
+        is_automation_plan_child = (
+            child_service_id == "automation_plan"
+            or "sos_automation_plan" in child_id.lower()
+            or "sos_automation_intent" in child_id.lower()
+            or "sos_control_intent" in child_id.lower()
+            or "sos_operator_approval" in child_id.lower()
+        )
+        is_automation_child = not is_automation_plan_child and (
             child_service_id == "automation"
             or "sos_automation" in child_id.lower()
             or "sos_control_logic" in child_id.lower()
@@ -2048,6 +2065,8 @@ def execute_orchestrator_request(
             remove_telemetry_quality_only_snapshot_aliases(child_request)
         if not is_automation_child:
             remove_automation_only_snapshot_aliases(child_request)
+        if not is_automation_plan_child:
+            remove_automation_plan_only_snapshot_aliases(child_request)
         if not is_conveyor_child:
             remove_conveyor_only_snapshot_aliases(child_request)
         if not is_config_drift_child:
@@ -2097,6 +2116,7 @@ def execute_orchestrator_request(
                 "defense",
                 "environment",
                 "automation",
+                "automation_plan",
                 "conveyor",
             }
             or "sos_integrity" in child_id.lower()
@@ -2149,6 +2169,10 @@ def execute_orchestrator_request(
             or "sos_control_logic" in child_id.lower()
             or "sos_script_health" in child_id.lower()
             or "sos_programmable_block" in child_id.lower()
+            or "sos_automation_plan" in child_id.lower()
+            or "sos_automation_intent" in child_id.lower()
+            or "sos_control_intent" in child_id.lower()
+            or "sos_operator_approval" in child_id.lower()
             or "sos_conveyor" in child_id.lower()
             or "sos_conveyors" in child_id.lower()
             or "sos_routing" in child_id.lower()

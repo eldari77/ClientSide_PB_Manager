@@ -879,7 +879,7 @@ def test_execute_sos_orchestrator_runs_dashboard_child_with_existing_services(tm
     ]
     dashboard_child = result["result"]["child_results"][1]
     assert dashboard_child["summary"] == (
-        "SOS Dashboard Ship A mode=Docked guidance=unknown readiness=unknown capabilities=unknown telemetry_quality=unknown automation=unknown redundancy=unknown topology=unknown diagnostics=unknown config_drift=unknown watch_log=unknown mission_profile=unknown endurance=unknown runbook=unknown integrity=unknown logistics=unknown conveyor=unknown maintenance=unknown airlock=unknown mobility=unknown navigation=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown environment=unknown display=unknown mining=unknown production=unknown transit=unknown defense=unknown alerts=unknown queue=0 blockers=none"
+        "SOS Dashboard Ship A mode=Docked guidance=unknown readiness=unknown capabilities=unknown telemetry_quality=unknown automation=unknown automation_plan=unknown redundancy=unknown topology=unknown diagnostics=unknown config_drift=unknown watch_log=unknown mission_profile=unknown endurance=unknown runbook=unknown integrity=unknown logistics=unknown conveyor=unknown maintenance=unknown airlock=unknown mobility=unknown navigation=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown environment=unknown display=unknown mining=unknown production=unknown transit=unknown defense=unknown alerts=unknown queue=0 blockers=none"
     )
     assert dashboard_child["error_bucket"] == "none"
     assert result["result"]["commands"][1]["kind"] == "echo"
@@ -2000,7 +2000,7 @@ def test_execute_sos_dashboard_child_degrades_gracefully_without_child_history(t
 
     assert result["status"] == "ok"
     assert result["result"]["child_results"][0]["summary"] == (
-        "SOS Dashboard Ship A mode=Docked guidance=unknown readiness=unknown capabilities=unknown telemetry_quality=unknown automation=unknown redundancy=unknown topology=unknown diagnostics=unknown config_drift=unknown watch_log=unknown mission_profile=unknown endurance=unknown runbook=unknown integrity=unknown logistics=unknown conveyor=unknown maintenance=unknown airlock=unknown mobility=unknown navigation=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown environment=unknown display=unknown mining=unknown production=unknown transit=unknown defense=unknown alerts=unknown queue=0 blockers=none"
+        "SOS Dashboard Ship A mode=Docked guidance=unknown readiness=unknown capabilities=unknown telemetry_quality=unknown automation=unknown automation_plan=unknown redundancy=unknown topology=unknown diagnostics=unknown config_drift=unknown watch_log=unknown mission_profile=unknown endurance=unknown runbook=unknown integrity=unknown logistics=unknown conveyor=unknown maintenance=unknown airlock=unknown mobility=unknown navigation=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown environment=unknown display=unknown mining=unknown production=unknown transit=unknown defense=unknown alerts=unknown queue=0 blockers=none"
     )
     dashboard = result["result"]["child_results"][0]["result"]["sos_dashboard"]
     assert dashboard["integrity"]["snapshot_status"] == "missing_child_result"
@@ -2026,6 +2026,7 @@ def test_execute_sos_dashboard_child_degrades_gracefully_without_child_history(t
     assert dashboard["capabilities"]["snapshot_status"] == "missing_child_result"
     assert dashboard["telemetry_quality"]["snapshot_status"] == "missing_child_result"
     assert dashboard["automation"]["snapshot_status"] == "missing_child_result"
+    assert dashboard["automation_plan"]["snapshot_status"] == "missing_child_result"
     assert dashboard["redundancy"]["snapshot_status"] == "missing_child_result"
     assert dashboard["diagnostics"]["snapshot_status"] == "missing_child_result"
     assert dashboard["config_drift"]["snapshot_status"] == "missing_child_result"
@@ -2034,7 +2035,7 @@ def test_execute_sos_dashboard_child_degrades_gracefully_without_child_history(t
     assert dashboard["endurance"]["snapshot_status"] == "missing_child_result"
     assert dashboard["runbook"]["snapshot_status"] == "missing_child_result"
     assert result["result"]["commands"][0]["text"] == (
-        "SOS Dashboard Ship A mode=Docked guidance=unknown readiness=unknown capabilities=unknown telemetry_quality=unknown automation=unknown redundancy=unknown topology=unknown diagnostics=unknown config_drift=unknown watch_log=unknown mission_profile=unknown endurance=unknown runbook=unknown integrity=unknown logistics=unknown conveyor=unknown maintenance=unknown airlock=unknown mobility=unknown navigation=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown environment=unknown display=unknown mining=unknown production=unknown transit=unknown defense=unknown alerts=unknown queue=0 blockers=none"
+        "SOS Dashboard Ship A mode=Docked guidance=unknown readiness=unknown capabilities=unknown telemetry_quality=unknown automation=unknown automation_plan=unknown redundancy=unknown topology=unknown diagnostics=unknown config_drift=unknown watch_log=unknown mission_profile=unknown endurance=unknown runbook=unknown integrity=unknown logistics=unknown conveyor=unknown maintenance=unknown airlock=unknown mobility=unknown navigation=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown environment=unknown display=unknown mining=unknown production=unknown transit=unknown defense=unknown alerts=unknown queue=0 blockers=none"
     )
 
 
@@ -5525,6 +5526,149 @@ def test_execute_sos_orchestrator_passes_automation_context_history_and_aliases_
         assert "script_health_snapshot" not in captured[sibling]
         assert "pb_snapshot" not in captured[sibling]
         assert "programmable_block_snapshot" not in captured[sibling]
+
+
+def test_execute_sos_orchestrator_scopes_automation_plan_evidence_and_preserves_empty_commands(
+    tmp_path: Path,
+):
+    from worker.scripts.sos_automation_plan import run as run_automation_plan
+
+    captured: dict[str, dict] = {}
+    module = types.ModuleType("tests.sos_automation_plan_capture_children")
+
+    def run(request):
+        captured[request["script_id"]] = request
+        if request["script_id"] == "bridge-a-sos_automation_plan":
+            return run_automation_plan(request)
+        return {"summary": f"{request['script_id']} captured", "commands": []}
+
+    module.run = run
+    sys.modules[module.__name__] = module
+    data = tmp_path / "data"
+    data.mkdir()
+    (data / "bridge_results").mkdir()
+    (data / "bridge_results" / "bridge-a.json").write_text(
+        json.dumps(
+            {
+                "result": {
+                    "queue_pressure": {"queued": 2, "drained": 1, "remaining": 1},
+                    "child_results": [
+                        {
+                            "script_id": "bridge-a-sos_automation",
+                            "status": "ok",
+                            "error_bucket": "none",
+                            "summary": "automation warning",
+                            "result": {"sos_automation": {"state": "warning", "warnings": ["pb_failing:Main PB"]}},
+                        },
+                        {
+                            "script_id": "bridge-a-sos_diagnostics",
+                            "status": "ok",
+                            "error_bucket": "none",
+                            "summary": "diagnostics warning",
+                            "result": {"sos_diagnostics": {"state": "warning", "warnings": ["child_error:automation"]}},
+                        },
+                    ],
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    (data / "sos_ships.json").write_text(
+        json.dumps(
+            {
+                "schema": "novali.client_side_pb.sos_ships.v1",
+                "ships": [
+                    {
+                        "ship_id": "ship-a",
+                        "bridge_id": "bridge-a",
+                        "display_name": "Ship A",
+                        "mode": "Docked",
+                        "expected_grid_entity_id": 10,
+                        "services": [
+                            {"script_id": "bridge-a-sos_automation_plan", "service_id": "automation_plan"},
+                            {"script_id": "bridge-a-sos_automation", "service_id": "automation"},
+                            {"script_id": "bridge-a-sos_status", "service_id": "status"},
+                            {"script_id": "bridge-a-sos_diagnostics", "service_id": "diagnostics"},
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    scripts = {
+        "bridge-a-orchestrator": WorkerScript(
+            "bridge-a-orchestrator", "script_instance", "Bridge A SOS", "", "", "", 1000, True, base_script_id="bridge_orchestrator"
+        ),
+        "bridge-a-sos_automation_plan": WorkerScript(
+            "bridge-a-sos_automation_plan", "manual", "Automation Plan", module.__name__, "", "", 1000, True
+        ),
+        "bridge-a-sos_automation": WorkerScript("bridge-a-sos_automation", "manual", "Automation", module.__name__, "", "", 1000, True),
+        "bridge-a-sos_status": WorkerScript("bridge-a-sos_status", "manual", "Status", module.__name__, "", "", 1000, True),
+        "bridge-a-sos_diagnostics": WorkerScript(
+            "bridge-a-sos_diagnostics", "manual", "Diagnostics", module.__name__, "", "", 1000, True
+        ),
+    }
+    plan_snapshot = {
+        "plans": [
+            {
+                "action_family": "programmable_block_recovery",
+                "operation": "restart",
+                "target": {"entity_id": 7001, "name": "Main PB"},
+                "expires_after_sequence": 9,
+            }
+        ]
+    }
+
+    result = execute_request(
+        {
+            "schema": "novali.client_side_pb_bridge.v1",
+            "message_kind": "request",
+            "bridge_id": "bridge-a",
+            "sequence": 8,
+            "script_id": "bridge-a-orchestrator",
+            "runtime_telemetry": {"limiter_state": "ok"},
+            "grid_snapshot": {
+                "schema": "novali.client_side_pb.grid_snapshot.v1",
+                "grid_entity_id": 10,
+                "blocks": [{"name": "Main PB", "type": "ProgrammableBlock", "integrity_ratio": 0.9, "functional": False}],
+            },
+            "automation_plan_snapshot": plan_snapshot,
+            "automation_intent_snapshot": {"intents": [{"operation": "restart"}]},
+            "operator_approval_snapshot": {"approval": {"state": "required"}},
+            "control_intent_snapshot": {"requests": [{"operation": "restart"}]},
+            "automation_snapshot": {"programmable_blocks": [{"name": "Main PB", "enabled": True}]},
+            "state": {},
+        },
+        scripts,
+        {},
+        tmp_path,
+    )
+
+    assert result["status"] == "ok"
+    plan_request = captured["bridge-a-sos_automation_plan"]
+    assert plan_request["sos_ship"]["ship_id"] == "ship-a"
+    assert plan_request["grid_snapshot"]["grid_entity_id"] == 10
+    assert plan_request["integrity_snapshot"]["blocks"][0]["name"] == "Main PB"
+    assert plan_request["automation_plan_snapshot"] == plan_snapshot
+    assert plan_request["runtime_telemetry"]["queue_pressure"] == {"queued": 2, "drained": 1, "remaining": 1, "by_source": {}}
+    assert plan_request["runtime_telemetry"]["child_services_by_service_id"]["automation"]["result"]["sos_automation"]["state"] == "warning"
+    assert plan_request["runtime_telemetry"]["child_services_by_service_id"]["diagnostics"]["result"]["sos_diagnostics"]["state"] == "warning"
+    assert "automation_snapshot" not in plan_request
+    for sibling in ("bridge-a-sos_automation", "bridge-a-sos_status", "bridge-a-sos_diagnostics"):
+        for alias in (
+            "automation_plan_snapshot",
+            "automation_intent_snapshot",
+            "operator_approval_snapshot",
+            "control_intent_snapshot",
+        ):
+            assert alias not in captured[sibling]
+    plan_child = result["result"]["child_results"][0]
+    assert any(
+        plan["action_family"] == "programmable_block_recovery"
+        for plan in plan_child["result"]["sos_automation_plan"]["plans"]
+    )
+    assert result["result"]["commands"] == []
 
 
 def test_execute_sos_orchestrator_runs_redundancy_child_with_existing_services(tmp_path: Path):

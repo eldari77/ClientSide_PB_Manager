@@ -30,6 +30,7 @@ DASHBOARD_COMPOSED_SERVICES = {
     "alerts",
     "airlock",
     "automation",
+    "automation_plan",
     "capabilities",
     "comms",
     "conveyor",
@@ -398,6 +399,7 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
         "capabilities",
         "telemetry_quality",
         "automation",
+        "automation_plan",
         "conveyor",
         "redundancy",
         "topology",
@@ -424,6 +426,10 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
         "script_health_snapshot",
         "pb_snapshot",
         "programmable_block_snapshot",
+        "automation_plan_snapshot",
+        "automation_intent_snapshot",
+        "operator_approval_snapshot",
+        "control_intent_snapshot",
         "conveyor_snapshot",
         "conveyor_network_snapshot",
         "inventory_network_snapshot",
@@ -500,6 +506,10 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
         "script_health_snapshot": {"scripts": [{"name": "Main PB", "healthy": True}]},
         "pb_snapshot": {"blocks": [{"name": "Main PB", "enabled": True}]},
         "programmable_block_snapshot": {"programmable_blocks": [{"name": "Backup PB", "enabled": False}]},
+        "automation_plan_snapshot": {"plans": [{"operation": "restart"}]},
+        "automation_intent_snapshot": {"intents": [{"operation": "restart"}]},
+        "operator_approval_snapshot": {"approval": {"state": "required"}},
+        "control_intent_snapshot": {"requests": [{"operation": "restart"}]},
         "conveyor_snapshot": {"conveyors": [{"name": "Cargo Line", "connected": True}]},
         "conveyor_network_snapshot": {"networks": [{"name": "Cargo Network", "connected": True}]},
         "inventory_network_snapshot": {"ports": [{"name": "Cargo Port", "connected": True}]},
@@ -540,6 +550,10 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
     assert "script_health_snapshot" in captured["automation"]
     assert "pb_snapshot" in captured["automation"]
     assert "programmable_block_snapshot" in captured["automation"]
+    assert "automation_plan_snapshot" in captured["automation_plan"]
+    assert "automation_intent_snapshot" in captured["automation_plan"]
+    assert "operator_approval_snapshot" in captured["automation_plan"]
+    assert "control_intent_snapshot" in captured["automation_plan"]
     assert "conveyor_snapshot" in captured["conveyor"]
     assert "conveyor_network_snapshot" in captured["conveyor"]
     assert "inventory_network_snapshot" in captured["conveyor"]
@@ -578,9 +592,13 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
     assert "capability_snapshot" not in captured["telemetry_quality"]
     assert "redundancy_snapshot" not in captured["telemetry_quality"]
     assert "automation_snapshot" not in captured["telemetry_quality"]
+    assert "automation_plan_snapshot" not in captured["telemetry_quality"]
     assert "conveyor_snapshot" not in captured["telemetry_quality"]
     assert "telemetry_quality_snapshot" not in captured["automation"]
+    assert "automation_plan_snapshot" not in captured["automation"]
     assert "conveyor_snapshot" not in captured["automation"]
+    assert "automation_snapshot" not in captured["automation_plan"]
+    assert "conveyor_snapshot" not in captured["automation_plan"]
     assert "redundancy_snapshot" not in captured["automation"]
     assert "automation_snapshot" not in captured["conveyor"]
     assert "redundancy_snapshot" not in captured["conveyor"]
