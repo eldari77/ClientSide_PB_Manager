@@ -1,7 +1,26 @@
+import re
 from pathlib import Path
 
 
 SHIM = Path("pb_shim/ClientSidePBBridgeShim.cs")
+PB_SHIM_ALLOWED_COMMAND_KINDS = {
+    "clear_assembler_queue",
+    "echo",
+    "enqueue_assembler_blueprint",
+    "move_assembler_queue_item",
+    "remove_assembler_queue_item",
+    "rename_block",
+    "set_assembler_cooperative_mode",
+    "set_assembler_mode",
+    "set_block_enabled",
+    "set_door_open",
+    "set_gas_auto_refill",
+    "set_light_color",
+    "set_use_conveyor",
+    "transfer_item",
+    "write_block_custom_data",
+    "write_text_surface",
+}
 
 
 def test_pb_shim_publishes_apply_telemetry_in_request_state():
@@ -97,6 +116,14 @@ def test_pb_shim_allows_isy_foundation_commands_with_skip_reasons():
     ]:
         assert skip_reason in source
 
+
+def test_pb_shim_skips_command_kinds_outside_the_existing_allowlist_before_execution():
+    source = SHIM.read_text(encoding="utf-8")
+    apply_body = source[source.index("string ApplyWorkerCommands") : source.index("bool ApplyTransferItemCommand")]
+    handled_kinds = set(re.findall(r'kind == "([^"]+)"', apply_body))
+    assert handled_kinds == PB_SHIM_ALLOWED_COMMAND_KINDS
+    assert 'lastCommandSkipReason = "unknown_kind:" + kind;' in apply_body
+    assert "skipped++;" in apply_body[apply_body.index('if (!string.IsNullOrWhiteSpace(kind))'):]
 
 def test_pb_shim_sets_lcd_surfaces_to_text_mode_before_writing():
     source = SHIM.read_text(encoding="utf-8")

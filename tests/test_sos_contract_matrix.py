@@ -15,6 +15,7 @@ from worker.worker import (
     BridgeScriptConfig,
     WorkerScript,
     child_service_telemetry,
+    compact_result_for_storage,
     enriched_child_runtime_telemetry,
     execute_request,
     load_bridge_script_configs,
@@ -57,6 +58,7 @@ DASHBOARD_COMPOSED_SERVICES = {
     "transit",
     "watch_log",
 }
+META_SERVICE_IDS = ("capabilities", "topology", "telemetry_quality", "config_drift")
 
 
 def _read_json(path: str) -> dict[str, Any]:
@@ -136,6 +138,24 @@ def test_manifest_sos_scripts_have_thin_adapter_default_instance_and_sos_ship_mo
         assert Path("worker", "scripts", f"{script_id}.py").exists()
         assert mounted_id in instance_ids
         assert mounted_by_script_id[mounted_id]["service_id"] == service_id
+
+
+def test_recent_meta_services_have_manifest_instance_registry_and_orchestrator_parity() -> None:
+    manifest_by_script_id = {script["script_id"]: script for script in _manifest_sos_scripts()}
+    mounted_by_service_id = {service["service_id"]: service for service in _mounted_sos_services()}
+    instance_ids = _default_instance_ids()
+    config = load_bridge_script_configs(Path("."))["pb-bridge-001"]
+    child_by_service_id = {child["service_id"]: child for child in config.child_worker_scripts}
+
+    for service_id in META_SERVICE_IDS:
+        base_script_id = f"sos_{service_id}"
+        mounted_script_id = f"pb-bridge-001-{base_script_id}"
+
+        assert manifest_by_script_id[base_script_id]["module"] == f"worker.scripts.{base_script_id}"
+        assert mounted_script_id in instance_ids
+        assert mounted_by_service_id[service_id]["script_id"] == mounted_script_id
+        assert mounted_script_id in config.allowed_worker_scripts
+        assert child_by_service_id[service_id]["script_id"] == mounted_script_id
 
 
 def test_thin_adapters_delegate_to_editable_sos_service_run(monkeypatch) -> None:
@@ -234,6 +254,49 @@ def test_runtime_telemetry_history_reaches_list_service_and_script_indexes() -> 
     assert by_script["bridge-a-sos_power"]["command_queue"] == {"queued": 2, "drained": 1, "remaining": 1}
 
 
+def test_previous_meta_service_payloads_flow_to_runtime_telemetry_by_service_id(tmp_path: Path) -> None:
+    child_configs = tuple(
+        {"script_id": f"bridge-a-sos_{service_id}", "service_id": service_id}
+        for service_id in META_SERVICE_IDS
+    )
+    previous_payload = {
+        "child_results": [
+            {
+                "script_id": f"bridge-a-sos_{service_id}",
+                "status": "ok",
+                "error_bucket": "none",
+                "summary": f"{service_id} summary",
+                "result": {f"sos_{service_id}": {"state": "ok", "snapshot_status": "ok"}},
+            }
+            for service_id in META_SERVICE_IDS
+        ],
+        "queue_pressure": {
+            "queued": 4,
+            "drained": 4,
+            "remaining": 0,
+            "by_source": {
+                f"bridge-a-sos_{service_id}": {"queued": 1, "drained": 1, "remaining": 0}
+                for service_id in META_SERVICE_IDS
+            },
+        },
+    }
+    result_dir = tmp_path / "data" / "bridge_results"
+    result_dir.mkdir(parents=True)
+    (result_dir / "bridge-a.json").write_text(json.dumps({"result": previous_payload}), encoding="utf-8")
+
+    telemetry = enriched_child_runtime_telemetry(
+        tmp_path,
+        {"bridge_id": "bridge-a", "runtime_telemetry": {"limiter_state": "ok"}},
+        child_configs,
+    )
+
+    for service_id in META_SERVICE_IDS:
+        child = telemetry["child_services_by_service_id"][service_id]
+        assert child["summary"] == f"{service_id} summary"
+        assert child["result"][f"sos_{service_id}"]["state"] == "ok"
+        assert child["command_queue"] == {"queued": 1, "drained": 1, "remaining": 0}
+
+
 def test_enriched_runtime_telemetry_exposes_child_history_in_all_supported_shapes(tmp_path: Path) -> None:
     result_dir = tmp_path / "data" / "bridge_results"
     result_dir.mkdir(parents=True)
@@ -265,6 +328,66 @@ def test_enriched_runtime_telemetry_exposes_child_history_in_all_supported_shape
     assert telemetry["child_services"][0]["result"]["sos_status"]["mode"] == "Combat"
     assert telemetry["child_services_by_service_id"]["status"]["result"]["sos_status"]["mode"] == "Combat"
     assert telemetry["child_services_by_script_id"]["bridge-a-sos_status"]["result"]["sos_status"]["mode"] == "Combat"
+
+
+def test_shared_contract_snapshot_reaches_diagnostics_and_config_drift_children(tmp_path: Path) -> None:
+    captured: dict[str, set[str]] = {}
+    services_payload = [
+        {"script_id": "bridge-a-sos_diagnostics", "service_id": "diagnostics"},
+        {"script_id": "bridge-a-sos_config_drift", "service_id": "config_drift"},
+    ]
+    _write_sos_registry(tmp_path, "bridge-a", services_payload)
+
+    scripts = {
+        "bridge-a-orchestrator": WorkerScript(
+            "bridge-a-orchestrator",
+            "script_instance",
+            "Bridge A SOS",
+            "",
+            "adapter_tick.v1",
+            "compact_commands.v1",
+            1000,
+            True,
+            base_script_id="bridge_orchestrator",
+            instance_bridge_id="bridge-a",
+        )
+    }
+    for service_id in ("diagnostics", "config_drift"):
+        module_name = f"tests.contract_snapshot_capture_{service_id}"
+        module = types.ModuleType(module_name)
+
+        def run(request: dict[str, Any], expected_service: str = service_id) -> dict[str, Any]:
+            captured[expected_service] = set(request)
+            return {"summary": expected_service, "commands": [{"kind": "echo", "text": expected_service}]}
+
+        module.run = run
+        sys.modules[module_name] = module
+        scripts[f"bridge-a-sos_{service_id}"] = WorkerScript(
+            f"bridge-a-sos_{service_id}",
+            "manual",
+            service_id,
+            module_name,
+            "adapter_tick.v1",
+            "compact_commands.v1",
+            1000,
+            True,
+        )
+
+    result = execute_request(
+        _request("bridge-a", "bridge-a-orchestrator") | {
+            "contract_snapshot": {
+                "dashboard_tokens": ["diagnostics", "config_drift"],
+                "commands": [{"kind": "echo"}],
+            }
+        },
+        scripts,
+        {},
+        tmp_path,
+    )
+
+    assert result["status"] == "ok"
+    assert "contract_snapshot" in captured["diagnostics"]
+    assert "contract_snapshot" in captured["config_drift"]
 
 
 def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_path: Path) -> None:
@@ -454,3 +577,48 @@ def test_configured_sos_orchestrator_no_history_tick_stays_within_command_allowl
     assert result["result"]["orchestrator"]["child_count"] == len(_default_sos_ship()["services"])
     assert {command["kind"] for command in commands} <= ALLOWED_SOS_COMMAND_KINDS
     assert len(json.dumps(result, separators=(",", ":"))) < 64000
+
+
+def test_expanded_meta_service_child_history_compaction_stays_under_storage_guardrail() -> None:
+    dashboard_payload = {
+        service_id: {
+            "state": "warning",
+            "snapshot_status": "ok",
+            "summary": "warning " + ("expanded meta service summary " * 80),
+            "warnings": [f"{service_id}:warning:{index}:" + ("detail " * 40) for index in range(40)],
+            "source_services": [f"source-{index}" for index in range(40)],
+        }
+        for service_id in DASHBOARD_COMPOSED_SERVICES
+    }
+    dashboard_payload["mode"] = "Combat"
+    dashboard_payload["posture"] = "threat-ready"
+    raw_result = {
+        "schema": "novali.client_side_pb_bridge.v1",
+        "message_kind": "result",
+        "bridge_id": "bridge-a",
+        "sequence": 1,
+        "script_id": "bridge-a-orchestrator",
+        "status": "ok",
+        "result": {
+            "summary": "bridge_orchestrator processed expanded child surface",
+            "commands": [
+                {"kind": "write_text_surface", "text": "expanded command text " * 40, "block_entity_id": index}
+                for index in range(40)
+            ],
+            "child_results": [
+                {
+                    "script_id": f"bridge-a-sos_{service_id}",
+                    "status": "ok",
+                    "summary": "child summary " * 80,
+                    "result": {f"sos_{service_id}": {"state": "ok", "warnings": ["warning " * 80 for _ in range(40)]}},
+                }
+                for service_id in DASHBOARD_COMPOSED_SERVICES
+            ],
+            "sos_dashboard": dashboard_payload,
+        },
+    }
+
+    compacted = compact_result_for_storage(raw_result)
+
+    assert compacted["result"]["storage_compacted"] is True
+    assert len(json.dumps(compacted, separators=(",", ":"))) < 64000

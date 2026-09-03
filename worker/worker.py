@@ -126,6 +126,10 @@ RESULT_STORAGE_MAX_COMMAND_TEXT_CHARS = 48
 RESULT_STORAGE_MAX_COMMAND_ITEMS = 16
 RESULT_STORAGE_MAX_LIST_ITEMS = 28
 RESULT_STORAGE_MAX_DEPTH = 8
+RESULT_STORAGE_MAX_BYTES = 64000
+RESULT_STORAGE_COMPACT_WARNING_ITEMS = 3
+RESULT_STORAGE_COMPACT_SOURCE_ITEMS = 8
+RESULT_STORAGE_COMPACT_TEXT_CHARS = 180
 
 
 @dataclass
@@ -1035,6 +1039,9 @@ def compact_result_for_storage(payload: dict[str, Any]) -> dict[str, Any]:
         return value
 
     compacted = compact(payload)
+    if isinstance(compacted, dict) and compacted_storage_size(compacted) >= RESULT_STORAGE_MAX_BYTES:
+        compacted = compact_oversized_sos_result_for_storage(compacted)
+        changed = True
     if changed and isinstance(compacted, dict):
         result = compacted.get("result")
         if isinstance(result, dict):
@@ -1042,6 +1049,108 @@ def compact_result_for_storage(payload: dict[str, Any]) -> dict[str, Any]:
         else:
             compacted["storage_compacted"] = True
     return compacted
+
+
+def compacted_storage_size(payload: dict[str, Any]) -> int:
+    return len(json.dumps(payload, separators=(",", ":")))
+
+
+def compact_oversized_sos_result_for_storage(payload: dict[str, Any]) -> dict[str, Any]:
+    result = payload.get("result")
+    if not isinstance(result, dict):
+        return payload
+    compacted = dict(payload)
+    result = dict(result)
+    compacted["result"] = result
+
+    dashboard = result.get("sos_dashboard")
+    if isinstance(dashboard, dict):
+        result["sos_dashboard"] = compact_sos_payload_for_storage("sos_dashboard", dashboard)
+
+    children = result.get("child_results")
+    if isinstance(children, list):
+        compact_children = []
+        for child in children[:RESULT_STORAGE_MAX_LIST_ITEMS]:
+            if not isinstance(child, dict):
+                continue
+            item: dict[str, Any] = {}
+            for field in ("script_id", "status", "error_bucket", "command_queue"):
+                if field in child:
+                    item[field] = child[field]
+            if "summary" in child:
+                item["summary"] = compact_storage_text(str(child.get("summary", "") or ""))
+            child_result = child.get("result")
+            if isinstance(child_result, dict):
+                history = {
+                    key: compact_sos_payload_for_storage(key, value)
+                    for key, value in child_result.items()
+                    if key.startswith("sos_") and isinstance(value, dict)
+                }
+                if history:
+                    item["result"] = history
+            compact_children.append(item)
+        if len(children) > RESULT_STORAGE_MAX_LIST_ITEMS:
+            compact_children.append({"truncated_count": len(children) - RESULT_STORAGE_MAX_LIST_ITEMS})
+        result["child_results"] = compact_children
+    return compacted
+
+
+def compact_sos_payload_for_storage(key: str, value: dict[str, Any]) -> dict[str, Any]:
+    compacted: dict[str, Any] = {}
+    if key == "sos_dashboard":
+        for field in ("mode", "posture"):
+            if field in value:
+                compacted[field] = value[field]
+        for service_id, payload in value.items():
+            if not isinstance(payload, dict) or service_id in {"identity", "service_health", "queue_pressure", "mode_effects"}:
+                continue
+            item = compact_sos_payload_for_storage(f"sos_{service_id}", payload)
+            if item:
+                compacted[service_id] = item
+        return compacted
+
+    for field in (
+        "state",
+        "snapshot_status",
+        "mode",
+        "identity_status",
+        "confidence_label",
+        "queue_pressure_state",
+        "declared_role",
+        "observed_role",
+        "role_match",
+    ):
+        if field in value:
+            compacted[field] = value[field]
+    if "summary" in value:
+        compacted["summary"] = compact_storage_text(str(value.get("summary", "") or ""))
+    for field, item in value.items():
+        if field.endswith("_count") and isinstance(item, (int, float, str)):
+            compacted[field] = item
+    for field in ("warnings", "blockers"):
+        items = compact_storage_list(value.get(field), RESULT_STORAGE_COMPACT_WARNING_ITEMS)
+        if items:
+            compacted[field] = items
+    sources = compact_storage_list(value.get("source_services"), RESULT_STORAGE_COMPACT_SOURCE_ITEMS)
+    if sources:
+        compacted["source_services"] = sources
+    return compacted
+
+
+def compact_storage_list(source: Any, max_items: int) -> list[Any]:
+    if not isinstance(source, list):
+        return []
+    items = [compact_storage_text(str(item)) if not isinstance(item, dict) else item for item in source[:max_items]]
+    if len(source) > max_items:
+        items.append({"truncated_count": len(source) - max_items})
+    return items
+
+
+def compact_storage_text(value: str) -> str:
+    if len(value) <= RESULT_STORAGE_COMPACT_TEXT_CHARS:
+        return value
+    omitted = len(value) - RESULT_STORAGE_COMPACT_TEXT_CHARS
+    return f"{value[:RESULT_STORAGE_COMPACT_TEXT_CHARS]}... [truncated {omitted} chars]"
 
 
 def request_requested_at(request: dict[str, Any]) -> datetime | None:
