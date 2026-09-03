@@ -22,6 +22,7 @@ ALLOWED_SOS_COMMAND_KINDS = {"echo", "write_text_surface"}
 DASHBOARD_TOKEN_SERVICES = {
     "alerts",
     "airlock",
+    "automation",
     "comms",
     "crew",
     "defense",
@@ -165,6 +166,31 @@ def _payload(service_id: str, state: str = "ok", warnings: list[str] | None = No
                 "warning_service_count": 1 if warnings else 0,
                 "queue_pressure_state": "none",
                 "source_services": ["status", "integrity", "logistics"],
+            }
+        )
+    elif service_id == "automation":
+        payload.update(
+            {
+                "loop_state": "degraded" if warnings else "ok",
+                "confidence_label": "medium" if warnings else "high",
+                "programmable_blocks": {
+                    "total_count": 3,
+                    "enabled_count": 2,
+                    "disabled_count": 1 if warnings else 0,
+                    "running_count": 2,
+                    "failing_count": 1 if warnings else 0,
+                    "stale_count": 0,
+                    "unknown_count": 0,
+                },
+                "automation_blocks": {
+                    "total_count": 2,
+                    "enabled_count": 2,
+                    "disabled_count": 0,
+                    "damaged_or_nonfunctional_count": 1 if warnings else 0,
+                    "unknown_count": 0,
+                },
+                "queue_pressure_state": "none",
+                "source_services": ["status", "integrity"],
             }
         )
     elif service_id == "guidance":
@@ -360,6 +386,7 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
         "config_drift",
         "endurance",
         "telemetry_quality",
+        "automation",
         "redundancy",
         "topology",
         "maintenance",
@@ -442,6 +469,7 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
         "contract_snapshot": {"commands": [{"kind": "echo"}]},
         "endurance_snapshot": {"cargo": {"used_volume": 10, "max_volume": 100}},
         "telemetry_quality_snapshot": {"sources": [{"service_id": "status", "confidence": 0.99}]},
+        "automation_snapshot": {"programmable_blocks": [{"name": "Main PB", "enabled": True}]},
         "redundancy_snapshot": {"capabilities": {"transit_jump": {"primary_count": 1, "backup_count": 0}}},
         "topology_snapshot": {"dependencies": [{"source": "power", "target": "mobility", "state": "ok"}]},
         "maintenance_snapshot": {"projectors": [{"name": "Repair Plan"}]},
@@ -460,6 +488,7 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
         "contract_snapshot",
         "endurance_snapshot",
         "telemetry_quality_snapshot",
+        "automation_snapshot",
         "redundancy_snapshot",
         "topology_snapshot",
         "maintenance_snapshot",
@@ -477,6 +506,7 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
     assert "contract_snapshot" in captured["config_drift"]
     assert "endurance_snapshot" in captured["endurance"]
     assert "telemetry_quality_snapshot" in captured["telemetry_quality"]
+    assert "automation_snapshot" in captured["automation"]
     assert "redundancy_snapshot" in captured["redundancy"]
     assert "topology_snapshot" in captured["topology"]
     assert "maintenance_snapshot" in captured["maintenance"]
@@ -493,6 +523,8 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
     assert "redundancy_snapshot" not in captured["topology"]
     assert "config_drift_snapshot" not in captured["redundancy"]
     assert "redundancy_snapshot" not in captured["config_drift"]
+    assert "automation_snapshot" not in captured["redundancy"]
+    assert "redundancy_snapshot" not in captured["automation"]
     assert "mining_snapshot" in captured["endurance"]
     assert "mining_snapshot" not in captured["maintenance"]
     assert "maintenance_snapshot" not in captured["mining"]

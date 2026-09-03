@@ -56,6 +56,13 @@ TELEMETRY_QUALITY_SNAPSHOT_KEYS = (
     "data_quality_snapshot",
     "signal_quality_snapshot",
 )
+AUTOMATION_SNAPSHOT_KEYS = (
+    "automation_snapshot",
+    "control_logic_snapshot",
+    "script_health_snapshot",
+    "pb_snapshot",
+    "programmable_block_snapshot",
+)
 CONFIG_DRIFT_SNAPSHOT_KEYS = (
     "config_drift_snapshot",
     "configuration_snapshot",
@@ -693,6 +700,10 @@ def remove_snapshot_aliases(request: dict[str, Any], keys: tuple[str, ...], pres
 
 def remove_telemetry_quality_only_snapshot_aliases(request: dict[str, Any]) -> None:
     remove_snapshot_aliases(request, TELEMETRY_QUALITY_SNAPSHOT_KEYS)
+
+
+def remove_automation_only_snapshot_aliases(request: dict[str, Any]) -> None:
+    remove_snapshot_aliases(request, AUTOMATION_SNAPSHOT_KEYS)
 
 
 def remove_config_drift_only_snapshot_aliases(request: dict[str, Any], preserve: tuple[str, ...] = ()) -> None:
@@ -1921,6 +1932,13 @@ def execute_orchestrator_request(
             or "sos_data_quality" in child_id.lower()
             or "sos_signal_quality" in child_id.lower()
         )
+        is_automation_child = (
+            child_service_id == "automation"
+            or "sos_automation" in child_id.lower()
+            or "sos_control_logic" in child_id.lower()
+            or "sos_script_health" in child_id.lower()
+            or "sos_programmable_block" in child_id.lower()
+        )
         is_config_drift_child = (
             child_service_id == "config_drift"
             or "sos_config_drift" in child_id.lower()
@@ -2011,6 +2029,8 @@ def execute_orchestrator_request(
             remove_capabilities_only_snapshot_aliases(child_request)
         if not is_telemetry_quality_child:
             remove_telemetry_quality_only_snapshot_aliases(child_request)
+        if not is_automation_child:
+            remove_automation_only_snapshot_aliases(child_request)
         if not is_config_drift_child:
             preserve = CONFIG_DRIFT_SHARED_DIAGNOSTICS_KEYS if is_diagnostics_child else ()
             remove_config_drift_only_snapshot_aliases(child_request, preserve)
@@ -2057,6 +2077,7 @@ def execute_orchestrator_request(
                 "transit",
                 "defense",
                 "environment",
+                "automation",
             }
             or "sos_integrity" in child_id.lower()
             or "sos_damage" in child_id.lower()
@@ -2104,6 +2125,10 @@ def execute_orchestrator_request(
             or "sos_transit" in child_id.lower()
             or "sos_defense" in child_id.lower()
             or "sos_environment" in child_id.lower()
+            or "sos_automation" in child_id.lower()
+            or "sos_control_logic" in child_id.lower()
+            or "sos_script_health" in child_id.lower()
+            or "sos_programmable_block" in child_id.lower()
         ):
             attach_integrity_snapshot_from_grid_snapshot(child_request)
         if (
@@ -2349,7 +2374,7 @@ def compact_sos_child_history_payload(key: str, value: dict[str, Any]) -> dict[s
         if not isinstance(payload, dict) or service_id in {"identity", "service_health", "queue_pressure", "mode_effects"}:
             continue
         item: dict[str, Any] = {}
-        for field in ("state", "snapshot_status", "summary"):
+        for field in ("state", "snapshot_status"):
             if field in payload:
                 item[field] = payload[field]
         for field in (
@@ -2362,7 +2387,7 @@ def compact_sos_child_history_payload(key: str, value: dict[str, Any]) -> dict[s
             if field in payload:
                 item[field] = payload[field]
         warnings = payload.get("warnings")
-        if isinstance(warnings, list):
+        if isinstance(warnings, list) and warnings:
             item["warnings"] = warnings[:10]
             if len(warnings) > 10:
                 item["warnings"].append({"truncated_count": len(warnings) - 10})

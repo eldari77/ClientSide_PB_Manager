@@ -35,6 +35,11 @@
           "enabled": true
         },
         {
+          "service_id": "automation",
+          "script_id": "pb-bridge-001-sos_automation",
+          "enabled": true
+        },
+        {
           "service_id": "config_drift",
           "script_id": "pb-bridge-001-sos_config_drift",
           "enabled": true

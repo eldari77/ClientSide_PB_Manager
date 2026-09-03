@@ -29,6 +29,7 @@ ALLOWED_SOS_COMMAND_KINDS = {"echo", "write_text_surface"}
 DASHBOARD_COMPOSED_SERVICES = {
     "alerts",
     "airlock",
+    "automation",
     "capabilities",
     "comms",
     "crew",
@@ -395,6 +396,7 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
     service_ids = (
         "capabilities",
         "telemetry_quality",
+        "automation",
         "redundancy",
         "topology",
         "endurance",
@@ -415,6 +417,11 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
         "evidence_snapshot",
         "data_quality_snapshot",
         "signal_quality_snapshot",
+        "automation_snapshot",
+        "control_logic_snapshot",
+        "script_health_snapshot",
+        "pb_snapshot",
+        "programmable_block_snapshot",
         "redundancy_snapshot",
         "topology_snapshot",
         "dependency_snapshot",
@@ -482,6 +489,11 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
         "evidence_snapshot": {"evidence": [{"source": "grid_snapshot", "fresh": True}]},
         "data_quality_snapshot": {"services": {"status": {"state": "ok"}}},
         "signal_quality_snapshot": {"signals": [{"name": "grid_snapshot", "quality": "high"}]},
+        "automation_snapshot": {"programmable_blocks": [{"name": "Main PB", "enabled": True}]},
+        "control_logic_snapshot": {"timers": [{"name": "Timer A", "enabled": True}]},
+        "script_health_snapshot": {"scripts": [{"name": "Main PB", "healthy": True}]},
+        "pb_snapshot": {"blocks": [{"name": "Main PB", "enabled": True}]},
+        "programmable_block_snapshot": {"programmable_blocks": [{"name": "Backup PB", "enabled": False}]},
         "redundancy_snapshot": {"capabilities": {"power": {"primary_count": 1, "backup_count": 1}}},
         "topology_snapshot": {"dependencies": [{"source": "power", "target": "mobility", "state": "ok"}]},
         "dependency_snapshot": {"chains": [{"source": "power", "target": "mobility", "state": "ok"}]},
@@ -513,6 +525,11 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
     assert "evidence_snapshot" in captured["telemetry_quality"]
     assert "data_quality_snapshot" in captured["telemetry_quality"]
     assert "signal_quality_snapshot" in captured["telemetry_quality"]
+    assert "automation_snapshot" in captured["automation"]
+    assert "control_logic_snapshot" in captured["automation"]
+    assert "script_health_snapshot" in captured["automation"]
+    assert "pb_snapshot" in captured["automation"]
+    assert "programmable_block_snapshot" in captured["automation"]
     assert "redundancy_snapshot" in captured["redundancy"]
     assert "topology_snapshot" in captured["topology"]
     assert "dependency_snapshot" in captured["topology"]
@@ -546,6 +563,9 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
     assert "endurance_snapshot" not in captured["redundancy"]
     assert "capability_snapshot" not in captured["telemetry_quality"]
     assert "redundancy_snapshot" not in captured["telemetry_quality"]
+    assert "automation_snapshot" not in captured["telemetry_quality"]
+    assert "telemetry_quality_snapshot" not in captured["automation"]
+    assert "redundancy_snapshot" not in captured["automation"]
     assert "redundancy_snapshot" not in captured["topology"]
     assert "capability_snapshot" not in captured["topology"]
     assert "redundancy_snapshot" not in captured["endurance"]
