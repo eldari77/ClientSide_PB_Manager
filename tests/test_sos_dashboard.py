@@ -46,6 +46,7 @@ def test_sos_dashboard_adapter_degrades_to_missing_child_result_with_echo():
     assert result["sos_dashboard"]["telemetry_quality"]["snapshot_status"] == "missing_child_result"
     assert result["sos_dashboard"]["automation"]["snapshot_status"] == "missing_child_result"
     assert result["sos_dashboard"]["automation_plan"]["snapshot_status"] == "missing_child_result"
+    assert result["sos_dashboard"]["automation_recovery"]["snapshot_status"] == "missing_child_result"
     assert result["sos_dashboard"]["redundancy"]["snapshot_status"] == "missing_child_result"
     assert result["sos_dashboard"]["topology"]["snapshot_status"] == "missing_child_result"
     assert result["sos_dashboard"]["config_drift"]["snapshot_status"] == "missing_child_result"
@@ -58,7 +59,7 @@ def test_sos_dashboard_adapter_degrades_to_missing_child_result_with_echo():
     assert result["commands"] == [
         {
             "kind": "echo",
-            "text": "SOS Dashboard Ship A mode=Docked guidance=unknown readiness=unknown capabilities=unknown telemetry_quality=unknown automation=unknown automation_plan=unknown redundancy=unknown topology=unknown diagnostics=unknown config_drift=unknown watch_log=unknown mission_profile=unknown endurance=unknown runbook=unknown integrity=unknown logistics=unknown conveyor=unknown maintenance=unknown airlock=unknown mobility=unknown navigation=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown environment=unknown display=unknown mining=unknown production=unknown transit=unknown defense=unknown alerts=unknown queue=none blockers=none",
+            "text": "SOS Dashboard Ship A mode=Docked guidance=unknown readiness=unknown capabilities=unknown telemetry_quality=unknown automation=unknown automation_plan=unknown automation_recovery=unknown redundancy=unknown topology=unknown diagnostics=unknown config_drift=unknown watch_log=unknown mission_profile=unknown endurance=unknown runbook=unknown integrity=unknown logistics=unknown conveyor=unknown maintenance=unknown airlock=unknown mobility=unknown navigation=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown environment=unknown display=unknown mining=unknown production=unknown transit=unknown defense=unknown alerts=unknown queue=none blockers=none",
         }
     ]
 
@@ -116,3 +117,40 @@ def test_sos_dashboard_adapter_reads_automation_plan_history_from_all_telemetry_
         assert result["sos_dashboard"]["automation_plan"]["state"] == "blocked"
         assert result["sos_dashboard"]["automation_plan"]["proposed_count"] == 1
         assert result["sos_dashboard"]["automation_plan"]["blockers"] == ["identity_mismatch"]
+
+
+def test_sos_dashboard_adapter_reads_automation_recovery_history_from_all_telemetry_shapes():
+    automation_recovery = {
+        "state": "passive",
+        "snapshot_status": "blocked",
+        "reason": "approval_missing",
+        "candidate_count": 1,
+        "warnings": [],
+        "blockers": ["approval_missing"],
+    }
+    child = {
+        "service_id": "automation_recovery",
+        "script_id": "pb-bridge-001-sos_automation_recovery",
+        "status": "ok",
+        "error_bucket": "none",
+        "summary": "automation recovery passive",
+        "result": {"sos_automation_recovery": automation_recovery},
+    }
+    telemetry_shapes = (
+        {"child_services": [child]},
+        {"child_services_by_service_id": {"automation_recovery": child}},
+        {"child_services_by_script_id": {"pb-bridge-001-sos_automation_recovery": child}},
+    )
+
+    for runtime_telemetry in telemetry_shapes:
+        result = run(
+            {
+                "bridge_id": "pb-bridge-001",
+                "sos_ship": {"ship_id": "ship-a", "display_name": "Ship A", "status_surfaces": []},
+                "runtime_telemetry": runtime_telemetry,
+            }
+        )
+
+        assert result["sos_dashboard"]["automation_recovery"]["state"] == "passive"
+        assert result["sos_dashboard"]["automation_recovery"]["reason"] == "approval_missing"
+        assert result["sos_dashboard"]["automation_recovery"]["candidate_count"] == 1

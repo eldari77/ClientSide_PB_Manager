@@ -45,6 +45,11 @@
           "enabled": true
         },
         {
+          "service_id": "automation_recovery",
+          "script_id": "pb-bridge-001-sos_automation_recovery",
+          "enabled": true
+        },
+        {
           "service_id": "config_drift",
           "script_id": "pb-bridge-001-sos_config_drift",
           "enabled": true

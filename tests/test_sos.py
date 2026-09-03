@@ -85,6 +85,7 @@ def test_expand_sos_bridge_configs_applies_mode_policy_and_services(tmp_path: Pa
                     {"script_id": "pb-bridge-001-sos_telemetry_quality", "service_id": "telemetry_quality"},
                     {"script_id": "pb-bridge-001-sos_automation", "service_id": "automation"},
                     {"script_id": "pb-bridge-001-sos_automation_plan", "service_id": "automation_plan"},
+                    {"script_id": "pb-bridge-001-sos_automation_recovery", "service_id": "automation_recovery"},
                     {"script_id": "pb-bridge-001-sos_dashboard", "service_id": "dashboard"},
                     {"script_id": "pb-bridge-001-sos_integrity", "service_id": "integrity"},
                     {"script_id": "pb-bridge-001-sos_logistics", "service_id": "logistics"},
@@ -137,6 +138,7 @@ def test_expand_sos_bridge_configs_applies_mode_policy_and_services(tmp_path: Pa
         "pb-bridge-001-sos_telemetry_quality",
         "pb-bridge-001-sos_automation",
         "pb-bridge-001-sos_automation_plan",
+        "pb-bridge-001-sos_automation_recovery",
         "pb-bridge-001-sos_dashboard",
         "pb-bridge-001-sos_integrity",
         "pb-bridge-001-sos_logistics",
@@ -176,6 +178,7 @@ def test_expand_sos_bridge_configs_applies_mode_policy_and_services(tmp_path: Pa
         "pb-bridge-001-sos_telemetry_quality",
         "pb-bridge-001-sos_automation",
         "pb-bridge-001-sos_automation_plan",
+        "pb-bridge-001-sos_automation_recovery",
         "pb-bridge-001-sos_dashboard",
         "pb-bridge-001-sos_integrity",
         "pb-bridge-001-sos_logistics",
@@ -222,6 +225,9 @@ def test_expand_sos_bridge_configs_applies_mode_policy_and_services(tmp_path: Pa
     assert by_service["automation"]["priority"] == 18
     assert by_service["automation_plan"]["budget"] == 1
     assert by_service["automation_plan"]["priority"] == 4
+    assert by_service["automation_recovery"]["budget"] == 1
+    assert by_service["automation_recovery"]["priority"] == 3
+    assert by_service["automation_recovery"]["reactive"] is True
     assert by_service["dashboard"]["priority"] == 4
     assert by_service["integrity"]["budget"] == 1
     assert by_service["logistics"]["budget"] == 1

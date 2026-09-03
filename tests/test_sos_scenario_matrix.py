@@ -24,6 +24,7 @@ DASHBOARD_TOKEN_SERVICES = {
     "airlock",
     "automation",
     "automation_plan",
+    "automation_recovery",
     "comms",
     "conveyor",
     "crew",
@@ -204,6 +205,8 @@ def _payload(service_id: str, state: str = "ok", warnings: list[str] | None = No
                 "expired_count": 0,
             }
         )
+    elif service_id == "automation_recovery":
+        payload.update({"reason": "approval_missing", "candidate_count": 1})
     elif service_id == "guidance":
         payload.update({"priorities": [{"service_id": "power", "severity": "warning", "reason": item} for item in warnings]})
     elif service_id == "diagnostics":
@@ -399,6 +402,7 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
         "telemetry_quality",
         "automation",
         "automation_plan",
+        "automation_recovery",
         "conveyor",
         "redundancy",
         "topology",
@@ -484,6 +488,7 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
         "telemetry_quality_snapshot": {"sources": [{"service_id": "status", "confidence": 0.99}]},
         "automation_snapshot": {"programmable_blocks": [{"name": "Main PB", "enabled": True}]},
         "automation_plan_snapshot": {"plans": [{"operation": "restart"}]},
+        "operator_approval_snapshot": {"approved": False},
         "conveyor_snapshot": {"conveyors": [{"name": "Cargo Line", "connected": True}]},
         "redundancy_snapshot": {"capabilities": {"transit_jump": {"primary_count": 1, "backup_count": 0}}},
         "topology_snapshot": {"dependencies": [{"source": "power", "target": "mobility", "state": "ok"}]},
@@ -505,6 +510,7 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
         "telemetry_quality_snapshot",
         "automation_snapshot",
         "automation_plan_snapshot",
+        "operator_approval_snapshot",
         "conveyor_snapshot",
         "redundancy_snapshot",
         "topology_snapshot",
@@ -525,6 +531,7 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
     assert "telemetry_quality_snapshot" in captured["telemetry_quality"]
     assert "automation_snapshot" in captured["automation"]
     assert "automation_plan_snapshot" in captured["automation_plan"]
+    assert "operator_approval_snapshot" in captured["automation_recovery"]
     assert "conveyor_snapshot" in captured["conveyor"]
     assert "redundancy_snapshot" in captured["redundancy"]
     assert "topology_snapshot" in captured["topology"]
@@ -546,6 +553,8 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
     assert "automation_plan_snapshot" not in captured["redundancy"]
     assert "conveyor_snapshot" not in captured["redundancy"]
     assert "automation_snapshot" not in captured["automation_plan"]
+    assert "operator_approval_snapshot" not in captured["automation_plan"]
+    assert "operator_approval_snapshot" not in captured["automation"]
     assert "automation_snapshot" not in captured["conveyor"]
     assert "redundancy_snapshot" not in captured["automation"]
     assert "mining_snapshot" in captured["endurance"]
