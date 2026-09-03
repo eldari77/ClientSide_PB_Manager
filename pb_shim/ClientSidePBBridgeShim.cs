@@ -15,6 +15,10 @@ string mailboxMode = "both";
 string textPanelName = "NOVALI PB Bridge";
 string scriptId = "sample_status_adapter";
 string verificationNonce = "";
+bool sosAutomationEnabled = false;
+string sosAutomationApprovalActionId = "";
+string sosAutomationApprovalNonce = "";
+int sosAutomationApprovalExpiresSequence = 0;
 string snapshotMode = "minimal";
 int maxCommandsPerMinute = 30;
 int maxApplyCommandsPerTick = 8;
@@ -47,6 +51,14 @@ string lastApplyLastSkip = "";
 string lastApplyActionText = "";
 string lastApplyActionTime = "";
 string lastApplyActionAtUtc = "";
+string consumedSosAutomationActionId = "";
+string consumedSosAutomationApprovalNonce = "";
+int consumedSosAutomationSequence = -1;
+string lastSosAutomationActionId = "";
+string lastSosAutomationApprovalNonce = "";
+string lastSosAutomationOutcome = "none";
+string lastSosAutomationRejectionReason = "";
+int lastSosAutomationSequence = -1;
 int lastReceivedSequence = -1;
 string lastReceivedStatus = "none";
 string lastResultCompletedAt = "";
@@ -140,6 +152,10 @@ mailbox_mode=both
 text_panel_name=NOVALI PB Bridge
 script_id=sample_status_adapter
 verification_nonce=
+sos_automation_enabled=false
+sos_automation_approval_action_id=
+sos_automation_approval_nonce=
+sos_automation_approval_expires_sequence=0
 snapshot_mode=minimal
 max_commands_per_minute=30
 max_apply_commands_per_tick=8
@@ -166,6 +182,10 @@ fail_closed=true
     EnsureConfigLine("dynamic_runtime_high_ratio", "dynamic_runtime_high_ratio=0.75");
     EnsureConfigLine("include_terminal_metadata", "include_terminal_metadata=false");
     EnsureConfigLine("verification_nonce", "verification_nonce=");
+    EnsureConfigLine("sos_automation_enabled", "sos_automation_enabled=false");
+    EnsureConfigLine("sos_automation_approval_action_id", "sos_automation_approval_action_id=");
+    EnsureConfigLine("sos_automation_approval_nonce", "sos_automation_approval_nonce=");
+    EnsureConfigLine("sos_automation_approval_expires_sequence", "sos_automation_approval_expires_sequence=0");
 }
 
 void UpgradeLegacyConfigDefaults()
@@ -218,6 +238,10 @@ void EnsureConfigLine(string key, string line)
 void LoadConfig()
 {
     instanceLabels.Clear();
+    sosAutomationEnabled = false;
+    sosAutomationApprovalActionId = "";
+    sosAutomationApprovalNonce = "";
+    sosAutomationApprovalExpiresSequence = 0;
     var lines = Me.CustomData.Split('\n');
     bool inSection = false;
     foreach (var raw in lines)
@@ -249,6 +273,10 @@ void LoadConfig()
         if (key == "text_panel_name") textPanelName = value;
         if (key == "script_id") scriptId = value;
         if (key == "verification_nonce") verificationNonce = value;
+        if (key == "sos_automation_enabled") bool.TryParse(value, out sosAutomationEnabled);
+        if (key == "sos_automation_approval_action_id") sosAutomationApprovalActionId = value;
+        if (key == "sos_automation_approval_nonce") sosAutomationApprovalNonce = value;
+        if (key == "sos_automation_approval_expires_sequence") int.TryParse(value, out sosAutomationApprovalExpiresSequence);
         if (key == "snapshot_mode") snapshotMode = value;
         if (key == "max_commands_per_minute") int.TryParse(value, out maxCommandsPerMinute);
         if (key == "max_apply_commands_per_tick") int.TryParse(value, out maxApplyCommandsPerTick);
@@ -301,6 +329,9 @@ string RenderOperatorStatus(string status, int pendingSequence)
         " skip=" + lastApplySkipped.ToString() + "\n" +
         "Queue total=" + lastQueueTotal.ToString() + " rem=" + lastQueueRemaining.ToString() +
         " drain=" + lastQueueDrained.ToString() + "\n" +
+        "SOS automation " + CompactStatus(lastSosAutomationOutcome) + " " +
+        Truncate(lastSosAutomationActionId, 24) + " seq=" + lastSosAutomationSequence.ToString() +
+        (string.IsNullOrWhiteSpace(lastSosAutomationRejectionReason) ? "" : " " + Truncate(lastSosAutomationRejectionReason, 32)) + "\n" +
         "Running:" + "\n";
     if (lastChildStatusLines.Count == 0)
     {
@@ -379,6 +410,38 @@ void LoadState()
         {
             lastApplyActionAtUtc = value;
         }
+        if (key == "consumed_sos_automation_action_id")
+        {
+            consumedSosAutomationActionId = value;
+        }
+        if (key == "consumed_sos_automation_approval_nonce")
+        {
+            consumedSosAutomationApprovalNonce = value;
+        }
+        if (key == "consumed_sos_automation_sequence")
+        {
+            int.TryParse(value, out consumedSosAutomationSequence);
+        }
+        if (key == "last_sos_automation_action_id")
+        {
+            lastSosAutomationActionId = value;
+        }
+        if (key == "last_sos_automation_approval_nonce")
+        {
+            lastSosAutomationApprovalNonce = value;
+        }
+        if (key == "last_sos_automation_outcome")
+        {
+            lastSosAutomationOutcome = value;
+        }
+        if (key == "last_sos_automation_rejection_reason")
+        {
+            lastSosAutomationRejectionReason = value;
+        }
+        if (key == "last_sos_automation_sequence")
+        {
+            int.TryParse(value, out lastSosAutomationSequence);
+        }
         if (key == "sequence")
         {
             int storedSequence;
@@ -397,7 +460,15 @@ void SaveState()
         "sequence=" + sequence.ToString() + "\n" +
         SaveField("last_apply_action_text", lastApplyActionText) +
         SaveField("last_apply_action_time", lastApplyActionTime) +
-        SaveField("last_apply_action_at_utc", lastApplyActionAtUtc);
+        SaveField("last_apply_action_at_utc", lastApplyActionAtUtc) +
+        SaveField("consumed_sos_automation_action_id", consumedSosAutomationActionId) +
+        SaveField("consumed_sos_automation_approval_nonce", consumedSosAutomationApprovalNonce) +
+        SaveField("consumed_sos_automation_sequence", consumedSosAutomationSequence.ToString()) +
+        SaveField("last_sos_automation_action_id", lastSosAutomationActionId) +
+        SaveField("last_sos_automation_approval_nonce", lastSosAutomationApprovalNonce) +
+        SaveField("last_sos_automation_outcome", lastSosAutomationOutcome) +
+        SaveField("last_sos_automation_rejection_reason", lastSosAutomationRejectionReason) +
+        SaveField("last_sos_automation_sequence", lastSosAutomationSequence.ToString());
 }
 
 string SaveField(string key, string value)
@@ -511,6 +582,12 @@ string BuildRequest()
             Quote("snapshot_mode") + ":" + Quote(snapshotMode) + "," +
             Quote("block_count") + ":" + blockCount.ToString() + "," +
             Quote("inventory_count") + ":" + inventoryCount.ToString() + "," +
+            Quote("sos_automation") + ":{" +
+                Quote("last_action_id") + ":" + Quote(lastSosAutomationActionId) + "," +
+                Quote("last_outcome") + ":" + Quote(lastSosAutomationOutcome) + "," +
+                Quote("last_rejection_reason") + ":" + Quote(lastSosAutomationRejectionReason) + "," +
+                Quote("last_sequence") + ":" + lastSosAutomationSequence.ToString() +
+            "}," +
             Quote("last_apply") + ":{" +
                 Quote("sequence") + ":" + lastApplySequence.ToString() + "," +
                 Quote("result_status") + ":" + Quote(lastApplyResultStatus) + "," +
@@ -801,7 +878,7 @@ string ApplyWorkerCommands(string resultText, int resultSequence, string resultS
         }
         if (kind == "set_block_enabled")
         {
-            if (ApplySetBlockEnabledCommand(command))
+            if (ApplySetBlockEnabledCommand(command, resultSequence))
             {
                 RecordActionText(DescribeCommandAction(kind, command));
                 applied++;
@@ -1339,8 +1416,13 @@ void PrepareTextSurface(IMyTextSurface surface, string command)
     surface.ContentType = contentType == "script" ? ContentType.SCRIPT : ContentType.TEXT_AND_IMAGE;
 }
 
-bool ApplySetBlockEnabledCommand(string command)
+bool ApplySetBlockEnabledCommand(string command, int resultSequence)
 {
+    var isSosAutomationRecovery = HasJsonField(command, "sos_action_family");
+    if (isSosAutomationRecovery && !ValidateSosAutomationRecoveryCommand(command, resultSequence))
+    {
+        return false;
+    }
     var blockId = ExtractLong(command, "block_entity_id");
     var enabled = ExtractBool(command, "enabled");
     if (blockId == 0)
@@ -1361,7 +1443,117 @@ bool ApplySetBlockEnabledCommand(string command)
         return false;
     }
     functional.Enabled = enabled;
+    if (isSosAutomationRecovery)
+    {
+        ConsumeSosAutomationReceipt(command, resultSequence);
+    }
     return true;
+}
+
+bool ValidateSosAutomationRecoveryCommand(string command, int resultSequence)
+{
+    var actionId = ExtractString(command, "sos_action_id");
+    var actionFamily = ExtractString(command, "sos_action_family");
+    var approvalNonce = ExtractString(command, "sos_approval_nonce");
+    if (!sosAutomationEnabled)
+    {
+        return RejectSosAutomationRecovery(actionId, approvalNonce, resultSequence, "sos_automation_disabled");
+    }
+    if (actionFamily != "programmable_block_recovery")
+    {
+        return RejectSosAutomationRecovery(actionId, approvalNonce, resultSequence, "sos_action_family_unsupported");
+    }
+    if (!ExtractBool(command, "enabled"))
+    {
+        return RejectSosAutomationRecovery(actionId, approvalNonce, resultSequence, "sos_recovery_requires_enabled");
+    }
+    if (string.IsNullOrWhiteSpace(actionId))
+    {
+        return RejectSosAutomationRecovery(actionId, approvalNonce, resultSequence, "sos_action_id_missing");
+    }
+    if (string.IsNullOrWhiteSpace(approvalNonce))
+    {
+        return RejectSosAutomationRecovery(actionId, approvalNonce, resultSequence, "sos_approval_nonce_missing");
+    }
+    if (actionId != sosAutomationApprovalActionId)
+    {
+        return RejectSosAutomationRecovery(actionId, approvalNonce, resultSequence, "sos_approval_action_mismatch");
+    }
+    if (approvalNonce != sosAutomationApprovalNonce)
+    {
+        return RejectSosAutomationRecovery(actionId, approvalNonce, resultSequence, "sos_approval_nonce_mismatch");
+    }
+    var expiresAfterSequence = ExtractInt(command, "sos_expires_after_sequence");
+    if (sosAutomationApprovalExpiresSequence <= 0)
+    {
+        return RejectSosAutomationRecovery(actionId, approvalNonce, resultSequence, "sos_approval_expiry_missing");
+    }
+    if (expiresAfterSequence != sosAutomationApprovalExpiresSequence)
+    {
+        return RejectSosAutomationRecovery(actionId, approvalNonce, resultSequence, "sos_approval_expiry_mismatch");
+    }
+    if (expiresAfterSequence < resultSequence)
+    {
+        return RejectSosAutomationRecovery(actionId, approvalNonce, resultSequence, "sos_approval_expired");
+    }
+    if (IsSosAutomationReceiptConsumed(actionId, approvalNonce))
+    {
+        return RejectSosAutomationRecovery(actionId, approvalNonce, resultSequence, "sos_approval_receipt_consumed");
+    }
+    var targetGridEntityId = ExtractLong(command, "sos_target_grid_entity_id");
+    if (targetGridEntityId == 0)
+    {
+        return RejectSosAutomationRecovery(actionId, approvalNonce, resultSequence, "sos_target_grid_invalid");
+    }
+    var target = ResolveTerminalBlock(ExtractLong(command, "block_entity_id")) as IMyProgrammableBlock;
+    if (target == null)
+    {
+        return RejectSosAutomationRecovery(actionId, approvalNonce, resultSequence, "sos_target_not_programmable_block");
+    }
+    if (target.CubeGrid == null || Me.CubeGrid == null ||
+        target.CubeGrid.EntityId != Me.CubeGrid.EntityId ||
+        target.CubeGrid.EntityId != targetGridEntityId)
+    {
+        return RejectSosAutomationRecovery(actionId, approvalNonce, resultSequence, "sos_target_grid_mismatch");
+    }
+    return true;
+}
+
+bool RejectSosAutomationRecovery(string actionId, string approvalNonce, int resultSequence, string reason)
+{
+    lastCommandSkipReason = reason;
+    RecordSosAutomationReceipt(actionId, approvalNonce, resultSequence, "rejected", reason, false);
+    return false;
+}
+
+bool IsSosAutomationReceiptConsumed(string actionId, string approvalNonce)
+{
+    return !string.IsNullOrWhiteSpace(actionId) &&
+        actionId == consumedSosAutomationActionId &&
+        approvalNonce == consumedSosAutomationApprovalNonce;
+}
+
+void ConsumeSosAutomationReceipt(string command, int resultSequence)
+{
+    var actionId = ExtractString(command, "sos_action_id");
+    var approvalNonce = ExtractString(command, "sos_approval_nonce");
+    RecordSosAutomationReceipt(actionId, approvalNonce, resultSequence, "applied", "", true);
+}
+
+void RecordSosAutomationReceipt(string actionId, string approvalNonce, int resultSequence, string outcome, string reason, bool consumeReceipt)
+{
+    lastSosAutomationActionId = actionId;
+    lastSosAutomationApprovalNonce = approvalNonce;
+    lastSosAutomationOutcome = outcome;
+    lastSosAutomationRejectionReason = reason;
+    lastSosAutomationSequence = resultSequence;
+    if (consumeReceipt)
+    {
+        consumedSosAutomationActionId = actionId;
+        consumedSosAutomationApprovalNonce = approvalNonce;
+        consumedSosAutomationSequence = resultSequence;
+    }
+    SaveState();
 }
 
 bool ApplySetUseConveyorCommand(string command)
@@ -1908,6 +2100,11 @@ string RemoveMarkedBlock(string original)
 string Quote(string value)
 {
     return "\"" + value.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
+}
+
+bool HasJsonField(string text, string key)
+{
+    return text.IndexOf("\"" + key + "\"") >= 0;
 }
 
 string ExtractString(string text, string key)

@@ -199,3 +199,85 @@ def test_pb_shim_renders_operator_status_panel_with_queue_and_child_statuses():
     assert "lastChildStatusLines" in source
     assert "instance_label." in source
     assert '"Pending request: seq "' not in source
+
+
+def test_pb_shim_sos_automation_approval_receipt_is_disabled_by_default_and_distinct_from_verification_nonce():
+    source = SHIM.read_text(encoding="utf-8")
+
+    assert "bool sosAutomationEnabled = false;" in source
+    assert 'string sosAutomationApprovalActionId = "";' in source
+    assert 'string sosAutomationApprovalNonce = "";' in source
+    assert "int sosAutomationApprovalExpiresSequence = 0;" in source
+    assert "sos_automation_enabled=false" in source
+    assert "sos_automation_approval_action_id=" in source
+    assert "sos_automation_approval_nonce=" in source
+    assert "sos_automation_approval_expires_sequence=0" in source
+    assert "sosAutomationEnabled = false;" in source[source.index("void LoadConfig") : source.index("void EchoOperatorStatus")]
+    assert 'if (key == "sos_automation_enabled") bool.TryParse(value, out sosAutomationEnabled);' in source
+    assert 'if (key == "sos_automation_approval_action_id") sosAutomationApprovalActionId = value;' in source
+    assert 'if (key == "sos_automation_approval_nonce") sosAutomationApprovalNonce = value;' in source
+    assert 'if (key == "sos_automation_approval_expires_sequence") int.TryParse(value, out sosAutomationApprovalExpiresSequence);' in source
+
+
+def test_pb_shim_sos_automation_recovery_gate_requires_exact_receipt_target_and_expiry():
+    source = SHIM.read_text(encoding="utf-8")
+    set_enabled_body = source[source.index("bool ApplySetBlockEnabledCommand") : source.index("bool ApplySetUseConveyorCommand")]
+    gate_body = source[source.index("bool ValidateSosAutomationRecoveryCommand") : source.index("void RecordSosAutomationReceipt")]
+
+    assert 'HasJsonField(command, "sos_action_family")' in set_enabled_body
+    assert "ValidateSosAutomationRecoveryCommand(command, resultSequence)" in set_enabled_body
+    assert "sos_automation_disabled" in gate_body
+    assert 'actionFamily != "programmable_block_recovery"' in gate_body
+    assert "sos_recovery_requires_enabled" in gate_body
+    assert "sos_action_id_missing" in gate_body
+    assert "sos_approval_nonce_missing" in gate_body
+    assert "sos_approval_action_mismatch" in gate_body
+    assert "sos_approval_nonce_mismatch" in gate_body
+    assert "sos_approval_expiry_missing" in gate_body
+    assert "sos_approval_expiry_mismatch" in gate_body
+    assert "sos_approval_expired" in gate_body
+    assert "sos_approval_receipt_consumed" in gate_body
+    assert "IMyProgrammableBlock" in gate_body
+    assert "sos_target_grid_invalid" in gate_body
+    assert "sos_target_grid_mismatch" in gate_body
+    assert "target.CubeGrid.EntityId != Me.CubeGrid.EntityId" in gate_body
+    assert "target.CubeGrid.EntityId != targetGridEntityId" in gate_body
+    assert "ConsumeSosAutomationReceipt" in set_enabled_body
+
+
+def test_pb_shim_sos_automation_receipt_is_persisted_and_published_without_replaying_actions():
+    source = SHIM.read_text(encoding="utf-8")
+
+    for field in (
+        "consumedSosAutomationActionId",
+        "consumedSosAutomationApprovalNonce",
+        "consumedSosAutomationSequence",
+        "lastSosAutomationActionId",
+        "lastSosAutomationApprovalNonce",
+        "lastSosAutomationOutcome",
+        "lastSosAutomationRejectionReason",
+        "lastSosAutomationSequence",
+    ):
+        assert field in source
+    assert 'SaveField("consumed_sos_automation_action_id", consumedSosAutomationActionId)' in source
+    assert 'SaveField("consumed_sos_automation_approval_nonce", consumedSosAutomationApprovalNonce)' in source
+    assert 'SaveField("last_sos_automation_action_id", lastSosAutomationActionId)' in source
+    assert 'SaveField("last_sos_automation_approval_nonce", lastSosAutomationApprovalNonce)' in source
+    assert 'Quote("sos_automation")' in source
+    assert 'Quote("last_action_id")' in source
+    assert 'Quote("last_outcome")' in source
+    assert 'Quote("last_rejection_reason")' in source
+    assert "RecordSosAutomationReceipt(actionId, approvalNonce, resultSequence, \"rejected\", reason, false);" in source
+    assert "RecordSosAutomationReceipt(actionId, approvalNonce, resultSequence, \"applied\", \"\", true);" in source
+
+
+def test_pb_shim_keeps_non_sos_block_enable_and_existing_result_guards_unchanged():
+    source = SHIM.read_text(encoding="utf-8")
+    set_enabled_body = source[source.index("bool ApplySetBlockEnabledCommand") : source.index("bool ApplySetUseConveyorCommand")]
+
+    assert 'var isSosAutomationRecovery = HasJsonField(command, "sos_action_family");' in set_enabled_body
+    assert "if (isSosAutomationRecovery && !ValidateSosAutomationRecoveryCommand(command, resultSequence))" in set_enabled_body
+    assert "functional.Enabled = enabled;" in set_enabled_body
+    assert "if (bridge != bridgeId || script != scriptId || resultSequence != sequence)" in source
+    assert "if (applied >= budget)" in source
+    assert 'lastCommandSkipReason = "unknown_kind:" + kind;' in source

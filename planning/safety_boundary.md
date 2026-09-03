@@ -92,3 +92,31 @@
   duplicate expected grid entity ids.
 - Treat SOS expected-grid mismatches as identity blockers before adding any
   navigation, weapons, or broader ship-control service.
+- Keep SOS programmable-block recovery disabled unless the PB operator enters a
+  one-time approval receipt in that shim's CustomData. The receipt applies only
+  to `set_block_enabled enabled=true` on a same-grid `IMyProgrammableBlock` and
+  must exactly match the action id, nonce, target grid id, and expiry sequence.
+- Consume a successful SOS approval receipt in PB Storage. Reject replayed,
+  expired, malformed, cross-grid, wrong-type, disabled, or unsupported SOS
+  recovery commands. This is not generic execution authority.
+
+## SOS Operator Approval Receipt Gate
+
+The PB shim is the final execution boundary for a future SOS recovery proposal.
+It has no general SOS executor and accepts no `restart_programmable_block` or
+approval command kind. A future result may use the existing
+`set_block_enabled` command only when it includes `sos_action_family` with the
+exact value `programmable_block_recovery` and every receipt field below:
+
+- `sos_action_id`
+- `sos_approval_nonce`
+- `sos_target_grid_entity_id`
+- `sos_expires_after_sequence`
+
+The operator must explicitly set `sos_automation_enabled=true` and enter a
+matching action id, nonce, and expiry in the same PB's CustomData. The shim
+requires an exact `Me.CubeGrid` match even when connected-grid commands are
+otherwise enabled. It stores the successful consumed pair separately from the
+last applied or rejected receipt, including its nonce, so an audit rejection
+cannot clear replay protection. SOS services remain passive until a future emitter produces this
+strict envelope; the current `sos_automation_plan` service emits no commands.

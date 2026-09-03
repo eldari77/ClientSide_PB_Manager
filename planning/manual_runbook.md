@@ -41,6 +41,10 @@ dynamic_min_apply_commands_per_tick=1
 dynamic_max_apply_commands_per_tick=8
 apply_worker_commands=true
 allow_connected_grid_commands=false
+sos_automation_enabled=false
+sos_automation_approval_action_id=
+sos_automation_approval_nonce=
+sos_automation_approval_expires_sequence=0
 ```
 
 In the manager, use the Bridges tab as the fastest PB setup path. Select the
@@ -64,6 +68,16 @@ Use the Worker Scripts tab, Config sub-tab, Inventory Sorting section to tune:
 - Apply/tick
 - Plan/tick
 - Machine plan/tick
+
+## SOS One-Time Recovery Approval
+
+`sos_automation_enabled` remains `false` by default. Do not enable it for a
+normal SOS status or automation-plan run. For one future same-grid programmable
+block recovery, enter a unique action id, approval nonce, and expiry sequence
+directly in the shim PB CustomData, then set `sos_automation_enabled=true`.
+The receipt is consumed only after a matching `set_block_enabled enabled=true`
+result reaches the shim; it cannot enable connected-grid blocks or any other
+block type or command kind.
 
 Start with Dry run enabled if testing on a live ship you care about. Disable
 Dry run only after the latest result summary shows the expected transfer plan.

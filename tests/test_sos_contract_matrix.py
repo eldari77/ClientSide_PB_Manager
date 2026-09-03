@@ -143,6 +143,21 @@ def test_manifest_sos_scripts_have_thin_adapter_default_instance_and_sos_ship_mo
         assert mounted_by_script_id[mounted_id]["service_id"] == service_id
 
 
+def test_sos_automation_plan_contract_remains_passive_and_commandless() -> None:
+    service = importlib.import_module("sos.services.automation_plan")
+
+    result = service.run(
+        {
+            "bridge_id": "pb-bridge-001",
+            "sequence": 1,
+            "sos_ship": {"ship_id": "ship-a", "display_name": "Matrix Ship", "mode": "Docked"},
+            "automation_plan_snapshot": {"plans": [{"action_family": "programmable_block_recovery", "operation": "restart"}]},
+        }
+    )
+
+    assert result["commands"] == []
+
+
 def test_recent_meta_services_have_manifest_instance_registry_and_orchestrator_parity() -> None:
     manifest_by_script_id = {script["script_id"]: script for script in _manifest_sos_scripts()}
     mounted_by_service_id = {service["service_id"]: service for service in _mounted_sos_services()}

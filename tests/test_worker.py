@@ -5669,6 +5669,7 @@ def test_execute_sos_orchestrator_scopes_automation_plan_evidence_and_preserves_
         for plan in plan_child["result"]["sos_automation_plan"]["plans"]
     )
     assert result["result"]["commands"] == []
+    assert all(command["kind"] != "set_block_enabled" for command in result["result"]["commands"])
 
 
 def test_execute_sos_orchestrator_runs_redundancy_child_with_existing_services(tmp_path: Path):

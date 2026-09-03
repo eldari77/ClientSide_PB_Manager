@@ -241,6 +241,34 @@ caps the text payload size. It is not a generic terminal-action escape hatch.
 }
 ```
 
+### SOS Programmable-Block Recovery Envelope
+
+Existing non-SOS `set_block_enabled` commands retain their current behavior.
+When `sos_action_family` is present, however, the shim treats the command as a
+future SOS recovery request and fail-closes unless all receipt fields are
+present and valid:
+
+```json
+{
+  "kind": "set_block_enabled",
+  "block_entity_id": 789,
+  "enabled": true,
+  "sos_action_id": "sos-ap-example",
+  "sos_action_family": "programmable_block_recovery",
+  "sos_approval_nonce": "operator-entered-once",
+  "sos_target_grid_entity_id": 123456,
+  "sos_expires_after_sequence": 42
+}
+```
+
+This envelope never introduces a new command kind or a generic execution API.
+The shim permits it only when its own CustomData enables SOS automation and the
+operator-entered action id, nonce, and expiry exactly match. The target must be
+an `IMyProgrammableBlock` on the shim PB's exact cube grid, `enabled` must be
+`true`, and the receipt pair must not have been consumed. The shim records the
+last outcome in request state and persists successful receipt consumption to
+reject replay.
+
 ```json
 {
   "kind": "set_use_conveyor",

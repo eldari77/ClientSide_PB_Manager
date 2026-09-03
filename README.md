@@ -48,6 +48,11 @@ PB budgets. New PB command kinds are `write_text_surface`,
 `remove_assembler_queue_item`, and `clear_assembler_queue`. These are
 foundation commands, not full behavior parity yet; the current parity state is
 tracked in `planning/isy_parity_matrix.md`.
+
+SOS automation-plan output remains passive. A future SOS programmable-block
+recovery may use only the existing `set_block_enabled enabled=true` path, and
+only after a disabled-by-default, one-time PB-side approval receipt matches the
+same-grid programmable-block target. It is not general execution authority.
 The worker now uses hybrid industry input stocking by default. Assemblers, food
 processors, and refineries keep their conveyor pull enabled while the worker
 continues to steer high-value behavior: queue goals, priority ore nudges,
