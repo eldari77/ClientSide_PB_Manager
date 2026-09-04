@@ -12,6 +12,7 @@ from worker.worker import WorkerScript, compact_result_for_storage, enriched_chi
 
 DIRECTIVE_ALIASES = ("operating_directive_snapshot", "desired_mode_snapshot", "operator_mode_request")
 MODE_LEDGER_ALIASES = ("mode_ledger_snapshot", "active_mode_snapshot", "operating_mode_receipt", "mode_transition_receipt", "mode_transition_ledger", "mode_transition_snapshot")
+MODE_TRANSITION_PLAN_ALIASES = ("mode_transition_request", "operator_mode_transition", "mode_change_request", "operating_mode_request", "mode_transition_plan_snapshot")
 AUTHORITY_ALIASES = ("authority_snapshot", "operating_authority_snapshot", "procedure_policy_snapshot")
 RECOVERY_ALIASES = ("operator_approval_snapshot", "automation_approval_snapshot", "sos_automation_approval", "sos_automation", "automation_receipt_snapshot", "automation_recovery_receipt", "recovery_receipt_snapshot")
 
@@ -51,6 +52,7 @@ def _orchestrator_request(bridge_id: str, *, mode: str = "Docked") -> dict[str, 
         "state": {"mode": mode},
         **{key: dict(directive) for key in DIRECTIVE_ALIASES},
         **{key: {"active_mode": mode, "requested_mode": "Cruise", "transition_id": "core-loop-transition", "transition_sequence": 10, "last_outcome": "pending", "grid_entity_id": 10} for key in MODE_LEDGER_ALIASES},
+        **{key: {"requested_mode": "Cruise", "request_id": "core-loop-plan", "expires_after_sequence": 20} for key in MODE_TRANSITION_PLAN_ALIASES},
         **{key: {"mode": mode} for key in AUTHORITY_ALIASES},
         "operator_approval_snapshot": approval,
         "automation_approval_snapshot": approval,
@@ -64,7 +66,7 @@ def _orchestrator_request(bridge_id: str, *, mode: str = "Docked") -> dict[str, 
 
 def test_orchestrator_routes_control_aliases_only_to_owning_children_and_preserves_all_history_shapes(tmp_path: Path) -> None:
     captured: dict[str, dict[str, Any]] = {}
-    service_ids = ("status", "operating_directive", "mode_ledger", "authority", "guidance", "runbook", "automation_recovery", "dashboard")
+    service_ids = ("status", "operating_directive", "mode_ledger", "mode_transition_plan", "authority", "guidance", "runbook", "automation_recovery", "dashboard")
     bridge_id = "bridge-loop"
     services = [{"service_id": service_id, "script_id": f"{bridge_id}-sos_{service_id}"} for service_id in service_ids]
     (tmp_path / "data").mkdir()
@@ -96,13 +98,16 @@ def test_orchestrator_routes_control_aliases_only_to_owning_children_and_preserv
     for alias in MODE_LEDGER_ALIASES:
         assert alias in captured["mode_ledger"]
         assert all(alias not in request for service_id, request in captured.items() if service_id != "mode_ledger")
+    for alias in MODE_TRANSITION_PLAN_ALIASES:
+        assert alias in captured["mode_transition_plan"]
+        assert all(alias not in request for service_id, request in captured.items() if service_id != "mode_transition_plan")
     for alias in AUTHORITY_ALIASES:
         assert alias in captured["authority"]
         assert all(alias not in request for service_id, request in captured.items() if service_id != "authority")
     for alias in RECOVERY_ALIASES:
         assert alias in captured["automation_recovery"]
         assert all(alias not in request for service_id, request in captured.items() if service_id != "automation_recovery")
-    for service_id in ("authority", "operating_directive", "mode_ledger", "guidance", "runbook", "dashboard", "automation_recovery"):
+    for service_id in ("authority", "operating_directive", "mode_ledger", "mode_transition_plan", "guidance", "runbook", "dashboard", "automation_recovery"):
         telemetry = captured[service_id]["runtime_telemetry"]
         assert telemetry["child_services"]
         assert telemetry["child_services_by_service_id"]
