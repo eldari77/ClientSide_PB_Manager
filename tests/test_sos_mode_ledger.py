@@ -11,8 +11,6 @@ from worker.worker import WorkerScript, enriched_child_runtime_telemetry, execut
 LEDGER_ALIASES = (
     "mode_ledger_snapshot",
     "active_mode_snapshot",
-    "operating_mode_receipt",
-    "mode_transition_receipt",
     "mode_transition_ledger",
     "mode_transition_snapshot",
 )

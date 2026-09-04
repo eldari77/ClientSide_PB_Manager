@@ -19,6 +19,13 @@ bool sosAutomationEnabled = false;
 string sosAutomationApprovalActionId = "";
 string sosAutomationApprovalNonce = "";
 int sosAutomationApprovalExpiresSequence = 0;
+bool sosModeTransitionEnabled = false;
+string sosModeTransitionApprovalActionId = "";
+string sosModeTransitionApprovalNonce = "";
+long sosModeTransitionApprovalGridId = 0;
+string sosModeTransitionApprovalFromMode = "";
+string sosModeTransitionApprovalToMode = "";
+int sosModeTransitionApprovalExpiresSequence = 0;
 string snapshotMode = "minimal";
 int maxCommandsPerMinute = 30;
 int maxApplyCommandsPerTick = 8;
@@ -59,6 +66,19 @@ string lastSosAutomationApprovalNonce = "";
 string lastSosAutomationOutcome = "none";
 string lastSosAutomationRejectionReason = "";
 int lastSosAutomationSequence = -1;
+string sosActiveMode = "Docked";
+bool sosModeLedgerIsValid = true;
+string consumedSosModeTransitionActionId = "";
+string consumedSosModeTransitionApprovalNonce = "";
+int consumedSosModeTransitionSequence = -1;
+string lastSosModeTransitionActionId = "";
+string lastSosModeTransitionApprovalNonce = "";
+string lastSosModeTransitionFromMode = "";
+string lastSosModeTransitionToMode = "";
+long lastSosModeTransitionGridId = 0;
+string lastSosModeTransitionOutcome = "none";
+string lastSosModeTransitionRejectionReason = "";
+int lastSosModeTransitionSequence = -1;
 int lastReceivedSequence = -1;
 string lastReceivedStatus = "none";
 string lastResultCompletedAt = "";
@@ -156,6 +176,13 @@ sos_automation_enabled=false
 sos_automation_approval_action_id=
 sos_automation_approval_nonce=
 sos_automation_approval_expires_sequence=0
+sos_mode_transition_enabled=false
+sos_mode_transition_approval_action_id=
+sos_mode_transition_approval_nonce=
+sos_mode_transition_approval_grid_id=0
+sos_mode_transition_approval_from_mode=
+sos_mode_transition_approval_to_mode=
+sos_mode_transition_approval_expires_sequence=0
 snapshot_mode=minimal
 max_commands_per_minute=30
 max_apply_commands_per_tick=8
@@ -186,6 +213,13 @@ fail_closed=true
     EnsureConfigLine("sos_automation_approval_action_id", "sos_automation_approval_action_id=");
     EnsureConfigLine("sos_automation_approval_nonce", "sos_automation_approval_nonce=");
     EnsureConfigLine("sos_automation_approval_expires_sequence", "sos_automation_approval_expires_sequence=0");
+    EnsureConfigLine("sos_mode_transition_enabled", "sos_mode_transition_enabled=false");
+    EnsureConfigLine("sos_mode_transition_approval_action_id", "sos_mode_transition_approval_action_id=");
+    EnsureConfigLine("sos_mode_transition_approval_nonce", "sos_mode_transition_approval_nonce=");
+    EnsureConfigLine("sos_mode_transition_approval_grid_id", "sos_mode_transition_approval_grid_id=0");
+    EnsureConfigLine("sos_mode_transition_approval_from_mode", "sos_mode_transition_approval_from_mode=");
+    EnsureConfigLine("sos_mode_transition_approval_to_mode", "sos_mode_transition_approval_to_mode=");
+    EnsureConfigLine("sos_mode_transition_approval_expires_sequence", "sos_mode_transition_approval_expires_sequence=0");
 }
 
 void UpgradeLegacyConfigDefaults()
@@ -242,6 +276,13 @@ void LoadConfig()
     sosAutomationApprovalActionId = "";
     sosAutomationApprovalNonce = "";
     sosAutomationApprovalExpiresSequence = 0;
+    sosModeTransitionEnabled = false;
+    sosModeTransitionApprovalActionId = "";
+    sosModeTransitionApprovalNonce = "";
+    sosModeTransitionApprovalGridId = 0;
+    sosModeTransitionApprovalFromMode = "";
+    sosModeTransitionApprovalToMode = "";
+    sosModeTransitionApprovalExpiresSequence = 0;
     var lines = Me.CustomData.Split('\n');
     bool inSection = false;
     foreach (var raw in lines)
@@ -277,6 +318,13 @@ void LoadConfig()
         if (key == "sos_automation_approval_action_id") sosAutomationApprovalActionId = value;
         if (key == "sos_automation_approval_nonce") sosAutomationApprovalNonce = value;
         if (key == "sos_automation_approval_expires_sequence") int.TryParse(value, out sosAutomationApprovalExpiresSequence);
+        if (key == "sos_mode_transition_enabled") bool.TryParse(value, out sosModeTransitionEnabled);
+        if (key == "sos_mode_transition_approval_action_id") sosModeTransitionApprovalActionId = value;
+        if (key == "sos_mode_transition_approval_nonce") sosModeTransitionApprovalNonce = value;
+        if (key == "sos_mode_transition_approval_grid_id") long.TryParse(value, out sosModeTransitionApprovalGridId);
+        if (key == "sos_mode_transition_approval_from_mode") sosModeTransitionApprovalFromMode = value;
+        if (key == "sos_mode_transition_approval_to_mode") sosModeTransitionApprovalToMode = value;
+        if (key == "sos_mode_transition_approval_expires_sequence") int.TryParse(value, out sosModeTransitionApprovalExpiresSequence);
         if (key == "snapshot_mode") snapshotMode = value;
         if (key == "max_commands_per_minute") int.TryParse(value, out maxCommandsPerMinute);
         if (key == "max_apply_commands_per_tick") int.TryParse(value, out maxApplyCommandsPerTick);
@@ -442,6 +490,22 @@ void LoadState()
         {
             int.TryParse(value, out lastSosAutomationSequence);
         }
+        if (key == "sos_mode_transition_ledger")
+        {
+            LoadSosModeTransitionLedger(value);
+        }
+        if (key == "consumed_sos_mode_transition_action_id")
+        {
+            consumedSosModeTransitionActionId = value;
+        }
+        if (key == "consumed_sos_mode_transition_approval_nonce")
+        {
+            consumedSosModeTransitionApprovalNonce = value;
+        }
+        if (key == "consumed_sos_mode_transition_sequence")
+        {
+            int.TryParse(value, out consumedSosModeTransitionSequence);
+        }
         if (key == "sequence")
         {
             int storedSequence;
@@ -468,7 +532,51 @@ void SaveState()
         SaveField("last_sos_automation_approval_nonce", lastSosAutomationApprovalNonce) +
         SaveField("last_sos_automation_outcome", lastSosAutomationOutcome) +
         SaveField("last_sos_automation_rejection_reason", lastSosAutomationRejectionReason) +
-        SaveField("last_sos_automation_sequence", lastSosAutomationSequence.ToString());
+        SaveField("last_sos_automation_sequence", lastSosAutomationSequence.ToString()) +
+        SaveField("sos_mode_transition_ledger", BuildSosModeTransitionLedger()) +
+        SaveField("consumed_sos_mode_transition_action_id", consumedSosModeTransitionActionId) +
+        SaveField("consumed_sos_mode_transition_approval_nonce", consumedSosModeTransitionApprovalNonce) +
+        SaveField("consumed_sos_mode_transition_sequence", consumedSosModeTransitionSequence.ToString());
+}
+
+string BuildSosModeTransitionLedger()
+{
+    return "{" +
+        Quote("schema") + ":" + Quote("novali.sos_mode_ledger.v1") + "," +
+        Quote("active_mode") + ":" + Quote(sosActiveMode) + "," +
+        Quote("previous_mode") + ":" + Quote(lastSosModeTransitionFromMode) + "," +
+        Quote("target_mode") + ":" + Quote(lastSosModeTransitionToMode) + "," +
+        Quote("action_id") + ":" + Quote(lastSosModeTransitionActionId) + "," +
+        Quote("approval_nonce") + ":" + Quote(lastSosModeTransitionApprovalNonce) + "," +
+        Quote("grid_entity_id") + ":" + lastSosModeTransitionGridId.ToString() + "," +
+        Quote("sequence") + ":" + lastSosModeTransitionSequence.ToString() + "," +
+        Quote("outcome") + ":" + Quote(lastSosModeTransitionOutcome) + "," +
+        Quote("rejection_reason") + ":" + Quote(lastSosModeTransitionRejectionReason) +
+    "}";
+}
+
+void LoadSosModeTransitionLedger(string ledger)
+{
+    if (string.IsNullOrWhiteSpace(ledger))
+    {
+        return;
+    }
+    var activeMode = ExtractString(ledger, "active_mode");
+    var outcome = ExtractString(ledger, "outcome");
+    if (ExtractString(ledger, "schema") != "novali.sos_mode_ledger.v1" || !IsKnownSosMode(activeMode) || string.IsNullOrWhiteSpace(outcome))
+    {
+        sosModeLedgerIsValid = false;
+        return;
+    }
+    sosActiveMode = activeMode;
+    lastSosModeTransitionFromMode = ExtractString(ledger, "previous_mode");
+    lastSosModeTransitionToMode = ExtractString(ledger, "target_mode");
+    lastSosModeTransitionActionId = ExtractString(ledger, "action_id");
+    lastSosModeTransitionApprovalNonce = ExtractString(ledger, "approval_nonce");
+    lastSosModeTransitionGridId = ExtractLong(ledger, "grid_entity_id");
+    lastSosModeTransitionSequence = ExtractInt(ledger, "sequence");
+    lastSosModeTransitionOutcome = outcome;
+    lastSosModeTransitionRejectionReason = ExtractString(ledger, "rejection_reason");
 }
 
 string SaveField(string key, string value)
@@ -588,6 +696,7 @@ string BuildRequest()
                 Quote("last_rejection_reason") + ":" + Quote(lastSosAutomationRejectionReason) + "," +
                 Quote("last_sequence") + ":" + lastSosAutomationSequence.ToString() +
             "}," +
+            Quote("sos_mode_transition") + ":" + BuildSosModeTransitionReceipt() + "," +
             Quote("last_apply") + ":{" +
                 Quote("sequence") + ":" + lastApplySequence.ToString() + "," +
                 Quote("result_status") + ":" + Quote(lastApplyResultStatus) + "," +
@@ -601,9 +710,24 @@ string BuildRequest()
                 Quote("last_action_time") + ":" + Quote(lastApplyActionTime) + "," +
                 Quote("last_action_at_utc") + ":" + Quote(lastApplyActionAtUtc) +
             "}" +
-        "}" +
+        "}," +
+        Quote("mode_transition_receipt") + ":" + BuildSosModeTransitionReceipt() +
     "}";
     return Begin + "\n" + json + "\n" + End;
+}
+
+string BuildSosModeTransitionReceipt()
+{
+    return "{" +
+        Quote("last_action_id") + ":" + Quote(lastSosModeTransitionActionId) + "," +
+        Quote("approval_nonce") + ":" + Quote(lastSosModeTransitionApprovalNonce) + "," +
+        Quote("from_mode") + ":" + Quote(lastSosModeTransitionFromMode) + "," +
+        Quote("to_mode") + ":" + Quote(lastSosModeTransitionToMode) + "," +
+        Quote("target_grid_entity_id") + ":" + lastSosModeTransitionGridId.ToString() + "," +
+        Quote("last_outcome") + ":" + Quote(lastSosModeTransitionOutcome) + "," +
+        Quote("last_rejection_reason") + ":" + Quote(lastSosModeTransitionRejectionReason) + "," +
+        Quote("last_sequence") + ":" + lastSosModeTransitionSequence.ToString() +
+    "}";
 }
 
 void WriteMailboxText(string text)
@@ -879,6 +1003,19 @@ string ApplyWorkerCommands(string resultText, int resultSequence, string resultS
         if (kind == "set_block_enabled")
         {
             if (ApplySetBlockEnabledCommand(command, resultSequence))
+            {
+                RecordActionText(DescribeCommandAction(kind, command));
+                applied++;
+            }
+            else
+            {
+                skipped++;
+            }
+            continue;
+        }
+        if (kind == "set_sos_active_mode")
+        {
+            if (ApplySetSosActiveModeCommand(command, resultSequence))
             {
                 RecordActionText(DescribeCommandAction(kind, command));
                 applied++;
@@ -1414,6 +1551,116 @@ void PrepareTextSurface(IMyTextSurface surface, string command)
     }
     var contentType = ExtractString(command, "content_type").ToLower();
     surface.ContentType = contentType == "script" ? ContentType.SCRIPT : ContentType.TEXT_AND_IMAGE;
+}
+
+bool ApplySetSosActiveModeCommand(string command, int resultSequence)
+{
+    var actionId = ExtractString(command, "sos_action_id");
+    var approvalNonce = ExtractString(command, "sos_approval_nonce");
+    var fromMode = ExtractString(command, "from_mode");
+    var toMode = ExtractString(command, "to_mode");
+    var targetGridEntityId = ExtractLong(command, "sos_target_grid_entity_id");
+    if (!ValidateSosModeTransitionCommand(command, resultSequence))
+    {
+        return false;
+    }
+    sosActiveMode = toMode;
+    RecordSosModeTransitionReceipt(actionId, approvalNonce, fromMode, toMode, targetGridEntityId, resultSequence, "applied", "", true);
+    return true;
+}
+
+bool ValidateSosModeTransitionCommand(string command, int resultSequence)
+{
+    var actionId = ExtractString(command, "sos_action_id");
+    var approvalNonce = ExtractString(command, "sos_approval_nonce");
+    var fromMode = ExtractString(command, "from_mode");
+    var toMode = ExtractString(command, "to_mode");
+    var targetGridEntityId = ExtractLong(command, "sos_target_grid_entity_id");
+    var actionFamily = ExtractString(command, "sos_action_family");
+    if (!sosModeTransitionEnabled)
+    {
+        return RejectSosModeTransition(actionId, approvalNonce, fromMode, toMode, targetGridEntityId, resultSequence, "sos_mode_transition_disabled");
+    }
+    if (actionFamily != "active_mode_transition")
+    {
+        return RejectSosModeTransition(actionId, approvalNonce, fromMode, toMode, targetGridEntityId, resultSequence, "sos_mode_transition_action_family_unsupported");
+    }
+    if (string.IsNullOrWhiteSpace(actionId) || string.IsNullOrWhiteSpace(approvalNonce))
+    {
+        return RejectSosModeTransition(actionId, approvalNonce, fromMode, toMode, targetGridEntityId, resultSequence, "sos_mode_transition_action_or_nonce_missing");
+    }
+    if (!IsKnownSosMode(fromMode) || !IsKnownSosMode(toMode) || fromMode == toMode)
+    {
+        return RejectSosModeTransition(actionId, approvalNonce, fromMode, toMode, targetGridEntityId, resultSequence, "sos_mode_transition_mode_invalid");
+    }
+    if (!sosModeLedgerIsValid)
+    {
+        return RejectSosModeTransition(actionId, approvalNonce, fromMode, toMode, targetGridEntityId, resultSequence, "sos_mode_transition_ledger_invalid");
+    }
+    if (targetGridEntityId == 0 || Me.CubeGrid == null || targetGridEntityId != Me.CubeGrid.EntityId)
+    {
+        return RejectSosModeTransition(actionId, approvalNonce, fromMode, toMode, targetGridEntityId, resultSequence, "sos_mode_transition_grid_mismatch");
+    }
+    if (actionId != sosModeTransitionApprovalActionId || approvalNonce != sosModeTransitionApprovalNonce ||
+        targetGridEntityId != sosModeTransitionApprovalGridId || fromMode != sosModeTransitionApprovalFromMode || toMode != sosModeTransitionApprovalToMode)
+    {
+        return RejectSosModeTransition(actionId, approvalNonce, fromMode, toMode, targetGridEntityId, resultSequence, "sos_mode_transition_approval_mismatch");
+    }
+    var expiresAfterSequence = ExtractInt(command, "sos_expires_after_sequence");
+    if (sosModeTransitionApprovalExpiresSequence <= 0 || expiresAfterSequence != sosModeTransitionApprovalExpiresSequence)
+    {
+        return RejectSosModeTransition(actionId, approvalNonce, fromMode, toMode, targetGridEntityId, resultSequence, "sos_mode_transition_approval_expiry_mismatch");
+    }
+    if (expiresAfterSequence < resultSequence)
+    {
+        return RejectSosModeTransition(actionId, approvalNonce, fromMode, toMode, targetGridEntityId, resultSequence, "sos_mode_transition_expired");
+    }
+    if (IsSosModeTransitionReceiptConsumed(actionId, approvalNonce))
+    {
+        return RejectSosModeTransition(actionId, approvalNonce, fromMode, toMode, targetGridEntityId, resultSequence, "sos_mode_transition_receipt_consumed");
+    }
+    if (sosActiveMode != fromMode)
+    {
+        return RejectSosModeTransition(actionId, approvalNonce, fromMode, toMode, targetGridEntityId, resultSequence, "sos_mode_transition_current_mode_mismatch");
+    }
+    return true;
+}
+
+bool IsKnownSosMode(string mode)
+{
+    return mode == "Docked" || mode == "Cruise" || mode == "Combat" || mode == "Emergency" || mode == "Maintenance";
+}
+
+bool RejectSosModeTransition(string actionId, string approvalNonce, string fromMode, string toMode, long gridId, int resultSequence, string reason)
+{
+    lastCommandSkipReason = reason;
+    var outcome = reason == "sos_mode_transition_expired" ? "expired" : reason == "sos_mode_transition_receipt_consumed" ? "consumed" : "rejected";
+    RecordSosModeTransitionReceipt(actionId, approvalNonce, fromMode, toMode, gridId, resultSequence, outcome, reason, false);
+    return false;
+}
+
+bool IsSosModeTransitionReceiptConsumed(string actionId, string approvalNonce)
+{
+    return !string.IsNullOrWhiteSpace(actionId) && actionId == consumedSosModeTransitionActionId && approvalNonce == consumedSosModeTransitionApprovalNonce;
+}
+
+void RecordSosModeTransitionReceipt(string actionId, string approvalNonce, string fromMode, string toMode, long gridId, int resultSequence, string outcome, string reason, bool consumeReceipt)
+{
+    lastSosModeTransitionActionId = Truncate(actionId, 128);
+    lastSosModeTransitionApprovalNonce = Truncate(approvalNonce, 128);
+    lastSosModeTransitionFromMode = Truncate(fromMode, 32);
+    lastSosModeTransitionToMode = Truncate(toMode, 32);
+    lastSosModeTransitionGridId = gridId;
+    lastSosModeTransitionOutcome = outcome;
+    lastSosModeTransitionRejectionReason = Truncate(reason, 128);
+    lastSosModeTransitionSequence = resultSequence;
+    if (consumeReceipt)
+    {
+        consumedSosModeTransitionActionId = lastSosModeTransitionActionId;
+        consumedSosModeTransitionApprovalNonce = lastSosModeTransitionApprovalNonce;
+        consumedSosModeTransitionSequence = resultSequence;
+    }
+    SaveState();
 }
 
 bool ApplySetBlockEnabledCommand(string command, int resultSequence)

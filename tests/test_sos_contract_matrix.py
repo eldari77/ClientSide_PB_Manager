@@ -32,9 +32,10 @@ DASHBOARD_COMPOSED_SERVICES = {
     "automation",
     "authority",
     "operating_directive",
-    "mode_ledger",
-    "mode_transition_plan",
-    "automation_plan",
+            "mode_ledger",
+            "mode_transition_plan",
+            "mode_transition_apply",
+            "automation_plan",
     "automation_recovery",
     "capabilities",
     "comms",
@@ -423,6 +424,7 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
         "operating_directive",
         "mode_ledger",
         "mode_transition_plan",
+        "mode_transition_apply",
         "automation_plan",
         "automation_recovery",
         "conveyor",
@@ -457,17 +459,23 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
         "operating_directive_snapshot",
         "desired_mode_snapshot",
         "operator_mode_request",
-        "mode_ledger_snapshot",
-        "active_mode_snapshot",
-        "operating_mode_receipt",
-        "mode_transition_receipt",
-        "mode_transition_ledger",
+            "mode_ledger_snapshot",
+            "active_mode_snapshot",
+            "operating_mode_receipt",
+            "mode_transition_receipt",
+            "active_mode_receipt",
+            "mode_transition_apply_receipt",
+            "mode_transition_ledger",
         "mode_transition_snapshot",
         "mode_transition_request",
         "operator_mode_transition",
         "mode_change_request",
         "operating_mode_request",
-        "mode_transition_plan_snapshot",
+            "mode_transition_plan_snapshot",
+            "operator_mode_transition_approval",
+            "mode_transition_approval_snapshot",
+            "sos_mode_transition_approval",
+            "operating_mode_approval",
         "automation_plan_snapshot",
         "automation_intent_snapshot",
         "control_intent_snapshot",
@@ -570,7 +578,13 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
         "operator_mode_transition": {"requested_mode": "Cruise", "request_id": "plan-1", "expires_after_sequence": 20},
         "mode_change_request": {"requested_mode": "Cruise", "request_id": "plan-1", "expires_after_sequence": 20},
         "operating_mode_request": {"requested_mode": "Cruise", "request_id": "plan-1", "expires_after_sequence": 20},
-        "mode_transition_plan_snapshot": {"requested_mode": "Cruise", "request_id": "plan-1", "expires_after_sequence": 20},
+            "mode_transition_plan_snapshot": {"requested_mode": "Cruise", "request_id": "plan-1", "expires_after_sequence": 20},
+            "operator_mode_transition_approval": {"approved": True, "action_id": "mode-action-1", "approval_nonce": "mode-nonce-1", "target_grid_entity_id": 10, "from_mode": "Docked", "to_mode": "Cruise", "expires_after_sequence": 20},
+            "mode_transition_approval_snapshot": {"approved": True, "action_id": "mode-action-1", "approval_nonce": "mode-nonce-1", "target_grid_entity_id": 10, "from_mode": "Docked", "to_mode": "Cruise", "expires_after_sequence": 20},
+            "sos_mode_transition_approval": {"approved": True, "action_id": "mode-action-1", "approval_nonce": "mode-nonce-1", "target_grid_entity_id": 10, "from_mode": "Docked", "to_mode": "Cruise", "expires_after_sequence": 20},
+            "operating_mode_approval": {"approved": True, "action_id": "mode-action-1", "approval_nonce": "mode-nonce-1", "target_grid_entity_id": 10, "from_mode": "Docked", "to_mode": "Cruise", "expires_after_sequence": 20},
+            "active_mode_receipt": {"last_action_id": "mode-action-1", "approval_nonce": "mode-nonce-1", "last_outcome": "none", "last_sequence": 10, "target_grid_entity_id": 10},
+            "mode_transition_apply_receipt": {"last_action_id": "mode-action-1", "approval_nonce": "mode-nonce-1", "last_outcome": "none", "last_sequence": 10, "target_grid_entity_id": 10},
         "automation_plan_snapshot": {"plans": [{"operation": "restart"}]},
         "automation_intent_snapshot": {"intents": [{"operation": "restart"}]},
         "control_intent_snapshot": {"requests": [{"operation": "restart"}]},
@@ -629,8 +643,6 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
     assert "operator_mode_request" in captured["operating_directive"]
     assert "mode_ledger_snapshot" in captured["mode_ledger"]
     assert "active_mode_snapshot" in captured["mode_ledger"]
-    assert "operating_mode_receipt" in captured["mode_ledger"]
-    assert "mode_transition_receipt" in captured["mode_ledger"]
     assert "mode_transition_ledger" in captured["mode_ledger"]
     assert "mode_transition_snapshot" in captured["mode_ledger"]
     assert "mode_transition_request" in captured["mode_transition_plan"]
@@ -638,6 +650,14 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
     assert "mode_change_request" in captured["mode_transition_plan"]
     assert "operating_mode_request" in captured["mode_transition_plan"]
     assert "mode_transition_plan_snapshot" in captured["mode_transition_plan"]
+    assert "operator_mode_transition_approval" in captured["mode_transition_apply"]
+    assert "mode_transition_approval_snapshot" in captured["mode_transition_apply"]
+    assert "sos_mode_transition_approval" in captured["mode_transition_apply"]
+    assert "operating_mode_approval" in captured["mode_transition_apply"]
+    assert "mode_transition_receipt" in captured["mode_transition_apply"]
+    assert "active_mode_receipt" in captured["mode_transition_apply"]
+    assert "operating_mode_receipt" in captured["mode_transition_apply"]
+    assert "mode_transition_apply_receipt" in captured["mode_transition_apply"]
     assert "automation_plan_snapshot" in captured["automation_plan"]
     assert "automation_intent_snapshot" in captured["automation_plan"]
     assert "control_intent_snapshot" in captured["automation_plan"]

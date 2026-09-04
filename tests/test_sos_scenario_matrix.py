@@ -25,9 +25,10 @@ DASHBOARD_TOKEN_SERVICES = {
     "automation",
     "authority",
     "operating_directive",
-    "mode_ledger",
-    "mode_transition_plan",
-    "automation_plan",
+            "mode_ledger",
+            "mode_transition_plan",
+            "mode_transition_apply",
+            "automation_plan",
     "automation_recovery",
     "comms",
     "conveyor",
@@ -409,6 +410,7 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
         "operating_directive",
         "mode_ledger",
         "mode_transition_plan",
+        "mode_transition_apply",
         "automation_plan",
         "automation_recovery",
         "conveyor",
@@ -505,6 +507,8 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
         "active_mode_snapshot": {"active_mode": "Docked", "requested_mode": "Cruise", "transition_id": "ledger-1", "transition_sequence": 10},
         "operating_mode_receipt": {"active_mode": "Docked", "requested_mode": "Cruise", "transition_id": "ledger-1", "transition_sequence": 10},
         "mode_transition_receipt": {"active_mode": "Docked", "requested_mode": "Cruise", "transition_id": "ledger-1", "transition_sequence": 10},
+        "active_mode_receipt": {"last_action_id": "mode-action-1", "approval_nonce": "mode-nonce-1", "last_outcome": "none", "last_sequence": 10, "target_grid_entity_id": 0},
+        "mode_transition_apply_receipt": {"last_action_id": "mode-action-1", "approval_nonce": "mode-nonce-1", "last_outcome": "none", "last_sequence": 10, "target_grid_entity_id": 0},
         "mode_transition_ledger": {"active_mode": "Docked", "requested_mode": "Cruise", "transition_id": "ledger-1", "transition_sequence": 10},
         "mode_transition_snapshot": {"active_mode": "Docked", "requested_mode": "Cruise", "transition_id": "ledger-1", "transition_sequence": 10},
         "mode_transition_request": {"requested_mode": "Cruise", "request_id": "plan-1", "expires_after_sequence": 20},
@@ -512,6 +516,10 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
         "mode_change_request": {"requested_mode": "Cruise", "request_id": "plan-1", "expires_after_sequence": 20},
         "operating_mode_request": {"requested_mode": "Cruise", "request_id": "plan-1", "expires_after_sequence": 20},
         "mode_transition_plan_snapshot": {"requested_mode": "Cruise", "request_id": "plan-1", "expires_after_sequence": 20},
+        "operator_mode_transition_approval": {"approved": True, "action_id": "mode-action-1", "approval_nonce": "mode-nonce-1", "target_grid_entity_id": 0, "from_mode": "Docked", "to_mode": "Cruise", "expires_after_sequence": 20},
+        "mode_transition_approval_snapshot": {"approved": True, "action_id": "mode-action-1", "approval_nonce": "mode-nonce-1", "target_grid_entity_id": 0, "from_mode": "Docked", "to_mode": "Cruise", "expires_after_sequence": 20},
+        "sos_mode_transition_approval": {"approved": True, "action_id": "mode-action-1", "approval_nonce": "mode-nonce-1", "target_grid_entity_id": 0, "from_mode": "Docked", "to_mode": "Cruise", "expires_after_sequence": 20},
+        "operating_mode_approval": {"approved": True, "action_id": "mode-action-1", "approval_nonce": "mode-nonce-1", "target_grid_entity_id": 0, "from_mode": "Docked", "to_mode": "Cruise", "expires_after_sequence": 20},
         "automation_plan_snapshot": {"plans": [{"operation": "restart"}]},
         "operator_approval_snapshot": {"approved": False},
         "sos_automation": {"last_action_id": "sos-action-1", "last_outcome": "rejected", "last_rejection_reason": "grid_mismatch", "last_sequence": 12},
@@ -548,6 +556,8 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
         "active_mode_snapshot",
         "operating_mode_receipt",
         "mode_transition_receipt",
+        "active_mode_receipt",
+        "mode_transition_apply_receipt",
         "mode_transition_ledger",
         "mode_transition_snapshot",
         "mode_transition_request",
@@ -555,6 +565,10 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
         "mode_change_request",
         "operating_mode_request",
         "mode_transition_plan_snapshot",
+        "operator_mode_transition_approval",
+        "mode_transition_approval_snapshot",
+        "sos_mode_transition_approval",
+        "operating_mode_approval",
         "automation_plan_snapshot",
         "operator_approval_snapshot",
         "sos_automation",
@@ -588,8 +602,6 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
     assert "operator_mode_request" in captured["operating_directive"]
     assert "mode_ledger_snapshot" in captured["mode_ledger"]
     assert "active_mode_snapshot" in captured["mode_ledger"]
-    assert "operating_mode_receipt" in captured["mode_ledger"]
-    assert "mode_transition_receipt" in captured["mode_ledger"]
     assert "mode_transition_ledger" in captured["mode_ledger"]
     assert "mode_transition_snapshot" in captured["mode_ledger"]
     assert "mode_transition_request" in captured["mode_transition_plan"]
@@ -597,6 +609,14 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
     assert "mode_change_request" in captured["mode_transition_plan"]
     assert "operating_mode_request" in captured["mode_transition_plan"]
     assert "mode_transition_plan_snapshot" in captured["mode_transition_plan"]
+    assert "operator_mode_transition_approval" in captured["mode_transition_apply"]
+    assert "mode_transition_approval_snapshot" in captured["mode_transition_apply"]
+    assert "sos_mode_transition_approval" in captured["mode_transition_apply"]
+    assert "operating_mode_approval" in captured["mode_transition_apply"]
+    assert "mode_transition_receipt" in captured["mode_transition_apply"]
+    assert "active_mode_receipt" in captured["mode_transition_apply"]
+    assert "operating_mode_receipt" in captured["mode_transition_apply"]
+    assert "mode_transition_apply_receipt" in captured["mode_transition_apply"]
     assert "automation_plan_snapshot" in captured["automation_plan"]
     assert "operator_approval_snapshot" in captured["automation_recovery"]
     assert "sos_automation" in captured["automation_recovery"]

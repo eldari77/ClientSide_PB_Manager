@@ -16,6 +16,7 @@ PB_SHIM_ALLOWED_COMMAND_KINDS = {
     "set_door_open",
     "set_gas_auto_refill",
     "set_light_color",
+    "set_sos_active_mode",
     "set_use_conveyor",
     "transfer_item",
     "write_block_custom_data",
@@ -294,3 +295,47 @@ def test_pb_shim_keeps_non_sos_block_enable_and_existing_result_guards_unchanged
     assert "if (bridge != bridgeId || script != scriptId || resultSequence != sequence)" in source
     assert "if (applied >= budget)" in source
     assert 'lastCommandSkipReason = "unknown_kind:" + kind;' in source
+
+
+def test_pb_shim_mode_transition_gate_is_opt_in_exact_and_replay_resistant():
+    source = SHIM.read_text(encoding="utf-8")
+    gate_body = source[source.index("bool ValidateSosModeTransitionCommand") : source.index("bool ApplySetBlockEnabledCommand")]
+
+    assert "bool sosModeTransitionEnabled = false;" in source
+    for line in (
+        "sos_mode_transition_enabled=false",
+        "sos_mode_transition_approval_action_id=",
+        "sos_mode_transition_approval_nonce=",
+        "sos_mode_transition_approval_grid_id=0",
+        "sos_mode_transition_approval_from_mode=",
+        "sos_mode_transition_approval_to_mode=",
+        "sos_mode_transition_approval_expires_sequence=0",
+    ):
+        assert line in source
+    assert 'if (kind == "set_sos_active_mode")' in source
+    assert "ApplySetSosActiveModeCommand(command, resultSequence)" in source
+    assert 'actionFamily != "active_mode_transition"' in gate_body
+    assert "sos_mode_transition_disabled" in gate_body
+    assert "sos_mode_transition_approval_mismatch" in gate_body
+    assert "sos_mode_transition_approval_expiry_mismatch" in gate_body
+    assert "sos_mode_transition_expired" in gate_body
+    assert "sos_mode_transition_receipt_consumed" in gate_body
+    assert "sos_mode_transition_current_mode_mismatch" in gate_body
+    assert "targetGridEntityId != Me.CubeGrid.EntityId" in gate_body
+    assert "IsKnownSosMode(fromMode)" in gate_body
+    assert "IsKnownSosMode(toMode)" in gate_body
+    assert "sosActiveMode = toMode;" in source
+    assert "sos_mode_ledger.v1" in source
+    assert 'Quote("mode_transition_receipt") + ":" + BuildSosModeTransitionReceipt()' in source
+
+
+def test_pb_shim_mode_transition_audits_only_its_dedicated_mode_ledger():
+    source = SHIM.read_text(encoding="utf-8")
+    apply_body = source[source.index("bool ApplySetSosActiveModeCommand") : source.index("bool ApplySetBlockEnabledCommand")]
+
+    assert "RecordSosModeTransitionReceipt" in apply_body
+    assert 'SaveField("sos_mode_transition_ledger", BuildSosModeTransitionLedger())' in source
+    assert 'SaveField("consumed_sos_mode_transition_action_id", consumedSosModeTransitionActionId)' in source
+    assert 'SaveField("consumed_sos_mode_transition_approval_nonce", consumedSosModeTransitionApprovalNonce)' in source
+    assert "RecordSosAutomationReceipt" not in apply_body
+    assert "functional.Enabled" not in apply_body

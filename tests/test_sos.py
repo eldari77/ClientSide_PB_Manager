@@ -88,6 +88,7 @@ def test_expand_sos_bridge_configs_applies_mode_policy_and_services(tmp_path: Pa
                     {"script_id": "pb-bridge-001-sos_operating_directive", "service_id": "operating_directive"},
                     {"script_id": "pb-bridge-001-sos_mode_ledger", "service_id": "mode_ledger"},
                     {"script_id": "pb-bridge-001-sos_mode_transition_plan", "service_id": "mode_transition_plan"},
+                    {"script_id": "pb-bridge-001-sos_mode_transition_apply", "service_id": "mode_transition_apply"},
                     {"script_id": "pb-bridge-001-sos_automation_plan", "service_id": "automation_plan"},
                     {"script_id": "pb-bridge-001-sos_automation_recovery", "service_id": "automation_recovery"},
                     {"script_id": "pb-bridge-001-sos_dashboard", "service_id": "dashboard"},
@@ -145,6 +146,7 @@ def test_expand_sos_bridge_configs_applies_mode_policy_and_services(tmp_path: Pa
         "pb-bridge-001-sos_operating_directive",
         "pb-bridge-001-sos_mode_ledger",
         "pb-bridge-001-sos_mode_transition_plan",
+        "pb-bridge-001-sos_mode_transition_apply",
         "pb-bridge-001-sos_automation_plan",
         "pb-bridge-001-sos_automation_recovery",
         "pb-bridge-001-sos_dashboard",
@@ -189,6 +191,7 @@ def test_expand_sos_bridge_configs_applies_mode_policy_and_services(tmp_path: Pa
         "pb-bridge-001-sos_operating_directive",
         "pb-bridge-001-sos_mode_ledger",
         "pb-bridge-001-sos_mode_transition_plan",
+        "pb-bridge-001-sos_mode_transition_apply",
         "pb-bridge-001-sos_automation_plan",
         "pb-bridge-001-sos_automation_recovery",
         "pb-bridge-001-sos_dashboard",
@@ -238,6 +241,7 @@ def test_expand_sos_bridge_configs_applies_mode_policy_and_services(tmp_path: Pa
     assert by_service["operating_directive"]["budget"] == 1
     assert by_service["mode_ledger"]["budget"] == 1
     assert by_service["mode_transition_plan"]["budget"] == 1
+    assert by_service["mode_transition_apply"]["budget"] == 1
     assert by_service["automation_plan"]["budget"] == 1
     assert by_service["automation_plan"]["priority"] == 4
     assert by_service["automation_recovery"]["budget"] == 1

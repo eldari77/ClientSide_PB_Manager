@@ -11,8 +11,10 @@ from worker.worker import WorkerScript, compact_result_for_storage, enriched_chi
 
 
 DIRECTIVE_ALIASES = ("operating_directive_snapshot", "desired_mode_snapshot", "operator_mode_request")
-MODE_LEDGER_ALIASES = ("mode_ledger_snapshot", "active_mode_snapshot", "operating_mode_receipt", "mode_transition_receipt", "mode_transition_ledger", "mode_transition_snapshot")
+MODE_LEDGER_ALIASES = ("mode_ledger_snapshot", "active_mode_snapshot", "mode_transition_ledger", "mode_transition_snapshot")
 MODE_TRANSITION_PLAN_ALIASES = ("mode_transition_request", "operator_mode_transition", "mode_change_request", "operating_mode_request", "mode_transition_plan_snapshot")
+MODE_TRANSITION_APPLY_APPROVAL_ALIASES = ("operator_mode_transition_approval", "mode_transition_approval_snapshot", "sos_mode_transition_approval", "operating_mode_approval")
+MODE_TRANSITION_APPLY_RECEIPT_ALIASES = ("mode_transition_receipt", "active_mode_receipt", "operating_mode_receipt", "mode_transition_apply_receipt")
 AUTHORITY_ALIASES = ("authority_snapshot", "operating_authority_snapshot", "procedure_policy_snapshot")
 RECOVERY_ALIASES = ("operator_approval_snapshot", "automation_approval_snapshot", "sos_automation_approval", "sos_automation", "automation_receipt_snapshot", "automation_recovery_receipt", "recovery_receipt_snapshot")
 
@@ -54,6 +56,8 @@ def _orchestrator_request(bridge_id: str, *, mode: str = "Docked") -> dict[str, 
         **{key: {"active_mode": mode, "requested_mode": "Cruise", "transition_id": "core-loop-transition", "transition_sequence": 10, "last_outcome": "pending", "grid_entity_id": 10} for key in MODE_LEDGER_ALIASES},
         **{key: {"requested_mode": "Cruise", "request_id": "core-loop-plan", "expires_after_sequence": 20} for key in MODE_TRANSITION_PLAN_ALIASES},
         **{key: {"mode": mode} for key in AUTHORITY_ALIASES},
+        **{key: {"approved": True, "action_id": "mode-action", "approval_nonce": "mode-nonce", "target_grid_entity_id": 10, "from_mode": mode, "to_mode": "Cruise", "expires_after_sequence": 12} for key in MODE_TRANSITION_APPLY_APPROVAL_ALIASES},
+        **{key: {"last_action_id": "mode-action", "approval_nonce": "mode-nonce", "last_outcome": "none", "last_sequence": 10, "target_grid_entity_id": 10} for key in MODE_TRANSITION_APPLY_RECEIPT_ALIASES},
         "operator_approval_snapshot": approval,
         "automation_approval_snapshot": approval,
         "sos_automation_approval": approval,
@@ -66,7 +70,7 @@ def _orchestrator_request(bridge_id: str, *, mode: str = "Docked") -> dict[str, 
 
 def test_orchestrator_routes_control_aliases_only_to_owning_children_and_preserves_all_history_shapes(tmp_path: Path) -> None:
     captured: dict[str, dict[str, Any]] = {}
-    service_ids = ("status", "operating_directive", "mode_ledger", "mode_transition_plan", "authority", "guidance", "runbook", "automation_recovery", "dashboard")
+    service_ids = ("status", "operating_directive", "mode_ledger", "mode_transition_plan", "mode_transition_apply", "authority", "guidance", "runbook", "automation_recovery", "dashboard")
     bridge_id = "bridge-loop"
     services = [{"service_id": service_id, "script_id": f"{bridge_id}-sos_{service_id}"} for service_id in service_ids]
     (tmp_path / "data").mkdir()
@@ -101,6 +105,9 @@ def test_orchestrator_routes_control_aliases_only_to_owning_children_and_preserv
     for alias in MODE_TRANSITION_PLAN_ALIASES:
         assert alias in captured["mode_transition_plan"]
         assert all(alias not in request for service_id, request in captured.items() if service_id != "mode_transition_plan")
+    for alias in MODE_TRANSITION_APPLY_APPROVAL_ALIASES + MODE_TRANSITION_APPLY_RECEIPT_ALIASES:
+        assert alias in captured["mode_transition_apply"]
+        assert all(alias not in request for service_id, request in captured.items() if service_id != "mode_transition_apply")
     for alias in AUTHORITY_ALIASES:
         assert alias in captured["authority"]
         assert all(alias not in request for service_id, request in captured.items() if service_id != "authority")

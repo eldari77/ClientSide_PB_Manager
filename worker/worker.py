@@ -92,8 +92,6 @@ OPERATING_DIRECTIVE_SNAPSHOT_KEYS = (
 MODE_LEDGER_SNAPSHOT_KEYS = (
     "mode_ledger_snapshot",
     "active_mode_snapshot",
-    "operating_mode_receipt",
-    "mode_transition_receipt",
     "mode_transition_ledger",
     "mode_transition_snapshot",
 )
@@ -103,6 +101,18 @@ MODE_TRANSITION_PLAN_SNAPSHOT_KEYS = (
     "mode_change_request",
     "operating_mode_request",
     "mode_transition_plan_snapshot",
+)
+MODE_TRANSITION_APPLY_APPROVAL_KEYS = (
+    "operator_mode_transition_approval",
+    "mode_transition_approval_snapshot",
+    "sos_mode_transition_approval",
+    "operating_mode_approval",
+)
+MODE_TRANSITION_APPLY_RECEIPT_KEYS = (
+    "mode_transition_receipt",
+    "active_mode_receipt",
+    "operating_mode_receipt",
+    "mode_transition_apply_receipt",
 )
 CONVEYOR_SNAPSHOT_KEYS = (
     "conveyor_snapshot",
@@ -779,6 +789,11 @@ def remove_mode_ledger_only_snapshot_aliases(request: dict[str, Any]) -> None:
 
 def remove_mode_transition_plan_only_snapshot_aliases(request: dict[str, Any]) -> None:
     remove_snapshot_aliases(request, MODE_TRANSITION_PLAN_SNAPSHOT_KEYS)
+
+
+def remove_mode_transition_apply_only_snapshot_aliases(request: dict[str, Any]) -> None:
+    remove_snapshot_aliases(request, MODE_TRANSITION_APPLY_APPROVAL_KEYS)
+    remove_snapshot_aliases(request, MODE_TRANSITION_APPLY_RECEIPT_KEYS)
 
 
 def remove_conveyor_only_snapshot_aliases(request: dict[str, Any]) -> None:
@@ -2042,6 +2057,7 @@ def execute_orchestrator_request(
             or (
                 "sos_mode_transition" in child_id.lower()
                 and "sos_mode_transition_plan" not in child_id.lower()
+                and "sos_mode_transition_apply" not in child_id.lower()
             )
             or "sos_desired_mode" in child_id.lower()
             or "sos_operator_mode" in child_id.lower()
@@ -2058,6 +2074,11 @@ def execute_orchestrator_request(
             or "sos_mode_plan" in child_id.lower()
             or "sos_operating_mode_plan" in child_id.lower()
             or "sos_transition_plan" in child_id.lower()
+        )
+        is_mode_transition_apply_child = (
+            child_service_id == "mode_transition_apply"
+            or "sos_mode_transition_apply" in child_id.lower()
+            or "sos_active_mode_apply" in child_id.lower()
         )
         is_conveyor_child = (
             child_service_id == "conveyor"
@@ -2171,6 +2192,8 @@ def execute_orchestrator_request(
             remove_mode_ledger_only_snapshot_aliases(child_request)
         if not is_mode_transition_plan_child:
             remove_mode_transition_plan_only_snapshot_aliases(child_request)
+        if not is_mode_transition_apply_child:
+            remove_mode_transition_apply_only_snapshot_aliases(child_request)
         if not is_conveyor_child:
             remove_conveyor_only_snapshot_aliases(child_request)
         if not is_config_drift_child:
@@ -2224,6 +2247,7 @@ def execute_orchestrator_request(
                 "operating_directive",
                 "mode_ledger",
                 "mode_transition_plan",
+                "mode_transition_apply",
                 "automation_plan",
                 "automation_recovery",
                 "conveyor",
@@ -2284,6 +2308,7 @@ def execute_orchestrator_request(
             or "sos_operator_approval" in child_id.lower()
             or "sos_automation_recovery" in child_id.lower()
             or "sos_programmable_block_recovery" in child_id.lower()
+            or "sos_mode_transition_apply" in child_id.lower()
             or "sos_conveyor" in child_id.lower()
             or "sos_conveyors" in child_id.lower()
             or "sos_routing" in child_id.lower()
