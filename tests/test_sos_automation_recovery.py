@@ -113,6 +113,12 @@ def test_sos_automation_recovery_preserves_the_approved_command_envelope():
         "target_entity_id": 7001,
         "target_grid_entity_id": 10,
     }
+    request["automation_receipt_snapshot"] = {
+        "last_action_id": "sos-action-1",
+        "approval_nonce": "sos-nonce-1",
+        "last_outcome": "none",
+        "last_sequence": 10,
+    }
 
     result = run(request)
 

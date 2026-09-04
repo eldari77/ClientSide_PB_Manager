@@ -880,7 +880,7 @@ def test_execute_sos_orchestrator_runs_dashboard_child_with_existing_services(tm
     ]
     dashboard_child = result["result"]["child_results"][1]
     assert dashboard_child["summary"] == (
-        "SOS Dashboard Ship A mode=Docked guidance=unknown readiness=unknown capabilities=unknown telemetry_quality=unknown automation=unknown automation_plan=unknown automation_recovery=unknown redundancy=unknown topology=unknown diagnostics=unknown config_drift=unknown watch_log=unknown mission_profile=unknown endurance=unknown runbook=unknown integrity=unknown logistics=unknown conveyor=unknown maintenance=unknown airlock=unknown mobility=unknown navigation=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown environment=unknown display=unknown mining=unknown production=unknown transit=unknown defense=unknown alerts=unknown queue=0 blockers=none"
+            "SOS Dashboard Ship A mode=Docked guidance=unknown readiness=unknown capabilities=unknown telemetry_quality=unknown automation=unknown authority=unknown automation_plan=unknown automation_recovery=unknown redundancy=unknown topology=unknown diagnostics=unknown config_drift=unknown watch_log=unknown mission_profile=unknown endurance=unknown runbook=unknown integrity=unknown logistics=unknown conveyor=unknown maintenance=unknown airlock=unknown mobility=unknown navigation=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown environment=unknown display=unknown mining=unknown production=unknown transit=unknown defense=unknown alerts=unknown queue=0 blockers=none"
     )
     assert dashboard_child["error_bucket"] == "none"
     assert result["result"]["commands"][1]["kind"] == "echo"
@@ -2001,7 +2001,7 @@ def test_execute_sos_dashboard_child_degrades_gracefully_without_child_history(t
 
     assert result["status"] == "ok"
     assert result["result"]["child_results"][0]["summary"] == (
-        "SOS Dashboard Ship A mode=Docked guidance=unknown readiness=unknown capabilities=unknown telemetry_quality=unknown automation=unknown automation_plan=unknown automation_recovery=unknown redundancy=unknown topology=unknown diagnostics=unknown config_drift=unknown watch_log=unknown mission_profile=unknown endurance=unknown runbook=unknown integrity=unknown logistics=unknown conveyor=unknown maintenance=unknown airlock=unknown mobility=unknown navigation=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown environment=unknown display=unknown mining=unknown production=unknown transit=unknown defense=unknown alerts=unknown queue=0 blockers=none"
+            "SOS Dashboard Ship A mode=Docked guidance=unknown readiness=unknown capabilities=unknown telemetry_quality=unknown automation=unknown authority=unknown automation_plan=unknown automation_recovery=unknown redundancy=unknown topology=unknown diagnostics=unknown config_drift=unknown watch_log=unknown mission_profile=unknown endurance=unknown runbook=unknown integrity=unknown logistics=unknown conveyor=unknown maintenance=unknown airlock=unknown mobility=unknown navigation=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown environment=unknown display=unknown mining=unknown production=unknown transit=unknown defense=unknown alerts=unknown queue=0 blockers=none"
     )
     dashboard = result["result"]["child_results"][0]["result"]["sos_dashboard"]
     assert dashboard["integrity"]["snapshot_status"] == "missing_child_result"
@@ -2037,7 +2037,7 @@ def test_execute_sos_dashboard_child_degrades_gracefully_without_child_history(t
     assert dashboard["endurance"]["snapshot_status"] == "missing_child_result"
     assert dashboard["runbook"]["snapshot_status"] == "missing_child_result"
     assert result["result"]["commands"][0]["text"] == (
-        "SOS Dashboard Ship A mode=Docked guidance=unknown readiness=unknown capabilities=unknown telemetry_quality=unknown automation=unknown automation_plan=unknown automation_recovery=unknown redundancy=unknown topology=unknown diagnostics=unknown config_drift=unknown watch_log=unknown mission_profile=unknown endurance=unknown runbook=unknown integrity=unknown logistics=unknown conveyor=unknown maintenance=unknown airlock=unknown mobility=unknown navigation=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown environment=unknown display=unknown mining=unknown production=unknown transit=unknown defense=unknown alerts=unknown queue=0 blockers=none"
+        "SOS Dashboard Ship A mode=Docked guidance=unknown readiness=unknown capabilities=unknown telemetry_quality=unknown automation=unknown authority=unknown automation_plan=unknown automation_recovery=unknown redundancy=unknown topology=unknown diagnostics=unknown config_drift=unknown watch_log=unknown mission_profile=unknown endurance=unknown runbook=unknown integrity=unknown logistics=unknown conveyor=unknown maintenance=unknown airlock=unknown mobility=unknown navigation=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown environment=unknown display=unknown mining=unknown production=unknown transit=unknown defense=unknown alerts=unknown queue=0 blockers=none"
     )
 
 
@@ -5683,7 +5683,8 @@ def test_execute_sos_orchestrator_scopes_automation_recovery_approval_and_preser
 
     def run_recovery(request):
         captured["recovery"] = request
-        return run_automation_recovery(request)
+        captured["recovery_output"] = run_automation_recovery(request)
+        return captured["recovery_output"]
 
     def run_sibling(request):
         captured[request["script_id"]] = request
@@ -5784,30 +5785,23 @@ def test_execute_sos_orchestrator_scopes_automation_recovery_approval_and_preser
                 }
             ]
         },
-        "operator_approval_snapshot": {
-            "approved": True,
-            "action_id": "sos-action-1",
-            "approval_nonce": "sos-nonce-1",
-            "target_entity_id": 7001,
-            "target_grid_entity_id": 10,
-        },
-        "runtime_telemetry": {"limiter_state": "ok"},
-        "state": {},
-    }
-    terminal_result = execute_request(
-        request
-        | {
-            "sos_automation": {
+            "operator_approval_snapshot": {
+                "approved": True,
+                "action_id": "sos-action-1",
+                "approval_nonce": "sos-nonce-1",
+                "target_entity_id": 7001,
+                "target_grid_entity_id": 10,
+            },
+            "automation_receipt_snapshot": {
                 "last_action_id": "sos-action-1",
-                "last_outcome": "applied",
+                "approval_nonce": "sos-nonce-1",
+                "last_outcome": "none",
                 "last_rejection_reason": "",
-                "last_sequence": 11,
-            }
-        },
-        scripts,
-        {},
-        tmp_path,
-    )
+                "last_sequence": 10,
+            },
+            "runtime_telemetry": {"limiter_state": "ok"},
+            "state": {},
+        }
     result = execute_request(request, scripts, {}, tmp_path)
 
     recovery_request = captured["recovery"]
@@ -5816,30 +5810,55 @@ def test_execute_sos_orchestrator_scopes_automation_recovery_approval_and_preser
     assert recovery_request["integrity_snapshot"]["blocks"][0]["name"] == "Recovery PB"
     assert recovery_request["runtime_telemetry"]["child_services_by_service_id"]["automation_plan"]["result"]["sos_automation_plan"]["plans"] == [plan]
     assert recovery_request["operator_approval_snapshot"]["action_id"] == "sos-action-1"
+    assert captured["recovery_output"]["sos_automation_recovery"]["reason"] == "approved_recovery_emitted"
+    assert captured["recovery_output"]["commands"] == [
+        {
+            "kind": "set_block_enabled",
+            "block_entity_id": 7001,
+            "enabled": True,
+            "sos_action_id": "sos-action-1",
+            "sos_action_family": "programmable_block_recovery",
+            "sos_approval_nonce": "sos-nonce-1",
+            "sos_target_grid_entity_id": 10,
+            "sos_expires_after_sequence": 12,
+        }
+    ]
     for sibling in ("bridge-a-sos_automation_plan", "bridge-a-sos_status"):
         for alias in ("operator_approval_snapshot", "automation_approval_snapshot", "sos_automation_approval"):
             assert alias not in captured[sibling]
 
-    command = next(command for command in result["result"]["commands"] if command["kind"] == "set_block_enabled")
-    assert {key: command[key] for key in (
-        "kind",
-        "block_entity_id",
-        "enabled",
-        "sos_action_id",
-        "sos_action_family",
-        "sos_approval_nonce",
-        "sos_target_grid_entity_id",
-        "sos_expires_after_sequence",
-    )} == {
-        "kind": "set_block_enabled",
-        "block_entity_id": 7001,
-        "enabled": True,
-        "sos_action_id": "sos-action-1",
-        "sos_action_family": "programmable_block_recovery",
-        "sos_approval_nonce": "sos-nonce-1",
-        "sos_target_grid_entity_id": 10,
-        "sos_expires_after_sequence": 12,
-    }
+    queued_command = result["result"]["commands"][0]
+    assert {
+        key: queued_command[key]
+        for key in (
+            "kind",
+            "block_entity_id",
+            "enabled",
+            "sos_action_id",
+            "sos_action_family",
+            "sos_approval_nonce",
+            "sos_target_grid_entity_id",
+            "sos_expires_after_sequence",
+        )
+    } == captured["recovery_output"]["commands"][0]
+    assert queued_command["source_script_id"] == "bridge-a-sos_automation_recovery"
+
+    terminal_result = execute_request(
+        request
+        | {
+            "sequence": 11,
+            "worker_config": {"commandQueueDrainPerResult": 0},
+            "automation_receipt_snapshot": {
+                "last_action_id": "sos-action-1",
+                "last_outcome": "applied",
+                "last_rejection_reason": "",
+                "last_sequence": 11,
+            },
+        },
+        scripts,
+        {},
+        tmp_path,
+    )
 
     terminal_recovery = next(
         child["result"]["sos_automation_recovery"]

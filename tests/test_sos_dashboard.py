@@ -45,6 +45,7 @@ def test_sos_dashboard_adapter_degrades_to_missing_child_result_with_echo():
     assert result["sos_dashboard"]["capabilities"]["snapshot_status"] == "missing_child_result"
     assert result["sos_dashboard"]["telemetry_quality"]["snapshot_status"] == "missing_child_result"
     assert result["sos_dashboard"]["automation"]["snapshot_status"] == "missing_child_result"
+    assert result["sos_dashboard"]["authority"]["snapshot_status"] == "missing_child_result"
     assert result["sos_dashboard"]["automation_plan"]["snapshot_status"] == "missing_child_result"
     assert result["sos_dashboard"]["automation_recovery"]["snapshot_status"] == "missing_child_result"
     assert result["sos_dashboard"]["redundancy"]["snapshot_status"] == "missing_child_result"
@@ -59,7 +60,7 @@ def test_sos_dashboard_adapter_degrades_to_missing_child_result_with_echo():
     assert result["commands"] == [
         {
             "kind": "echo",
-            "text": "SOS Dashboard Ship A mode=Docked guidance=unknown readiness=unknown capabilities=unknown telemetry_quality=unknown automation=unknown automation_plan=unknown automation_recovery=unknown redundancy=unknown topology=unknown diagnostics=unknown config_drift=unknown watch_log=unknown mission_profile=unknown endurance=unknown runbook=unknown integrity=unknown logistics=unknown conveyor=unknown maintenance=unknown airlock=unknown mobility=unknown navigation=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown environment=unknown display=unknown mining=unknown production=unknown transit=unknown defense=unknown alerts=unknown queue=none blockers=none",
+            "text": "SOS Dashboard Ship A mode=Docked guidance=unknown readiness=unknown capabilities=unknown telemetry_quality=unknown automation=unknown authority=unknown automation_plan=unknown automation_recovery=unknown redundancy=unknown topology=unknown diagnostics=unknown config_drift=unknown watch_log=unknown mission_profile=unknown endurance=unknown runbook=unknown integrity=unknown logistics=unknown conveyor=unknown maintenance=unknown airlock=unknown mobility=unknown navigation=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown environment=unknown display=unknown mining=unknown production=unknown transit=unknown defense=unknown alerts=unknown queue=none blockers=none",
         }
     ]
 
@@ -117,6 +118,49 @@ def test_sos_dashboard_adapter_reads_automation_plan_history_from_all_telemetry_
         assert result["sos_dashboard"]["automation_plan"]["state"] == "blocked"
         assert result["sos_dashboard"]["automation_plan"]["proposed_count"] == 1
         assert result["sos_dashboard"]["automation_plan"]["blockers"] == ["identity_mismatch"]
+
+
+def test_sos_dashboard_adapter_reads_authority_history_from_all_telemetry_shapes():
+    authority = {
+        "state": "blocked",
+        "policy_status": "blocked",
+        "snapshot_status": "ok",
+        "eligible_actions": [],
+        "prohibited_actions": [],
+        "blocked_actions": ["programmable_block_recovery"],
+        "unknown_actions": [],
+        "warnings": ["same_grid_identity_missing_or_mismatch"],
+        "source_services": ["automation_plan", "grid_snapshot"],
+    }
+    child = {
+        "service_id": "authority",
+        "script_id": "pb-bridge-001-sos_authority",
+        "status": "ok",
+        "error_bucket": "none",
+        "summary": "authority blocked",
+        "result": {"sos_authority": authority},
+    }
+    telemetry_shapes = (
+        {"child_services": [child]},
+        {"child_services_by_service_id": {"authority": child}},
+        {"child_services_by_script_id": {"pb-bridge-001-sos_authority": child}},
+    )
+
+    for runtime_telemetry in telemetry_shapes:
+        result = run(
+            {
+                "bridge_id": "pb-bridge-001",
+                "sos_ship": {"ship_id": "ship-a", "display_name": "Ship A", "status_surfaces": []},
+                "runtime_telemetry": runtime_telemetry,
+            }
+        )
+
+        dashboard_authority = result["sos_dashboard"]["authority"]
+        assert dashboard_authority["state"] == "blocked"
+        assert dashboard_authority["policy_status"] == "blocked"
+        assert dashboard_authority["blocked_actions"] == ["programmable_block_recovery"]
+        assert dashboard_authority["warnings"] == ["same_grid_identity_missing_or_mismatch"]
+        assert dashboard_authority["source_services"] == ["automation_plan", "grid_snapshot"]
 
 
 def test_sos_dashboard_adapter_reads_automation_recovery_history_from_all_telemetry_shapes():

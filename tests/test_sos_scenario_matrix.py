@@ -23,6 +23,7 @@ DASHBOARD_TOKEN_SERVICES = {
     "alerts",
     "airlock",
     "automation",
+    "authority",
     "automation_plan",
     "automation_recovery",
     "comms",
@@ -401,6 +402,7 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
         "endurance",
         "telemetry_quality",
         "automation",
+        "authority",
         "automation_plan",
         "automation_recovery",
         "conveyor",
@@ -487,6 +489,9 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
         "endurance_snapshot": {"cargo": {"used_volume": 10, "max_volume": 100}},
         "telemetry_quality_snapshot": {"sources": [{"service_id": "status", "confidence": 0.99}]},
         "automation_snapshot": {"programmable_blocks": [{"name": "Main PB", "enabled": True}]},
+        "authority_snapshot": {"mode": "Docked"},
+        "operating_authority_snapshot": {"procedure": "recovery"},
+        "procedure_policy_snapshot": {"policy": "operator_approval_required"},
         "automation_plan_snapshot": {"plans": [{"operation": "restart"}]},
         "operator_approval_snapshot": {"approved": False},
         "sos_automation": {"last_action_id": "sos-action-1", "last_outcome": "rejected", "last_rejection_reason": "grid_mismatch", "last_sequence": 12},
@@ -513,6 +518,9 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
         "endurance_snapshot",
         "telemetry_quality_snapshot",
         "automation_snapshot",
+        "authority_snapshot",
+        "operating_authority_snapshot",
+        "procedure_policy_snapshot",
         "automation_plan_snapshot",
         "operator_approval_snapshot",
         "sos_automation",
@@ -538,6 +546,9 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
     assert "endurance_snapshot" in captured["endurance"]
     assert "telemetry_quality_snapshot" in captured["telemetry_quality"]
     assert "automation_snapshot" in captured["automation"]
+    assert "authority_snapshot" in captured["authority"]
+    assert "operating_authority_snapshot" in captured["authority"]
+    assert "procedure_policy_snapshot" in captured["authority"]
     assert "automation_plan_snapshot" in captured["automation_plan"]
     assert "operator_approval_snapshot" in captured["automation_recovery"]
     assert "sos_automation" in captured["automation_recovery"]
