@@ -127,6 +127,69 @@ def test_sos_mode_transition_plan_orchestrator_preserves_plan_aliases_and_ledger
     assert {command["kind"] for command in result["result"]["commands"]} <= {"echo", "write_text_surface"}
 
 
+def test_shim_transition_request_is_plan_only_and_uses_the_validated_ledger_mode(tmp_path: Path):
+    captured: dict[str, dict] = {}
+    plan_module = types.ModuleType("tests.sos_shim_transition_request_plan")
+    sibling_module = types.ModuleType("tests.sos_shim_transition_request_sibling")
+
+    def run_plan(request):
+        captured["plan"] = request
+        return {"summary": "plan", "commands": []}
+
+    def run_sibling(request):
+        captured["status"] = request
+        return {"summary": "status", "commands": []}
+
+    plan_module.run = run_plan
+    sibling_module.run = run_sibling
+    sys.modules[plan_module.__name__] = plan_module
+    sys.modules[sibling_module.__name__] = sibling_module
+    services = [
+        {"service_id": "mode_transition_plan", "script_id": "bridge-a-sos_mode_transition_plan"},
+        {"service_id": "status", "script_id": "bridge-a-sos_status"},
+    ]
+    data = tmp_path / "data"
+    data.mkdir()
+    ships = {
+        "schema": "novali.client_side_pb.sos_ships.v1",
+        "ships": [{
+            "ship_id": "ship-a", "bridge_id": "bridge-a", "display_name": "Ship A",
+            "expected_grid_entity_id": 10, "mode": "Docked", "services": services, "status_surfaces": [],
+        }],
+    }
+    ship_file = data / "sos_ships.json"
+    ship_file.write_text(json.dumps(ships), encoding="utf-8")
+    scripts = {
+        "bridge-a-orchestrator": WorkerScript("bridge-a-orchestrator", "script_instance", "SOS", "", "", "", 1000, True, base_script_id="bridge_orchestrator"),
+        "bridge-a-sos_mode_transition_plan": WorkerScript("bridge-a-sos_mode_transition_plan", "manual", "Plan", plan_module.__name__, "", "", 1000, True),
+        "bridge-a-sos_status": WorkerScript("bridge-a-sos_status", "manual", "Status", sibling_module.__name__, "", "", 1000, True),
+    }
+    ledger = {
+        "schema": "novali.sos_mode_ledger.v1", "active_mode": "Cruise", "previous_mode": "Docked",
+        "target_mode": "Cruise", "action_id": "action-1", "approval_nonce": "nonce-1",
+        "grid_entity_id": 10, "sequence": 12, "outcome": "applied", "rejection_reason": "",
+    }
+    request = {
+        "schema": "novali.client_side_pb_bridge.v1", "message_kind": "request", "bridge_id": "bridge-a",
+        "sequence": 13, "script_id": "bridge-a-orchestrator", "state": {},
+        "grid_snapshot": {"grid_entity_id": 10, "identity_status": "ok", "blocks": []},
+        "mode_ledger_snapshot": ledger,
+        "mode_transition_request": {"requested_mode": "Mining", "request_id": "operator-mining-001", "expires_after_sequence": 120},
+    }
+
+    result = execute_request(request, scripts, {}, tmp_path)
+
+    assert result["status"] == "ok"
+    assert captured["plan"]["mode_transition_request"] == request["mode_transition_request"]
+    assert captured["plan"]["sos_ship"]["configured_mode"] == "Docked"
+    assert captured["plan"]["sos_ship"]["mode"] == "Cruise"
+    assert "mode_ledger_snapshot" not in captured["plan"]
+    assert "mode_transition_request" not in captured["status"]
+    assert json.loads(ship_file.read_text(encoding="utf-8")) == ships
+    assert result["result"]["commands"] == []
+    assert len(json.dumps(result, separators=(",", ":"))) < 64000
+
+
 def test_sos_mode_transition_plan_history_stays_within_its_bridge(tmp_path: Path):
     results_dir = tmp_path / "data" / "bridge_results"
     results_dir.mkdir(parents=True)

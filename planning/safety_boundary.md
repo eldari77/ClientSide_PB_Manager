@@ -99,6 +99,9 @@
 - Consume a successful SOS approval receipt in PB Storage. Reject replayed,
   expired, malformed, cross-grid, wrong-type, disabled, or unsupported SOS
   recovery commands. This is not generic execution authority.
+- Transport an operator-configured SOS mode-transition request only when its
+  request id, target mode, and absolute expiry sequence are all present. This
+  is planning input, never approval, active-mode mutation, or execution.
 
 ## SOS Operator Approval Receipt Gate
 

@@ -26,6 +26,9 @@ long sosModeTransitionApprovalGridId = 0;
 string sosModeTransitionApprovalFromMode = "";
 string sosModeTransitionApprovalToMode = "";
 int sosModeTransitionApprovalExpiresSequence = 0;
+string sosModeTransitionRequestId = "";
+string sosModeTransitionRequestedMode = "";
+int sosModeTransitionExpiresSequence = 0;
 string snapshotMode = "minimal";
 int maxCommandsPerMinute = 30;
 int maxApplyCommandsPerTick = 8;
@@ -183,6 +186,9 @@ sos_mode_transition_approval_grid_id=0
 sos_mode_transition_approval_from_mode=
 sos_mode_transition_approval_to_mode=
 sos_mode_transition_approval_expires_sequence=0
+sos_mode_transition_request_id=
+sos_mode_transition_requested_mode=
+sos_mode_transition_expires_sequence=0
 snapshot_mode=minimal
 max_commands_per_minute=30
 max_apply_commands_per_tick=8
@@ -220,6 +226,9 @@ fail_closed=true
     EnsureConfigLine("sos_mode_transition_approval_from_mode", "sos_mode_transition_approval_from_mode=");
     EnsureConfigLine("sos_mode_transition_approval_to_mode", "sos_mode_transition_approval_to_mode=");
     EnsureConfigLine("sos_mode_transition_approval_expires_sequence", "sos_mode_transition_approval_expires_sequence=0");
+    EnsureConfigLine("sos_mode_transition_request_id", "sos_mode_transition_request_id=");
+    EnsureConfigLine("sos_mode_transition_requested_mode", "sos_mode_transition_requested_mode=");
+    EnsureConfigLine("sos_mode_transition_expires_sequence", "sos_mode_transition_expires_sequence=0");
 }
 
 void UpgradeLegacyConfigDefaults()
@@ -283,6 +292,9 @@ void LoadConfig()
     sosModeTransitionApprovalFromMode = "";
     sosModeTransitionApprovalToMode = "";
     sosModeTransitionApprovalExpiresSequence = 0;
+    sosModeTransitionRequestId = "";
+    sosModeTransitionRequestedMode = "";
+    sosModeTransitionExpiresSequence = 0;
     var lines = Me.CustomData.Split('\n');
     bool inSection = false;
     foreach (var raw in lines)
@@ -325,6 +337,9 @@ void LoadConfig()
         if (key == "sos_mode_transition_approval_from_mode") sosModeTransitionApprovalFromMode = value;
         if (key == "sos_mode_transition_approval_to_mode") sosModeTransitionApprovalToMode = value;
         if (key == "sos_mode_transition_approval_expires_sequence") int.TryParse(value, out sosModeTransitionApprovalExpiresSequence);
+        if (key == "sos_mode_transition_request_id") sosModeTransitionRequestId = value;
+        if (key == "sos_mode_transition_requested_mode") sosModeTransitionRequestedMode = value;
+        if (key == "sos_mode_transition_expires_sequence") int.TryParse(value, out sosModeTransitionExpiresSequence);
         if (key == "snapshot_mode") snapshotMode = value;
         if (key == "max_commands_per_minute") int.TryParse(value, out maxCommandsPerMinute);
         if (key == "max_apply_commands_per_tick") int.TryParse(value, out maxApplyCommandsPerTick);
@@ -713,8 +728,24 @@ string BuildRequest()
         "}," +
         Quote("mode_ledger_snapshot") + ":" + BuildSosModeTransitionLedger() + "," +
         Quote("mode_transition_receipt") + ":" + BuildSosModeTransitionReceipt() +
+        BuildSosModeTransitionRequest() +
     "}";
     return Begin + "\n" + json + "\n" + End;
+}
+
+string BuildSosModeTransitionRequest()
+{
+    if (string.IsNullOrWhiteSpace(sosModeTransitionRequestId) ||
+        string.IsNullOrWhiteSpace(sosModeTransitionRequestedMode) ||
+        sosModeTransitionExpiresSequence <= 0)
+    {
+        return "";
+    }
+    return "," + Quote("mode_transition_request") + ":{" +
+        Quote("requested_mode") + ":" + Quote(sosModeTransitionRequestedMode) + "," +
+        Quote("request_id") + ":" + Quote(sosModeTransitionRequestId) + "," +
+        Quote("expires_after_sequence") + ":" + sosModeTransitionExpiresSequence.ToString() +
+    "}";
 }
 
 string BuildSosModeTransitionReceipt()

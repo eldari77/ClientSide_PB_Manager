@@ -350,3 +350,34 @@ def test_pb_shim_projects_one_canonical_mode_ledger_snapshot_without_changing_th
     assert 'Quote("mode_transition_receipt") + ":" + BuildSosModeTransitionReceipt()' in request_body
     assert 'Quote("active_mode_snapshot")' not in request_body
     assert 'Quote("mode_transition_ledger")' not in request_body
+
+
+def test_pb_shim_mode_transition_request_ingress_is_an_inert_canonical_tuple():
+    source = SHIM.read_text(encoding="utf-8")
+    request_body = source[source.index("string BuildRequest()") : source.index("void WriteMailboxText")]
+
+    for line in (
+        "sos_mode_transition_request_id=",
+        "sos_mode_transition_requested_mode=",
+        "sos_mode_transition_expires_sequence=0",
+    ):
+        assert line in source
+    assert "string BuildSosModeTransitionRequest()" in source
+    ingress_body = source[source.index("string BuildSosModeTransitionRequest()") : source.index("string BuildSosModeTransitionReceipt()")]
+    assert "string.IsNullOrWhiteSpace(sosModeTransitionRequestId)" in ingress_body
+    assert "string.IsNullOrWhiteSpace(sosModeTransitionRequestedMode)" in ingress_body
+    assert "sosModeTransitionExpiresSequence <= 0" in ingress_body
+    assert 'return "";' in ingress_body
+    assert 'Quote("requested_mode") + ":" + Quote(sosModeTransitionRequestedMode)' in ingress_body
+    assert 'Quote("request_id") + ":" + Quote(sosModeTransitionRequestId)' in ingress_body
+    assert 'Quote("expires_after_sequence") + ":" + sosModeTransitionExpiresSequence.ToString()' in ingress_body
+    assert 'Quote("mode_transition_request")' in request_body
+    assert request_body.count('Quote("mode_transition_request")') == 1
+    assert 'Quote("operator_mode_transition")' not in request_body
+    assert 'Quote("mode_change_request")' not in request_body
+    assert 'Quote("operating_mode_request")' not in request_body
+    assert 'Quote("mode_transition_plan_snapshot")' not in request_body
+    assert 'Quote("mode_ledger_snapshot") + ":" + BuildSosModeTransitionLedger()' in request_body
+    assert 'Quote("mode_transition_receipt") + ":" + BuildSosModeTransitionReceipt()' in request_body
+    assert "set_sos_active_mode" not in request_body
+    assert 'Quote("commands")' not in request_body

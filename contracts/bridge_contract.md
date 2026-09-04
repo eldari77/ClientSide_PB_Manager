@@ -69,6 +69,30 @@ The PB shim includes `state.shim_version` in live requests. Operators can use
 that field, together with the reset echo, to verify the pasted in-game shim is
 the same build as `pb_shim\ClientSidePBBridgeShim.cs`.
 
+### SOS Mode-Transition Request Ingress
+
+An operator may add `sos_mode_transition_request_id`,
+`sos_mode_transition_requested_mode`, and
+`sos_mode_transition_expires_sequence` to the shim's CustomData. Only a
+complete tuple with a positive absolute expiry sequence produces this raw
+planning input:
+
+```json
+{
+  "mode_transition_request": {
+    "requested_mode": "Cruise",
+    "request_id": "operator-cruise-001",
+    "expires_after_sequence": 120
+  }
+}
+```
+
+The shim omits the object for incomplete tuples and leaves operator
+configuration untouched. It neither changes the active mode nor approves,
+authorizes, emits, or executes a transition. SOS evaluates this input through
+the normal orchestrator path; the separate exact-match PB approval gate remains
+the final boundary for the existing active-mode command envelope.
+
 Requests also include `state.last_apply`, which records the previous PB-side
 result application attempt. This is the durable place to inspect command
 application from files:
