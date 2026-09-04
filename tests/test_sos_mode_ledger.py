@@ -5,7 +5,14 @@ import types
 from pathlib import Path
 
 from worker.scripts.sos_mode_ledger import run
-from worker.worker import WorkerScript, enriched_child_runtime_telemetry, execute_orchestrator_request, execute_request, load_manifest
+from worker.worker import (
+    WorkerScript,
+    apply_shim_mode_ledger_context,
+    enriched_child_runtime_telemetry,
+    execute_orchestrator_request,
+    execute_request,
+    load_manifest,
+)
 
 
 LEDGER_ALIASES = (
@@ -34,6 +41,111 @@ def test_sos_mode_ledger_degrades_without_snapshot():
     assert result["sos_mode_ledger"]["snapshot_status"] == "missing_ledger"
     assert result["sos_mode_ledger"]["state"] == "unknown"
     assert result["commands"] == []
+
+
+def test_valid_same_grid_shim_ledger_overrides_only_the_request_context_mode():
+    request = {
+        "grid_snapshot": {"grid_entity_id": 10, "identity_status": "ok"},
+        "mode_ledger_snapshot": {
+            "schema": "novali.sos_mode_ledger.v1", "active_mode": "Cruise", "previous_mode": "Docked", "target_mode": "Cruise",
+            "action_id": "action-1", "approval_nonce": "nonce-1", "grid_entity_id": 10, "sequence": 12,
+            "outcome": "applied", "rejection_reason": "",
+        },
+        "sos_ship": {"ship_id": "ship-a", "mode": "Docked", "expected_grid_entity_id": 10, "identity_status": "ok", "blockers": []},
+    }
+
+    assert apply_shim_mode_ledger_context(request) is True
+    assert request["sos_ship"]["configured_mode"] == "Docked"
+    assert request["sos_ship"]["mode"] == "Cruise"
+    assert request["sos_ship"]["mode_source"] == "shim_mode_ledger"
+
+
+def test_invalid_shim_ledgers_never_override_the_configured_mode():
+    base = {
+        "schema": "novali.sos_mode_ledger.v1", "active_mode": "Cruise", "previous_mode": "Docked", "target_mode": "Cruise",
+        "action_id": "action-1", "approval_nonce": "nonce-1", "grid_entity_id": 10, "sequence": 12,
+        "outcome": "applied", "rejection_reason": "",
+    }
+    for update in ({}, {"schema": "wrong"}, {"outcome": 1}, {"active_mode": "Unknown"}, {"grid_entity_id": 0}, {"grid_entity_id": 11}):
+        request = {
+            "grid_snapshot": {"grid_entity_id": 10, "identity_status": "ok"},
+            "mode_ledger_snapshot": base | update if update else None,
+            "sos_ship": {"mode": "Docked", "expected_grid_entity_id": 10, "identity_status": "ok", "blockers": []},
+        }
+        assert apply_shim_mode_ledger_context(request) is False
+        assert request["sos_ship"]["mode"] == "Docked"
+        assert "configured_mode" not in request["sos_ship"]
+
+    expected_grid_mismatch = {
+        "grid_snapshot": {"grid_entity_id": 10, "identity_status": "ok"}, "mode_ledger_snapshot": base,
+        "sos_ship": {"mode": "Docked", "expected_grid_entity_id": 11, "identity_status": "ok", "blockers": []},
+    }
+    assert apply_shim_mode_ledger_context(expected_grid_mismatch) is False
+    assert expected_grid_mismatch["sos_ship"]["mode"] == "Docked"
+
+    blocked = {
+        "grid_snapshot": {"grid_entity_id": 10, "identity_status": "ok"}, "mode_ledger_snapshot": base,
+        "sos_ship": {"mode": "Docked", "expected_grid_entity_id": 10, "identity_status": "grid_mismatch", "blockers": ["expected_grid_entity_id_mismatch"]},
+    }
+    assert apply_shim_mode_ledger_context(blocked) is False
+    assert blocked["sos_ship"]["mode"] == "Docked"
+
+
+def test_shim_ledger_readback_is_request_scoped_and_receipt_independent(tmp_path: Path):
+    captured: dict[str, dict] = {}
+    ledger_module = types.ModuleType("tests.sos_mode_ledger_readback_ledger")
+    sibling_module = types.ModuleType("tests.sos_mode_ledger_readback_sibling")
+
+    def run_ledger(request):
+        captured["ledger"] = request
+        return {"summary": "ledger", "commands": []}
+
+    def run_sibling(request):
+        captured["status"] = request
+        return {"summary": "status", "commands": []}
+
+    ledger_module.run = run_ledger
+    sibling_module.run = run_sibling
+    sys.modules[ledger_module.__name__] = ledger_module
+    sys.modules[sibling_module.__name__] = sibling_module
+    services = [
+        {"service_id": "mode_ledger", "script_id": "bridge-a-sos_mode_ledger"},
+        {"service_id": "status", "script_id": "bridge-a-sos_status"},
+    ]
+    data = tmp_path / "data"
+    data.mkdir()
+    ship_file = data / "sos_ships.json"
+    original = {"schema": "novali.client_side_pb.sos_ships.v1", "ships": [{"ship_id": "ship-a", "bridge_id": "bridge-a", "display_name": "Ship A", "expected_grid_entity_id": 10, "mode": "Docked", "services": services, "status_surfaces": []}]}
+    ship_file.write_text(json.dumps(original), encoding="utf-8")
+    scripts = {
+        "bridge-a-orchestrator": WorkerScript("bridge-a-orchestrator", "script_instance", "SOS", "", "", "", 1000, True, base_script_id="bridge_orchestrator"),
+        "bridge-a-sos_mode_ledger": WorkerScript("bridge-a-sos_mode_ledger", "manual", "Ledger", ledger_module.__name__, "", "", 1000, True),
+        "bridge-a-sos_status": WorkerScript("bridge-a-sos_status", "manual", "Status", sibling_module.__name__, "", "", 1000, True),
+    }
+    ledger = {"schema": "novali.sos_mode_ledger.v1", "active_mode": "Cruise", "previous_mode": "Docked", "target_mode": "Cruise", "action_id": "action-1", "approval_nonce": "nonce-1", "grid_entity_id": 10, "sequence": 12, "outcome": "applied", "rejection_reason": ""}
+    receipt = {"last_action_id": "action-2", "approval_nonce": "nonce-2", "last_outcome": "rejected", "last_sequence": 13}
+    result = execute_request({"schema": "novali.client_side_pb_bridge.v1", "message_kind": "request", "bridge_id": "bridge-a", "sequence": 13, "script_id": "bridge-a-orchestrator", "grid_snapshot": {"grid_entity_id": 10, "identity_status": "ok", "blocks": []}, "mode_ledger_snapshot": ledger, "mode_transition_receipt": receipt, "state": {}}, scripts, {}, tmp_path)
+
+    assert result["status"] == "ok"
+    assert captured["ledger"]["sos_ship"]["configured_mode"] == "Docked"
+    assert captured["ledger"]["sos_ship"]["mode"] == "Cruise"
+    assert captured["status"]["sos_ship"]["mode"] == "Cruise"
+    assert captured["ledger"]["mode_ledger_snapshot"] is ledger
+    assert "mode_ledger_snapshot" not in captured["status"]
+    assert "mode_transition_receipt" not in captured["ledger"]
+    assert json.loads(ship_file.read_text(encoding="utf-8")) == original
+    assert len(json.dumps(result, separators=(",", ":"))) < 64000
+
+
+def test_shim_ledger_readback_never_crosses_bridge_or_expected_grid_boundaries():
+    ledger = {"schema": "novali.sos_mode_ledger.v1", "active_mode": "Cruise", "previous_mode": "Docked", "target_mode": "Cruise", "action_id": "action-1", "approval_nonce": "nonce-1", "grid_entity_id": 10, "sequence": 12, "outcome": "applied", "rejection_reason": ""}
+    request_a = {"grid_snapshot": {"grid_entity_id": 10, "identity_status": "ok"}, "mode_ledger_snapshot": ledger, "sos_ship": {"mode": "Docked", "expected_grid_entity_id": 10, "identity_status": "ok", "blockers": []}}
+    request_b = {"grid_snapshot": {"grid_entity_id": 11, "identity_status": "ok"}, "mode_ledger_snapshot": ledger, "sos_ship": {"mode": "Docked", "expected_grid_entity_id": 11, "identity_status": "ok", "blockers": []}}
+
+    assert apply_shim_mode_ledger_context(request_a) is True
+    assert apply_shim_mode_ledger_context(request_b) is False
+    assert request_a["sos_ship"]["mode"] == "Cruise"
+    assert request_b["sos_ship"]["mode"] == "Docked"
 
 
 def test_sos_mode_ledger_registered_in_manifest_instance_and_ship_registry(tmp_path: Path):

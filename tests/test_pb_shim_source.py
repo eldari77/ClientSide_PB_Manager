@@ -339,3 +339,14 @@ def test_pb_shim_mode_transition_audits_only_its_dedicated_mode_ledger():
     assert 'SaveField("consumed_sos_mode_transition_approval_nonce", consumedSosModeTransitionApprovalNonce)' in source
     assert "RecordSosAutomationReceipt" not in apply_body
     assert "functional.Enabled" not in apply_body
+
+
+def test_pb_shim_projects_one_canonical_mode_ledger_snapshot_without_changing_the_receipt():
+    source = SHIM.read_text(encoding="utf-8")
+    request_body = source[source.index("string BuildRequest()") : source.index("void WriteMailboxText")]
+
+    assert request_body.count('Quote("mode_ledger_snapshot")') == 1
+    assert 'Quote("mode_ledger_snapshot") + ":" + BuildSosModeTransitionLedger()' in request_body
+    assert 'Quote("mode_transition_receipt") + ":" + BuildSosModeTransitionReceipt()' in request_body
+    assert 'Quote("active_mode_snapshot")' not in request_body
+    assert 'Quote("mode_transition_ledger")' not in request_body

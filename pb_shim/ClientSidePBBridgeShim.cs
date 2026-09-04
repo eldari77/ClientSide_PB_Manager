@@ -711,6 +711,7 @@ string BuildRequest()
                 Quote("last_action_at_utc") + ":" + Quote(lastApplyActionAtUtc) +
             "}" +
         "}," +
+        Quote("mode_ledger_snapshot") + ":" + BuildSosModeTransitionLedger() + "," +
         Quote("mode_transition_receipt") + ":" + BuildSosModeTransitionReceipt() +
     "}";
     return Begin + "\n" + json + "\n" + End;

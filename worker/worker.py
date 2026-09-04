@@ -14,7 +14,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
-from worker.sos import attach_sos_request_context, expand_sos_bridge_configs
+from worker.sos import SOS_MODES, attach_sos_request_context, expand_sos_bridge_configs
 
 
 SCHEMA = "novali.client_side_pb_bridge.v1"
@@ -1868,6 +1868,61 @@ def sos_blocker_result(request: dict[str, Any], error_bucket: str, blockers: lis
     return result_for(request, "rejected", output, error_bucket)
 
 
+def apply_shim_mode_ledger_context(request: dict[str, Any]) -> bool:
+    """Apply only a validated shim ledger as the per-request SOS runtime mode."""
+    ship = request.get("sos_ship")
+    ledger = request.get("mode_ledger_snapshot")
+    grid = request.get("grid_snapshot")
+    if not isinstance(ship, dict) or not isinstance(ledger, dict) or not isinstance(grid, dict):
+        return False
+    if ship.get("identity_status") != "ok" or ship.get("blockers"):
+        return False
+    required_strings = (
+        "schema",
+        "active_mode",
+        "previous_mode",
+        "target_mode",
+        "action_id",
+        "approval_nonce",
+        "outcome",
+        "rejection_reason",
+    )
+    if any(not isinstance(ledger.get(key), str) for key in required_strings):
+        return False
+    if ledger["schema"] != "novali.sos_mode_ledger.v1" or ledger["active_mode"] not in SOS_MODES:
+        return False
+    ledger_grid = ledger.get("grid_entity_id")
+    ledger_sequence = ledger.get("sequence")
+    observed_grid = grid.get("grid_entity_id")
+    if (
+        isinstance(ledger_grid, bool)
+        or not isinstance(ledger_grid, int)
+        or ledger_grid <= 0
+        or isinstance(ledger_sequence, bool)
+        or not isinstance(ledger_sequence, int)
+        or ledger_sequence < 0
+        or isinstance(observed_grid, bool)
+        or not isinstance(observed_grid, int)
+        or observed_grid <= 0
+        or ledger_grid != observed_grid
+    ):
+        return False
+    if grid.get("identity_status") not in (None, "", "ok"):
+        return False
+    expected_grid = ship.get("expected_grid_entity_id")
+    if isinstance(expected_grid, bool):
+        return False
+    if isinstance(expected_grid, int) and expected_grid > 0 and ledger_grid != expected_grid:
+        return False
+    configured_mode = ship.get("mode")
+    if not isinstance(configured_mode, str) or not configured_mode:
+        return False
+    ship["configured_mode"] = configured_mode
+    ship["mode"] = ledger["active_mode"]
+    ship["mode_source"] = "shim_mode_ledger"
+    return True
+
+
 def execute_request(
     request: dict[str, Any],
     scripts: dict[str, WorkerScript],
@@ -1903,6 +1958,7 @@ def execute_request(
             blockers = sos_context.get("blockers")
             if isinstance(blockers, list) and blockers:
                 return sos_blocker_result(request, "sos_identity_blocked", blockers)
+            apply_shim_mode_ledger_context(request)
         return execute_orchestrator_request(request, scripts, bridge_configs or {}, bridge_config, root)
 
     try:
