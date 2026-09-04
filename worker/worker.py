@@ -84,6 +84,12 @@ AUTHORITY_SNAPSHOT_KEYS = (
     "operating_authority_snapshot",
     "procedure_policy_snapshot",
 )
+OPERATING_DIRECTIVE_SNAPSHOT_KEYS = (
+    "operating_directive_snapshot",
+    "mode_transition_snapshot",
+    "desired_mode_snapshot",
+    "operator_mode_request",
+)
 CONVEYOR_SNAPSHOT_KEYS = (
     "conveyor_snapshot",
     "conveyor_network_snapshot",
@@ -161,7 +167,7 @@ RESULT_STORAGE_MAX_COMMAND_ITEMS = 16
 RESULT_STORAGE_MAX_LIST_ITEMS = 28
 RESULT_STORAGE_MAX_DEPTH = 8
 RESULT_STORAGE_MAX_BYTES = 64000
-RESULT_STORAGE_COMPACT_WARNING_ITEMS = 3
+RESULT_STORAGE_COMPACT_WARNING_ITEMS = 2
 RESULT_STORAGE_COMPACT_SOURCE_ITEMS = 0
 RESULT_STORAGE_COMPACT_TEXT_CHARS = 180
 
@@ -747,6 +753,10 @@ def remove_automation_recovery_receipt_aliases(request: dict[str, Any]) -> None:
 
 def remove_authority_only_snapshot_aliases(request: dict[str, Any]) -> None:
     remove_snapshot_aliases(request, AUTHORITY_SNAPSHOT_KEYS)
+
+
+def remove_operating_directive_only_snapshot_aliases(request: dict[str, Any]) -> None:
+    remove_snapshot_aliases(request, OPERATING_DIRECTIVE_SNAPSHOT_KEYS)
 
 
 def remove_conveyor_only_snapshot_aliases(request: dict[str, Any]) -> None:
@@ -2004,6 +2014,13 @@ def execute_orchestrator_request(
             or "sos_operating_authority" in child_id.lower()
             or "sos_procedure_policy" in child_id.lower()
         )
+        is_operating_directive_child = (
+            child_service_id == "operating_directive"
+            or "sos_operating_directive" in child_id.lower()
+            or "sos_mode_transition" in child_id.lower()
+            or "sos_desired_mode" in child_id.lower()
+            or "sos_operator_mode" in child_id.lower()
+        )
         is_conveyor_child = (
             child_service_id == "conveyor"
             or "sos_conveyor" in child_id.lower()
@@ -2110,6 +2127,8 @@ def execute_orchestrator_request(
             remove_automation_recovery_receipt_aliases(child_request)
         if not is_authority_child:
             remove_authority_only_snapshot_aliases(child_request)
+        if not is_operating_directive_child:
+            remove_operating_directive_only_snapshot_aliases(child_request)
         if not is_conveyor_child:
             remove_conveyor_only_snapshot_aliases(child_request)
         if not is_config_drift_child:
@@ -2160,6 +2179,7 @@ def execute_orchestrator_request(
                 "environment",
                 "automation",
                 "authority",
+                "operating_directive",
                 "automation_plan",
                 "automation_recovery",
                 "conveyor",

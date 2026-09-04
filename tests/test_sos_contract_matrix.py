@@ -31,6 +31,7 @@ DASHBOARD_COMPOSED_SERVICES = {
     "airlock",
     "automation",
     "authority",
+    "operating_directive",
     "automation_plan",
     "automation_recovery",
     "capabilities",
@@ -417,6 +418,7 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
         "telemetry_quality",
         "automation",
         "authority",
+        "operating_directive",
         "automation_plan",
         "automation_recovery",
         "conveyor",
@@ -448,6 +450,10 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
         "authority_snapshot",
         "operating_authority_snapshot",
         "procedure_policy_snapshot",
+        "operating_directive_snapshot",
+        "mode_transition_snapshot",
+        "desired_mode_snapshot",
+        "operator_mode_request",
         "automation_plan_snapshot",
         "automation_intent_snapshot",
         "control_intent_snapshot",
@@ -537,6 +543,10 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
         "authority_snapshot": {"mode": "Docked"},
         "operating_authority_snapshot": {"procedure": "recovery"},
         "procedure_policy_snapshot": {"policy": "operator_approval_required"},
+        "operating_directive_snapshot": {"operator_requested": True, "requested_mode": "Cruise", "request_id": "directive-1", "requested_at_sequence": 10},
+        "mode_transition_snapshot": {"operator_requested": True, "requested_mode": "Cruise", "request_id": "directive-1", "requested_at_sequence": 10},
+        "desired_mode_snapshot": {"operator_requested": True, "requested_mode": "Cruise", "request_id": "directive-1", "requested_at_sequence": 10},
+        "operator_mode_request": {"operator_requested": True, "requested_mode": "Cruise", "request_id": "directive-1", "requested_at_sequence": 10},
         "automation_plan_snapshot": {"plans": [{"operation": "restart"}]},
         "automation_intent_snapshot": {"intents": [{"operation": "restart"}]},
         "control_intent_snapshot": {"requests": [{"operation": "restart"}]},
@@ -590,6 +600,10 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
     assert "authority_snapshot" in captured["authority"]
     assert "operating_authority_snapshot" in captured["authority"]
     assert "procedure_policy_snapshot" in captured["authority"]
+    assert "operating_directive_snapshot" in captured["operating_directive"]
+    assert "mode_transition_snapshot" in captured["operating_directive"]
+    assert "desired_mode_snapshot" in captured["operating_directive"]
+    assert "operator_mode_request" in captured["operating_directive"]
     assert "automation_plan_snapshot" in captured["automation_plan"]
     assert "automation_intent_snapshot" in captured["automation_plan"]
     assert "control_intent_snapshot" in captured["automation_plan"]

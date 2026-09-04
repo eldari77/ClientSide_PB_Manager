@@ -46,6 +46,7 @@ def test_sos_dashboard_adapter_degrades_to_missing_child_result_with_echo():
     assert result["sos_dashboard"]["telemetry_quality"]["snapshot_status"] == "missing_child_result"
     assert result["sos_dashboard"]["automation"]["snapshot_status"] == "missing_child_result"
     assert result["sos_dashboard"]["authority"]["snapshot_status"] == "missing_child_result"
+    assert result["sos_dashboard"]["operating_directive"]["snapshot_status"] == "missing_child_result"
     assert result["sos_dashboard"]["automation_plan"]["snapshot_status"] == "missing_child_result"
     assert result["sos_dashboard"]["automation_recovery"]["snapshot_status"] == "missing_child_result"
     assert result["sos_dashboard"]["redundancy"]["snapshot_status"] == "missing_child_result"
@@ -60,7 +61,7 @@ def test_sos_dashboard_adapter_degrades_to_missing_child_result_with_echo():
     assert result["commands"] == [
         {
             "kind": "echo",
-            "text": "SOS Dashboard Ship A mode=Docked guidance=unknown readiness=unknown capabilities=unknown telemetry_quality=unknown automation=unknown authority=unknown automation_plan=unknown automation_recovery=unknown redundancy=unknown topology=unknown diagnostics=unknown config_drift=unknown watch_log=unknown mission_profile=unknown endurance=unknown runbook=unknown integrity=unknown logistics=unknown conveyor=unknown maintenance=unknown airlock=unknown mobility=unknown navigation=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown environment=unknown display=unknown mining=unknown production=unknown transit=unknown defense=unknown alerts=unknown queue=none blockers=none",
+            "text": "SOS Dashboard Ship A mode=Docked guidance=unknown readiness=unknown capabilities=unknown telemetry_quality=unknown automation=unknown authority=unknown operating_directive=unknown automation_plan=unknown automation_recovery=unknown redundancy=unknown topology=unknown diagnostics=unknown config_drift=unknown watch_log=unknown mission_profile=unknown endurance=unknown runbook=unknown integrity=unknown logistics=unknown conveyor=unknown maintenance=unknown airlock=unknown mobility=unknown navigation=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown environment=unknown display=unknown mining=unknown production=unknown transit=unknown defense=unknown alerts=unknown queue=none blockers=none",
         }
     ]
 
@@ -161,6 +162,49 @@ def test_sos_dashboard_adapter_reads_authority_history_from_all_telemetry_shapes
         assert dashboard_authority["blocked_actions"] == ["programmable_block_recovery"]
         assert dashboard_authority["warnings"] == ["same_grid_identity_missing_or_mismatch"]
         assert dashboard_authority["source_services"] == ["automation_plan", "grid_snapshot"]
+
+
+def test_sos_dashboard_adapter_reads_operating_directive_history_from_all_telemetry_shapes():
+    directive = {
+        "state": "approval_required",
+        "transition_status": "approval_required",
+        "approval_status": "required",
+        "current_mode": "Docked",
+        "requested_mode": "Cruise",
+        "snapshot_status": "ok",
+        "warnings": ["operator_transition_approval_required"],
+        "blocked_prerequisites": [],
+        "unknown_prerequisites": [],
+        "source_services": ["operator_mode_request", "sos_identity"],
+    }
+    child = {
+        "service_id": "operating_directive",
+        "script_id": "pb-bridge-001-sos_operating_directive",
+        "status": "ok",
+        "error_bucket": "none",
+        "summary": "directive approval required",
+        "result": {"sos_operating_directive": directive},
+    }
+    telemetry_shapes = (
+        {"child_services": [child]},
+        {"child_services_by_service_id": {"operating_directive": child}},
+        {"child_services_by_script_id": {"pb-bridge-001-sos_operating_directive": child}},
+    )
+
+    for runtime_telemetry in telemetry_shapes:
+        result = run(
+            {
+                "bridge_id": "pb-bridge-001",
+                "sos_ship": {"ship_id": "ship-a", "display_name": "Ship A", "status_surfaces": []},
+                "runtime_telemetry": runtime_telemetry,
+            }
+        )
+
+        dashboard_directive = result["sos_dashboard"]["operating_directive"]
+        assert dashboard_directive["state"] == "approval_required"
+        assert dashboard_directive["requested_mode"] == "Cruise"
+        assert dashboard_directive["approval_status"] == "required"
+        assert dashboard_directive["source_services"] == ["operator_mode_request", "sos_identity"]
 
 
 def test_sos_dashboard_adapter_reads_automation_recovery_history_from_all_telemetry_shapes():
