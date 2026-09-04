@@ -449,6 +449,10 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
         "operator_approval_snapshot",
         "automation_approval_snapshot",
         "sos_automation_approval",
+        "sos_automation",
+        "automation_receipt_snapshot",
+        "automation_recovery_receipt",
+        "recovery_receipt_snapshot",
         "conveyor_snapshot",
         "conveyor_network_snapshot",
         "inventory_network_snapshot",
@@ -531,6 +535,10 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
         "operator_approval_snapshot": {"approved": False},
         "automation_approval_snapshot": {"approved": False},
         "sos_automation_approval": {"approved": False},
+        "sos_automation": {"last_action_id": "sos-action-1", "last_outcome": "rejected", "last_rejection_reason": "grid_mismatch", "last_sequence": 12},
+        "automation_receipt_snapshot": {"last_action_id": "sos-action-1", "last_outcome": "rejected", "last_rejection_reason": "grid_mismatch", "last_sequence": 12},
+        "automation_recovery_receipt": {"last_action_id": "sos-action-1", "last_outcome": "rejected", "last_rejection_reason": "grid_mismatch", "last_sequence": 12},
+        "recovery_receipt_snapshot": {"last_action_id": "sos-action-1", "last_outcome": "rejected", "last_rejection_reason": "grid_mismatch", "last_sequence": 12},
         "conveyor_snapshot": {"conveyors": [{"name": "Cargo Line", "connected": True}]},
         "conveyor_network_snapshot": {"networks": [{"name": "Cargo Network", "connected": True}]},
         "inventory_network_snapshot": {"ports": [{"name": "Cargo Port", "connected": True}]},
@@ -577,6 +585,10 @@ def test_service_specific_snapshot_aliases_do_not_leak_to_sibling_children(tmp_p
     assert "operator_approval_snapshot" in captured["automation_recovery"]
     assert "automation_approval_snapshot" in captured["automation_recovery"]
     assert "sos_automation_approval" in captured["automation_recovery"]
+    assert "sos_automation" in captured["automation_recovery"]
+    assert "automation_receipt_snapshot" in captured["automation_recovery"]
+    assert "automation_recovery_receipt" in captured["automation_recovery"]
+    assert "recovery_receipt_snapshot" in captured["automation_recovery"]
     assert "conveyor_snapshot" in captured["conveyor"]
     assert "conveyor_network_snapshot" in captured["conveyor"]
     assert "inventory_network_snapshot" in captured["conveyor"]

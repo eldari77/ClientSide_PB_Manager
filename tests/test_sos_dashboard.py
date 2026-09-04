@@ -121,12 +121,17 @@ def test_sos_dashboard_adapter_reads_automation_plan_history_from_all_telemetry_
 
 def test_sos_dashboard_adapter_reads_automation_recovery_history_from_all_telemetry_shapes():
     automation_recovery = {
-        "state": "passive",
-        "snapshot_status": "blocked",
-        "reason": "approval_missing",
+        "state": "rejected",
+        "snapshot_status": "ok",
+        "reason": "receipt_rejected",
         "candidate_count": 1,
-        "warnings": [],
-        "blockers": ["approval_missing"],
+        "warnings": ["receipt_rejected:sos_target_grid_mismatch"],
+        "blockers": ["receipt_rejected"],
+        "receipt_status": "rejected",
+        "receipt_outcome": "rejected",
+        "receipt_reason": "sos_target_grid_mismatch",
+        "receipt_sequence": 12,
+        "reconciliation_state": "rejected",
     }
     child = {
         "service_id": "automation_recovery",
@@ -151,6 +156,11 @@ def test_sos_dashboard_adapter_reads_automation_recovery_history_from_all_teleme
             }
         )
 
-        assert result["sos_dashboard"]["automation_recovery"]["state"] == "passive"
-        assert result["sos_dashboard"]["automation_recovery"]["reason"] == "approval_missing"
+        assert result["sos_dashboard"]["automation_recovery"]["state"] == "rejected"
+        assert result["sos_dashboard"]["automation_recovery"]["reason"] == "receipt_rejected"
         assert result["sos_dashboard"]["automation_recovery"]["candidate_count"] == 1
+        assert result["sos_dashboard"]["automation_recovery"]["receipt_status"] == "rejected"
+        assert result["sos_dashboard"]["automation_recovery"]["receipt_outcome"] == "rejected"
+        assert result["sos_dashboard"]["automation_recovery"]["receipt_reason"] == "sos_target_grid_mismatch"
+        assert result["sos_dashboard"]["automation_recovery"]["receipt_sequence"] == 12
+        assert result["sos_dashboard"]["automation_recovery"]["reconciliation_state"] == "rejected"

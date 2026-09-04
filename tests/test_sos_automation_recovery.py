@@ -83,6 +83,27 @@ def test_sos_automation_recovery_requires_explicit_matching_approval():
     assert result["commands"] == []
 
 
+def test_sos_automation_recovery_preserves_terminal_shim_receipt_without_commands():
+    request = _request()
+    request["sos_automation"] = {
+        "last_action_id": "sos-action-1",
+        "last_outcome": "rejected",
+        "last_rejection_reason": "sos_target_grid_mismatch",
+        "last_sequence": 12,
+    }
+
+    result = run(request)
+
+    recovery = result["sos_automation_recovery"]
+    assert recovery["state"] == "rejected"
+    assert recovery["receipt_status"] == "rejected"
+    assert recovery["receipt_outcome"] == "rejected"
+    assert recovery["receipt_reason"] == "sos_target_grid_mismatch"
+    assert recovery["receipt_sequence"] == 12
+    assert recovery["reconciliation_state"] == "rejected"
+    assert result["commands"] == []
+
+
 def test_sos_automation_recovery_preserves_the_approved_command_envelope():
     request = _request()
     request["operator_approval_snapshot"] = {

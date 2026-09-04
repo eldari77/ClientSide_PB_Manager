@@ -489,6 +489,10 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
         "automation_snapshot": {"programmable_blocks": [{"name": "Main PB", "enabled": True}]},
         "automation_plan_snapshot": {"plans": [{"operation": "restart"}]},
         "operator_approval_snapshot": {"approved": False},
+        "sos_automation": {"last_action_id": "sos-action-1", "last_outcome": "rejected", "last_rejection_reason": "grid_mismatch", "last_sequence": 12},
+        "automation_receipt_snapshot": {"last_action_id": "sos-action-1", "last_outcome": "rejected", "last_rejection_reason": "grid_mismatch", "last_sequence": 12},
+        "automation_recovery_receipt": {"last_action_id": "sos-action-1", "last_outcome": "rejected", "last_rejection_reason": "grid_mismatch", "last_sequence": 12},
+        "recovery_receipt_snapshot": {"last_action_id": "sos-action-1", "last_outcome": "rejected", "last_rejection_reason": "grid_mismatch", "last_sequence": 12},
         "conveyor_snapshot": {"conveyors": [{"name": "Cargo Line", "connected": True}]},
         "redundancy_snapshot": {"capabilities": {"transit_jump": {"primary_count": 1, "backup_count": 0}}},
         "topology_snapshot": {"dependencies": [{"source": "power", "target": "mobility", "state": "ok"}]},
@@ -511,6 +515,10 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
         "automation_snapshot",
         "automation_plan_snapshot",
         "operator_approval_snapshot",
+        "sos_automation",
+        "automation_receipt_snapshot",
+        "automation_recovery_receipt",
+        "recovery_receipt_snapshot",
         "conveyor_snapshot",
         "redundancy_snapshot",
         "topology_snapshot",
@@ -532,6 +540,10 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
     assert "automation_snapshot" in captured["automation"]
     assert "automation_plan_snapshot" in captured["automation_plan"]
     assert "operator_approval_snapshot" in captured["automation_recovery"]
+    assert "sos_automation" in captured["automation_recovery"]
+    assert "automation_receipt_snapshot" in captured["automation_recovery"]
+    assert "automation_recovery_receipt" in captured["automation_recovery"]
+    assert "recovery_receipt_snapshot" in captured["automation_recovery"]
     assert "conveyor_snapshot" in captured["conveyor"]
     assert "redundancy_snapshot" in captured["redundancy"]
     assert "topology_snapshot" in captured["topology"]

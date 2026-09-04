@@ -73,6 +73,12 @@ AUTOMATION_RECOVERY_SNAPSHOT_KEYS = (
     "automation_approval_snapshot",
     "sos_automation_approval",
 )
+AUTOMATION_RECOVERY_RECEIPT_KEYS = (
+    "sos_automation",
+    "automation_receipt_snapshot",
+    "automation_recovery_receipt",
+    "recovery_receipt_snapshot",
+)
 CONVEYOR_SNAPSHOT_KEYS = (
     "conveyor_snapshot",
     "conveyor_network_snapshot",
@@ -728,6 +734,10 @@ def remove_automation_plan_only_snapshot_aliases(request: dict[str, Any]) -> Non
 
 def remove_automation_recovery_only_snapshot_aliases(request: dict[str, Any]) -> None:
     remove_snapshot_aliases(request, AUTOMATION_RECOVERY_SNAPSHOT_KEYS)
+
+
+def remove_automation_recovery_receipt_aliases(request: dict[str, Any]) -> None:
+    remove_snapshot_aliases(request, AUTOMATION_RECOVERY_RECEIPT_KEYS)
 
 
 def remove_conveyor_only_snapshot_aliases(request: dict[str, Any]) -> None:
@@ -2082,6 +2092,7 @@ def execute_orchestrator_request(
             remove_automation_plan_only_snapshot_aliases(child_request)
         if not is_automation_recovery_child:
             remove_automation_recovery_only_snapshot_aliases(child_request)
+            remove_automation_recovery_receipt_aliases(child_request)
         if not is_conveyor_child:
             remove_conveyor_only_snapshot_aliases(child_request)
         if not is_config_drift_child:
