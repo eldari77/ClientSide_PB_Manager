@@ -64,7 +64,7 @@ def test_sos_dashboard_adapter_degrades_to_missing_child_result_with_echo():
     assert result["commands"] == [
         {
             "kind": "echo",
-            "text": "SOS Dashboard Ship A mode=Docked guidance=unknown readiness=unknown capabilities=unknown telemetry_quality=unknown automation=unknown authority=unknown operating_directive=unknown mode_ledger=unknown mode_transition_plan=unknown mode_transition_apply=unknown automation_plan=unknown automation_recovery=unknown redundancy=unknown topology=unknown diagnostics=unknown config_drift=unknown watch_log=unknown mission_profile=unknown endurance=unknown runbook=unknown integrity=unknown logistics=unknown conveyor=unknown maintenance=unknown airlock=unknown mobility=unknown navigation=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown environment=unknown display=unknown mining=unknown production=unknown transit=unknown defense=unknown alerts=unknown queue=none blockers=none",
+            "text": "SOS Dashboard Ship A mode=Docked guidance=unknown readiness=unknown capabilities=unknown telemetry_quality=unknown automation=unknown authority=unknown operating_directive=unknown mode_ledger=unknown mode_transition_plan=unknown mode_transition_review=unknown mode_transition_apply=unknown automation_plan=unknown automation_recovery=unknown redundancy=unknown topology=unknown diagnostics=unknown config_drift=unknown watch_log=unknown mission_profile=unknown endurance=unknown runbook=unknown integrity=unknown logistics=unknown conveyor=unknown maintenance=unknown airlock=unknown mobility=unknown navigation=unknown power=unknown comms=unknown crew=unknown docking=unknown life_support=unknown environment=unknown display=unknown mining=unknown production=unknown transit=unknown defense=unknown alerts=unknown queue=none blockers=none",
         }
     ]
 
@@ -269,6 +269,30 @@ def test_sos_dashboard_adapter_reads_mode_transition_plan_history_from_all_telem
         assert dashboard_plan["state"] == "proposed"
         assert dashboard_plan["plan_count"] == 1
         assert dashboard_plan["warnings"] == ["operator_approval_required"]
+
+
+def test_sos_dashboard_adapter_reads_mode_transition_review_history_from_all_telemetry_shapes():
+    for state in ("ready", "blocked", "unknown"):
+        review = {
+            "state": state, "snapshot_status": "ok",
+            "approval_packet": {"action_id": "review-1", "approval_nonce": "nonce-1", "target_grid_entity_id": 10, "from_mode": "Docked", "to_mode": "Cruise", "expires_after_sequence": 20},
+            "blockers": [] if state == "ready" else ["review_blocked"], "warnings": ["operator_review_required"], "source_services": ["mode_transition_plan", "mode_ledger", "authority"],
+        }
+        child = {
+            "service_id": "mode_transition_review", "script_id": "pb-bridge-001-sos_mode_transition_review", "status": "ok",
+            "error_bucket": "none", "summary": "mode transition review", "result": {"sos_mode_transition_review": review},
+        }
+        telemetry_shapes = (
+            {"child_services": [child]},
+            {"child_services_by_service_id": {"mode_transition_review": child}},
+            {"child_services_by_script_id": {"pb-bridge-001-sos_mode_transition_review": child}},
+        )
+        for runtime_telemetry in telemetry_shapes:
+            result = run({"bridge_id": "pb-bridge-001", "sos_ship": {"ship_id": "ship-a", "display_name": "Ship A", "status_surfaces": []}, "runtime_telemetry": runtime_telemetry})
+            dashboard_review = result["sos_dashboard"]["mode_transition_review"]
+            assert dashboard_review["state"] == state
+            assert dashboard_review["approval_packet"]["action_id"] == "review-1"
+            assert dashboard_review["approval_packet"]["to_mode"] == "Cruise"
 
 
 def test_sos_dashboard_adapter_reads_mode_transition_apply_history_from_all_telemetry_shapes():

@@ -2107,6 +2107,10 @@ def execute_orchestrator_request(
             or "sos_operating_authority" in child_id.lower()
             or "sos_procedure_policy" in child_id.lower()
         )
+        is_mode_transition_review_child = (
+            child_service_id == "mode_transition_review"
+            or "sos_mode_transition_review" in child_id.lower()
+        )
         is_operating_directive_child = (
             child_service_id == "operating_directive"
             or "sos_operating_directive" in child_id.lower()
@@ -2114,6 +2118,7 @@ def execute_orchestrator_request(
                 "sos_mode_transition" in child_id.lower()
                 and "sos_mode_transition_plan" not in child_id.lower()
                 and "sos_mode_transition_apply" not in child_id.lower()
+                and not is_mode_transition_review_child
             )
             or "sos_desired_mode" in child_id.lower()
             or "sos_operator_mode" in child_id.lower()
@@ -2365,6 +2370,7 @@ def execute_orchestrator_request(
             or "sos_automation_recovery" in child_id.lower()
             or "sos_programmable_block_recovery" in child_id.lower()
             or "sos_mode_transition_apply" in child_id.lower()
+            or "sos_mode_transition_review" in child_id.lower()
             or "sos_conveyor" in child_id.lower()
             or "sos_conveyors" in child_id.lower()
             or "sos_routing" in child_id.lower()
