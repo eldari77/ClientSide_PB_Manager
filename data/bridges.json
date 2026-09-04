@@ -12,7 +12,7 @@
         "setup_script_id": "sample_status_adapter",
         "verification_nonce": "0d500cfa4e704fd4",
         "max_commands_per_minute": 60,
-        "max_apply_commands_per_tick": 8,
+        "max_apply_commands_per_tick": 5,
         "apply_worker_commands": true,
         "allow_connected_grid_commands": false,
         "runtime_ms_limit": 0.25,
@@ -36,7 +36,66 @@
         "pb-bridge-001-workshop_1216126863_adapter"
       ],
       "created_at": "2026-08-07T00:00:00Z",
-      "updated_at": "2026-08-21T00:44:55.4499470Z"
+      "updated_at": "2026-08-29T15:18:39.3459310Z"
+    },
+    "pb-bridge-002": {
+      "bridge_id": "pb-bridge-002",
+      "display_name": "SOS-dev",
+      "status": "verified",
+      "shim": {
+        "mailbox_mode": "both",
+        "text_panel_name": "NOVALI PB Bridge",
+        "snapshot_mode": "minimal",
+        "setup_script_id": "sample_status_adapter",
+        "verification_nonce": "ad875a6b37ee4381",
+        "max_commands_per_minute": 60,
+        "max_apply_commands_per_tick": 8,
+        "apply_worker_commands": true,
+        "allow_connected_grid_commands": false,
+        "runtime_ms_limit": 0.25,
+        "runtime_ms_soft_ratio": 0.75,
+        "cooldown_seconds": 3,
+        "fail_closed": true
+      },
+      "verification": {
+        "verified": true,
+        "verification_nonce": "ad875a6b37ee4381",
+        "shim_version": "baseline-template-v1",
+        "last_sequence": 183,
+        "last_result_status": "ok",
+        "last_error": "none",
+        "checked_at": "2026-08-29T15:31:55.8265201Z"
+      },
+      "selected_script_instance_id": "pb-bridge-002-orchestrator",
+      "allowed_script_instance_ids": [
+        "pb-bridge-002-orchestrator",
+        "pb-bridge-002-sos_status",
+        "pb-bridge-002-sos_alerts",
+        "pb-bridge-002-sos_dashboard",
+        "pb-bridge-002-sos_integrity",
+        "pb-bridge-002-sos_logistics",
+        "pb-bridge-002-sos_maintenance",
+        "pb-bridge-002-sos_airlock",
+        "pb-bridge-002-sos_mobility",
+        "pb-bridge-002-sos_navigation",
+        "pb-bridge-002-sos_display",
+        "pb-bridge-002-sos_power",
+        "pb-bridge-002-sos_comms",
+        "pb-bridge-002-sos_crew",
+        "pb-bridge-002-sos_docking",
+        "pb-bridge-002-sos_life_support",
+        "pb-bridge-002-sos_production",
+        "pb-bridge-002-sos_mining",
+        "pb-bridge-002-sos_transit",
+        "pb-bridge-002-sos_defense",
+        "pb-bridge-002-sos_environment",
+        "pb-bridge-002-sos_readiness",
+        "pb-bridge-002-sos_guidance",
+        "pb-bridge-002-sos_diagnostics",
+        "pb-bridge-002-sos_mission_profile"
+      ],
+      "created_at": "2026-08-29T06:42:18.1325445Z",
+      "updated_at": "2026-08-29T20:20:42.9784762Z"
     }
   }
 }

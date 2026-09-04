@@ -2082,6 +2082,10 @@ string ReplaceMarkedBlock(string original, string replacement)
         end += End.Length;
         return original.Substring(0, start) + replacement + original.Substring(end);
     }
+    if (start >= 0)
+    {
+        return original.Substring(0, start).TrimEnd() + "\n\n" + replacement + "\n";
+    }
     return original.TrimEnd() + "\n\n" + replacement + "\n";
 }
 
@@ -2093,6 +2097,17 @@ string RemoveMarkedBlock(string original)
     {
         end += End.Length;
         return (original.Substring(0, start) + original.Substring(end)).TrimEnd() + "\n";
+    }
+    return RemoveOrphanedMarkedBlock(original);
+}
+
+string RemoveOrphanedMarkedBlock(string original)
+{
+    int start = original.IndexOf(Begin);
+    if (start >= 0)
+    {
+        lastResultWasStale = true;
+        return original.Substring(0, start).TrimEnd() + "\n";
     }
     return original;
 }

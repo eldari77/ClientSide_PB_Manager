@@ -202,3 +202,30 @@ def test_plugin_distinguishes_expected_result_lag_from_sequence_mismatch():
     assert '_lastResultState = "waiting_for_current_result";' in source
     assert '_lastResultState = "result_future_sequence";' in source
     assert "ExtractNestedJsonInt" in source
+
+
+def test_plugin_compacts_large_result_before_returning_to_pb_custom_data():
+    source = PLUGIN.read_text(encoding="utf-8")
+
+    assert "MaxMailboxResultChars" in source
+    assert "BuildMailboxResultJson(result)" in source
+    assert 'Quote("mailbox_compacted") + ":true,"' in source
+    assert 'Quote("full_result_path")' in source
+    assert 'Quote("commands") + ":[{"' in source
+    assert 'Quote("text") + ":" + Quote(Limit(' in source
+
+
+def test_plugin_clears_orphaned_marked_block_before_request_parsing():
+    source = PLUGIN.read_text(encoding="utf-8")
+
+    assert "HasOrphanedMarkedBlock(customData)" in source
+    assert "RemoveOrphanedMarkedBlock(customData)" in source
+    assert '_lastResultState = "orphaned_mailbox_cleared";' in source
+
+
+def test_plugin_does_not_overwrite_active_request_file_while_worker_processes():
+    source = PLUGIN.read_text(encoding="utf-8")
+
+    assert "if (File.Exists(path))" in source
+    assert '_lastResultState = "request_file_pending";' in source
+    assert "File.WriteAllText(path, body, Utf8NoBom);" in source

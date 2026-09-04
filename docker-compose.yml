@@ -10,10 +10,12 @@ services:
       NOVALI_CLIENT_SIDE_PB_POLL_SECONDS: "1.0"
       NOVALI_CLIENT_SIDE_PB_UI_HOST: "0.0.0.0"
       NOVALI_CLIENT_SIDE_PB_UI_PORT: "8788"
+      PYTHONPATH: "/workspace/client-side-pb:/workspace/sos/src"
     ports:
       - "8788:8788"
     volumes:
       - ./:/workspace/client-side-pb
+      - ${SOS_ADDON_SRC:-../SOS-Starship-Operating-System/SOS-Starship-Operating-System/src}:/workspace/sos/src:ro
       - client_side_pb_private:/var/lib/novali-client-side-pb
     restart: unless-stopped
 

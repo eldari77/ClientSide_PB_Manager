@@ -120,10 +120,13 @@ def test_pb_shim_allows_isy_foundation_commands_with_skip_reasons():
 def test_pb_shim_skips_command_kinds_outside_the_existing_allowlist_before_execution():
     source = SHIM.read_text(encoding="utf-8")
     apply_body = source[source.index("string ApplyWorkerCommands") : source.index("bool ApplyTransferItemCommand")]
+
     handled_kinds = set(re.findall(r'kind == "([^"]+)"', apply_body))
+
     assert handled_kinds == PB_SHIM_ALLOWED_COMMAND_KINDS
     assert 'lastCommandSkipReason = "unknown_kind:" + kind;' in apply_body
-    assert "skipped++;" in apply_body[apply_body.index('if (!string.IsNullOrWhiteSpace(kind))'):]
+    assert "skipped++;" in apply_body[apply_body.index('if (!string.IsNullOrWhiteSpace(kind))') :]
+
 
 def test_pb_shim_sets_lcd_surfaces_to_text_mode_before_writing():
     source = SHIM.read_text(encoding="utf-8")
@@ -199,6 +202,16 @@ def test_pb_shim_renders_operator_status_panel_with_queue_and_child_statuses():
     assert "lastChildStatusLines" in source
     assert "instance_label." in source
     assert '"Pending request: seq "' not in source
+
+
+def test_pb_shim_removes_orphaned_mailbox_begin_marker_on_reset():
+    source = SHIM.read_text(encoding="utf-8")
+
+    assert "RemoveMarkedBlock(Me.CustomData)" in source
+    assert "RemoveOrphanedMarkedBlock(original)" in source
+    assert "int start = original.IndexOf(Begin);" in source
+    assert "if (start >= 0)" in source
+    assert 'lastResultWasStale = true;' in source
 
 
 def test_pb_shim_sos_automation_approval_receipt_is_disabled_by_default_and_distinct_from_verification_nonce():

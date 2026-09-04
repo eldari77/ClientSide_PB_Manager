@@ -45,6 +45,303 @@
         }
       ],
       "updated_at": "2026-08-20T23:02:17.8198381Z"
+    },
+    "pb-bridge-002": {
+      "selected_script_id": "pb-bridge-002-orchestrator",
+      "allowed_worker_scripts": [
+        "pb-bridge-002-orchestrator",
+        "pb-bridge-002-sos_status",
+        "pb-bridge-002-sos_alerts",
+        "pb-bridge-002-sos_dashboard",
+        "pb-bridge-002-sos_integrity",
+        "pb-bridge-002-sos_logistics",
+        "pb-bridge-002-sos_maintenance",
+        "pb-bridge-002-sos_airlock",
+        "pb-bridge-002-sos_mobility",
+        "pb-bridge-002-sos_navigation",
+        "pb-bridge-002-sos_display",
+        "pb-bridge-002-sos_power",
+        "pb-bridge-002-sos_comms",
+        "pb-bridge-002-sos_crew",
+        "pb-bridge-002-sos_docking",
+        "pb-bridge-002-sos_life_support",
+        "pb-bridge-002-sos_production",
+        "pb-bridge-002-sos_mining",
+        "pb-bridge-002-sos_transit",
+        "pb-bridge-002-sos_defense",
+        "pb-bridge-002-sos_environment",
+        "pb-bridge-002-sos_readiness",
+        "pb-bridge-002-sos_guidance",
+        "pb-bridge-002-sos_diagnostics",
+        "pb-bridge-002-sos_mission_profile"
+      ],
+      "child_worker_scripts": [
+        {
+          "script_id": "pb-bridge-002-sos_status",
+          "enabled": true,
+          "budget": 1,
+          "priority": 10,
+          "role": "worker",
+          "reactive": false,
+          "expires_after_sequences": 0,
+          "fairness_weight": 1,
+          "operator_status": "manual_adapter_required"
+        },
+        {
+          "script_id": "pb-bridge-002-sos_alerts",
+          "enabled": true,
+          "budget": 1,
+          "priority": 11,
+          "role": "worker",
+          "reactive": false,
+          "expires_after_sequences": 0,
+          "fairness_weight": 1,
+          "operator_status": "manual_adapter_required"
+        },
+        {
+          "script_id": "pb-bridge-002-sos_dashboard",
+          "enabled": true,
+          "budget": 1,
+          "priority": 12,
+          "role": "worker",
+          "reactive": false,
+          "expires_after_sequences": 0,
+          "fairness_weight": 1,
+          "operator_status": "manual_adapter_required"
+        },
+        {
+          "script_id": "pb-bridge-002-sos_integrity",
+          "enabled": true,
+          "budget": 1,
+          "priority": 13,
+          "role": "worker",
+          "reactive": false,
+          "expires_after_sequences": 0,
+          "fairness_weight": 1,
+          "operator_status": "manual_adapter_required"
+        },
+        {
+          "script_id": "pb-bridge-002-sos_logistics",
+          "enabled": true,
+          "budget": 1,
+          "priority": 14,
+          "role": "worker",
+          "reactive": false,
+          "expires_after_sequences": 0,
+          "fairness_weight": 1,
+          "operator_status": "manual_adapter_required"
+        },
+        {
+          "script_id": "pb-bridge-002-sos_maintenance",
+          "enabled": true,
+          "budget": 1,
+          "priority": 15,
+          "role": "worker",
+          "reactive": false,
+          "expires_after_sequences": 0,
+          "fairness_weight": 1,
+          "operator_status": "manual_adapter_required"
+        },
+        {
+          "script_id": "pb-bridge-002-sos_airlock",
+          "enabled": true,
+          "budget": 1,
+          "priority": 16,
+          "role": "worker",
+          "reactive": false,
+          "expires_after_sequences": 0,
+          "fairness_weight": 1,
+          "operator_status": "manual_adapter_required"
+        },
+        {
+          "script_id": "pb-bridge-002-sos_mobility",
+          "enabled": true,
+          "budget": 1,
+          "priority": 17,
+          "role": "worker",
+          "reactive": false,
+          "expires_after_sequences": 0,
+          "fairness_weight": 1,
+          "operator_status": "manual_adapter_required"
+        },
+        {
+          "script_id": "pb-bridge-002-sos_navigation",
+          "enabled": true,
+          "budget": 1,
+          "priority": 18,
+          "role": "worker",
+          "reactive": false,
+          "expires_after_sequences": 0,
+          "fairness_weight": 1,
+          "operator_status": "manual_adapter_required"
+        },
+        {
+          "script_id": "pb-bridge-002-sos_display",
+          "enabled": true,
+          "budget": 1,
+          "priority": 19,
+          "role": "worker",
+          "reactive": false,
+          "expires_after_sequences": 0,
+          "fairness_weight": 1,
+          "operator_status": "manual_adapter_required"
+        },
+        {
+          "script_id": "pb-bridge-002-sos_power",
+          "enabled": true,
+          "budget": 1,
+          "priority": 20,
+          "role": "worker",
+          "reactive": false,
+          "expires_after_sequences": 0,
+          "fairness_weight": 1,
+          "operator_status": "manual_adapter_required"
+        },
+        {
+          "script_id": "pb-bridge-002-sos_comms",
+          "enabled": true,
+          "budget": 1,
+          "priority": 21,
+          "role": "worker",
+          "reactive": false,
+          "expires_after_sequences": 0,
+          "fairness_weight": 1,
+          "operator_status": "manual_adapter_required"
+        },
+        {
+          "script_id": "pb-bridge-002-sos_crew",
+          "enabled": true,
+          "budget": 1,
+          "priority": 22,
+          "role": "worker",
+          "reactive": false,
+          "expires_after_sequences": 0,
+          "fairness_weight": 1,
+          "operator_status": "manual_adapter_required"
+        },
+        {
+          "script_id": "pb-bridge-002-sos_docking",
+          "enabled": true,
+          "budget": 1,
+          "priority": 23,
+          "role": "worker",
+          "reactive": false,
+          "expires_after_sequences": 0,
+          "fairness_weight": 1,
+          "operator_status": "manual_adapter_required"
+        },
+        {
+          "script_id": "pb-bridge-002-sos_life_support",
+          "enabled": true,
+          "budget": 1,
+          "priority": 24,
+          "role": "worker",
+          "reactive": false,
+          "expires_after_sequences": 0,
+          "fairness_weight": 1,
+          "operator_status": "manual_adapter_required"
+        },
+        {
+          "script_id": "pb-bridge-002-sos_production",
+          "enabled": true,
+          "budget": 1,
+          "priority": 25,
+          "role": "worker",
+          "reactive": false,
+          "expires_after_sequences": 0,
+          "fairness_weight": 1,
+          "operator_status": "manual_adapter_required"
+        },
+        {
+          "script_id": "pb-bridge-002-sos_mining",
+          "enabled": true,
+          "budget": 1,
+          "priority": 26,
+          "role": "worker",
+          "reactive": false,
+          "expires_after_sequences": 0,
+          "fairness_weight": 1,
+          "operator_status": "manual_adapter_required"
+        },
+        {
+          "script_id": "pb-bridge-002-sos_transit",
+          "enabled": true,
+          "budget": 1,
+          "priority": 27,
+          "role": "worker",
+          "reactive": false,
+          "expires_after_sequences": 0,
+          "fairness_weight": 1,
+          "operator_status": "manual_adapter_required"
+        },
+        {
+          "script_id": "pb-bridge-002-sos_defense",
+          "enabled": true,
+          "budget": 1,
+          "priority": 28,
+          "role": "worker",
+          "reactive": false,
+          "expires_after_sequences": 0,
+          "fairness_weight": 1,
+          "operator_status": "manual_adapter_required"
+        },
+        {
+          "script_id": "pb-bridge-002-sos_environment",
+          "enabled": true,
+          "budget": 1,
+          "priority": 29,
+          "role": "worker",
+          "reactive": false,
+          "expires_after_sequences": 0,
+          "fairness_weight": 1,
+          "operator_status": "manual_adapter_required"
+        },
+        {
+          "script_id": "pb-bridge-002-sos_readiness",
+          "enabled": true,
+          "budget": 1,
+          "priority": 30,
+          "role": "worker",
+          "reactive": false,
+          "expires_after_sequences": 0,
+          "fairness_weight": 1,
+          "operator_status": "manual_adapter_required"
+        },
+        {
+          "script_id": "pb-bridge-002-sos_guidance",
+          "enabled": true,
+          "budget": 1,
+          "priority": 31,
+          "role": "worker",
+          "reactive": false,
+          "expires_after_sequences": 0,
+          "fairness_weight": 1,
+          "operator_status": "manual_adapter_required"
+        },
+        {
+          "script_id": "pb-bridge-002-sos_diagnostics",
+          "enabled": true,
+          "budget": 1,
+          "priority": 32,
+          "role": "worker",
+          "reactive": false,
+          "expires_after_sequences": 0,
+          "fairness_weight": 1,
+          "operator_status": "manual_adapter_required"
+        },
+        {
+          "script_id": "pb-bridge-002-sos_mission_profile",
+          "enabled": true,
+          "budget": 1,
+          "priority": 33,
+          "role": "worker",
+          "reactive": false,
+          "expires_after_sequences": 0,
+          "fairness_weight": 1,
+          "operator_status": "manual_adapter_required"
+        }
+      ],
+      "updated_at": "2026-08-29T15:33:47.1777886Z"
     }
   }
 }

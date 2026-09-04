@@ -38,6 +38,16 @@ def test_beta_install_script_sets_up_local_only_dependencies():
     assert "data\\bridge_results" in script
 
 
+def test_docker_worker_mounts_sos_addon_source_for_runtime_imports():
+    compose = read_text("docker-compose.yml")
+
+    assert "PYTHONPATH: \"/workspace/client-side-pb:/workspace/sos/src\"" in compose
+    assert (
+        "${SOS_ADDON_SRC:-../SOS-Starship-Operating-System/SOS-Starship-Operating-System/src}"
+        ":/workspace/sos/src:ro"
+    ) in compose
+
+
 def test_beta_setup_guide_covers_nontechnical_handoff_steps():
     guide = read_text("docs/beta_handoff/setup-guide.md")
 

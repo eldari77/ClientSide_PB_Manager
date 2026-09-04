@@ -30,6 +30,7 @@ namespace NOVALI.ClientSidePBBridge
         private const int GridSnapshotBlockCap = 500;
         private const int IntegritySnapshotBlockCap = 1200;
         private const int ProductionQueueItemCap = 120;
+        private const int MaxMailboxResultChars = 24000;
         private int _tick;
         private string _root;
         private string _lastStatus = "starting";
@@ -167,6 +168,12 @@ namespace NOVALI.ClientSidePBBridge
                     return;
                 }
                 _lastMarkedMailboxes++;
+                if (HasOrphanedMarkedBlock(customData))
+                {
+                    WriteStringMember(entity, "CustomData", RemoveOrphanedMarkedBlock(customData));
+                    _lastResultState = "orphaned_mailbox_cleared";
+                    return;
+                }
                 var body = ExtractMarkedBody(customData);
                 if (string.IsNullOrWhiteSpace(body))
                 {
@@ -1462,6 +1469,11 @@ namespace NOVALI.ClientSidePBBridge
                 return false;
             }
             var path = Path.Combine(_root, "data", "bridge_requests", SafeFileName(bridgeId) + ".json");
+            if (File.Exists(path))
+            {
+                _lastResultState = "request_file_pending";
+                return false;
+            }
             File.WriteAllText(path, body, Utf8NoBom);
             _lastSequences[bridgeId] = sequence;
             return true;
@@ -1504,7 +1516,8 @@ namespace NOVALI.ClientSidePBBridge
                 _lastResultState = "result_bridge_mismatch";
                 return false;
             }
-            var wrapped = Begin + "\n" + result + "\n" + End;
+            var mailboxResult = BuildMailboxResultJson(result);
+            var wrapped = Begin + "\n" + mailboxResult + "\n" + End;
             var panelName = ExtractConfigValue(customData, "text_panel_name");
             if (!string.IsNullOrWhiteSpace(panelName))
             {
@@ -1676,6 +1689,71 @@ namespace NOVALI.ClientSidePBBridge
             }
             start += Begin.Length;
             return text.Substring(start, end - start).Trim();
+        }
+
+        private static bool HasOrphanedMarkedBlock(string text)
+        {
+            var start = text.IndexOf(Begin, StringComparison.OrdinalIgnoreCase);
+            var end = text.IndexOf(End, StringComparison.OrdinalIgnoreCase);
+            return start >= 0 && (end < 0 || end <= start);
+        }
+
+        private static string RemoveOrphanedMarkedBlock(string text)
+        {
+            var start = text.IndexOf(Begin, StringComparison.OrdinalIgnoreCase);
+            return start < 0 ? text : text.Substring(0, start).TrimEnd() + "\n";
+        }
+
+        private static string BuildMailboxResultJson(string result)
+        {
+            if (result.Length <= MaxMailboxResultChars)
+            {
+                return result;
+            }
+            var bridgeId = ExtractJsonString(result, "bridge_id");
+            var scriptId = ExtractJsonString(result, "script_id");
+            var status = ExtractJsonString(result, "status");
+            var summary = ExtractJsonString(result, "summary");
+            if (string.IsNullOrWhiteSpace(summary))
+            {
+                summary = status == "ok" ? "worker result completed" : "worker result returned";
+            }
+            var completedAt = ExtractJsonString(result, "completed_at");
+            var errorBucket = ExtractJsonString(result, "error_bucket");
+            if (string.IsNullOrWhiteSpace(errorBucket))
+            {
+                errorBucket = "none";
+            }
+            var sequence = ExtractJsonInt(result, "sequence");
+            var commandText = "Compact result: " + summary + ". Full result retained on client disk.";
+            return "{" +
+                Quote("schema") + ":" + Quote(Schema) + "," +
+                Quote("message_kind") + ":" + Quote("result") + "," +
+                Quote("bridge_id") + ":" + Quote(bridgeId) + "," +
+                Quote("sequence") + ":" + sequence.ToString() + "," +
+                Quote("script_id") + ":" + Quote(scriptId) + "," +
+                Quote("status") + ":" + Quote(status) + "," +
+                Quote("result") + ":{" +
+                    Quote("summary") + ":" + Quote(summary) + "," +
+                    Quote("mailbox_compacted") + ":true," +
+                    Quote("full_result_path") + ":" + Quote("data/bridge_results/" + SafeFileName(bridgeId) + ".json") + "," +
+                    Quote("commands") + ":[{" +
+                        Quote("kind") + ":" + Quote("echo") + "," +
+                        Quote("text") + ":" + Quote(Limit(commandText, 240)) +
+                    "}]," +
+                    Quote("remaining_commands") + ":0," +
+                    Quote("queued_commands") + ":0," +
+                    Quote("drained_commands") + ":0," +
+                    Quote("command_queue") + ":{" +
+                        Quote("state") + ":" + Quote("active") + "," +
+                        Quote("queued") + ":0," +
+                        Quote("drained") + ":0," +
+                        Quote("remaining") + ":0" +
+                    "}" +
+                "}," +
+                Quote("error_bucket") + ":" + Quote(errorBucket) + "," +
+                Quote("completed_at") + ":" + Quote(completedAt) +
+                "}";
         }
 
         private static string ReplaceMarkedBlock(string original, string replacement)

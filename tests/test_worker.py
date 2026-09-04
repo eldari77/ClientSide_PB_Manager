@@ -14,6 +14,7 @@ from worker.worker import (
     command_queue_key,
     compact_result_for_storage,
     cleanup_processed_requests,
+    execute_orchestrator_request,
     execute_request,
     learn_autocrafting_blueprints,
     load_effective_worker_config,
@@ -5760,44 +5761,54 @@ def test_execute_sos_orchestrator_scopes_automation_recovery_approval_and_preser
         "bridge-a-sos_status": WorkerScript("bridge-a-sos_status", "manual", "Status", sibling_module.__name__, "", "", 1000, True),
     }
 
-    result = execute_request(
-        {
-            "schema": "novali.client_side_pb_bridge.v1",
-            "message_kind": "request",
-            "bridge_id": "bridge-a",
-            "sequence": 10,
-            "script_id": "bridge-a-orchestrator",
-            "grid_snapshot": {
-                "schema": "novali.client_side_pb.grid_snapshot.v1",
-                "grid_entity_id": 10,
-                "identity_status": "ok",
-                "blocks": [{"entity_id": 7001, "name": "Recovery PB", "functional": True, "integrity_ratio": 1.0}],
-            },
-            "script_health_snapshot": {
-                "programmable_blocks": [
-                    {
-                        "entity_id": 7001,
-                        "grid_entity_id": 10,
-                        "interface_type": "IMyProgrammableBlock",
-                        "functional": True,
-                        "enabled": False,
-                    }
-                ]
-            },
-            "operator_approval_snapshot": {
-                "approved": True,
-                "action_id": "sos-action-1",
-                "approval_nonce": "sos-nonce-1",
-                "target_entity_id": 7001,
-                "target_grid_entity_id": 10,
-            },
-            "runtime_telemetry": {"limiter_state": "ok"},
-            "state": {},
+    request = {
+        "schema": "novali.client_side_pb_bridge.v1",
+        "message_kind": "request",
+        "bridge_id": "bridge-a",
+        "sequence": 10,
+        "script_id": "bridge-a-orchestrator",
+        "grid_snapshot": {
+            "schema": "novali.client_side_pb.grid_snapshot.v1",
+            "grid_entity_id": 10,
+            "identity_status": "ok",
+            "blocks": [{"entity_id": 7001, "name": "Recovery PB", "functional": True, "integrity_ratio": 1.0}],
+        },
+        "script_health_snapshot": {
+            "programmable_blocks": [
+                {
+                    "entity_id": 7001,
+                    "grid_entity_id": 10,
+                    "interface_type": "IMyProgrammableBlock",
+                    "functional": True,
+                    "enabled": False,
+                }
+            ]
+        },
+        "operator_approval_snapshot": {
+            "approved": True,
+            "action_id": "sos-action-1",
+            "approval_nonce": "sos-nonce-1",
+            "target_entity_id": 7001,
+            "target_grid_entity_id": 10,
+        },
+        "runtime_telemetry": {"limiter_state": "ok"},
+        "state": {},
+    }
+    terminal_result = execute_request(
+        request
+        | {
+            "sos_automation": {
+                "last_action_id": "sos-action-1",
+                "last_outcome": "applied",
+                "last_rejection_reason": "",
+                "last_sequence": 11,
+            }
         },
         scripts,
         {},
         tmp_path,
     )
+    result = execute_request(request, scripts, {}, tmp_path)
 
     recovery_request = captured["recovery"]
     assert recovery_request["sos_ship"]["identity_status"] == "ok"
@@ -5829,6 +5840,76 @@ def test_execute_sos_orchestrator_scopes_automation_recovery_approval_and_preser
         "sos_target_grid_entity_id": 10,
         "sos_expires_after_sequence": 12,
     }
+
+    terminal_recovery = next(
+        child["result"]["sos_automation_recovery"]
+        for child in terminal_result["result"]["child_results"]
+        if child["script_id"] == "bridge-a-sos_automation_recovery"
+    )
+    assert terminal_recovery["receipt_status"] == "applied"
+    assert terminal_recovery["reconciliation_state"] == "applied"
+    assert terminal_result["result"]["commands"] == []
+
+
+def test_execute_sos_orchestrator_scopes_raw_automation_receipts_to_recovery_only():
+    captured: dict[str, dict] = {}
+    module = types.ModuleType("tests.sos_automation_recovery_receipt_capture")
+
+    def run(request):
+        captured[request["script_id"]] = request
+        return {"summary": request["script_id"], "commands": []}
+
+    module.run = run
+    sys.modules[module.__name__] = module
+    receipt = {
+        "last_action_id": "sos-action-1",
+        "last_outcome": "rejected",
+        "last_rejection_reason": "sos_target_grid_mismatch",
+        "last_sequence": 12,
+    }
+    service_ids = ("automation_recovery", "automation_plan", "automation", "dashboard", "status")
+    scripts = {
+        script_id: WorkerScript(script_id, "manual", service_id, module.__name__, "", "", 1000, True)
+        for service_id in service_ids
+        for script_id in (f"bridge-a-sos_{service_id}",)
+    }
+    result = execute_orchestrator_request(
+        {
+            "schema": "novali.client_side_pb_bridge.v1",
+            "message_kind": "request",
+            "bridge_id": "bridge-a",
+            "sequence": 12,
+            "script_id": "bridge-a-orchestrator",
+            "sos_automation": receipt,
+            "automation_receipt_snapshot": dict(receipt),
+            "automation_recovery_receipt": dict(receipt),
+            "recovery_receipt_snapshot": dict(receipt),
+            "operator_approval_snapshot": {"approved": True},
+            "runtime_telemetry": {"limiter_state": "ok"},
+            "state": {},
+        },
+        scripts,
+        {},
+        BridgeScriptConfig(
+            "bridge-a-orchestrator",
+            tuple(scripts),
+            tuple({"script_id": f"bridge-a-sos_{service_id}", "service_id": service_id} for service_id in service_ids),
+        ),
+        None,
+    )
+
+    assert result["status"] == "ok"
+    recovery_request = captured["bridge-a-sos_automation_recovery"]
+    for alias in ("sos_automation", "automation_receipt_snapshot", "automation_recovery_receipt", "recovery_receipt_snapshot"):
+        assert recovery_request[alias] == receipt
+        for field, value in receipt.items():
+            assert recovery_request[alias][field] == value
+            assert type(recovery_request[alias][field]) is type(value)
+    for service_id in service_ids[1:]:
+        sibling = captured[f"bridge-a-sos_{service_id}"]
+        for alias in ("sos_automation", "automation_receipt_snapshot", "automation_recovery_receipt", "recovery_receipt_snapshot"):
+            assert alias not in sibling
+        assert "operator_approval_snapshot" not in sibling
 
 
 def test_execute_sos_orchestrator_runs_redundancy_child_with_existing_services(tmp_path: Path):
