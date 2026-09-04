@@ -86,9 +86,16 @@ AUTHORITY_SNAPSHOT_KEYS = (
 )
 OPERATING_DIRECTIVE_SNAPSHOT_KEYS = (
     "operating_directive_snapshot",
-    "mode_transition_snapshot",
     "desired_mode_snapshot",
     "operator_mode_request",
+)
+MODE_LEDGER_SNAPSHOT_KEYS = (
+    "mode_ledger_snapshot",
+    "active_mode_snapshot",
+    "operating_mode_receipt",
+    "mode_transition_receipt",
+    "mode_transition_ledger",
+    "mode_transition_snapshot",
 )
 CONVEYOR_SNAPSHOT_KEYS = (
     "conveyor_snapshot",
@@ -757,6 +764,10 @@ def remove_authority_only_snapshot_aliases(request: dict[str, Any]) -> None:
 
 def remove_operating_directive_only_snapshot_aliases(request: dict[str, Any]) -> None:
     remove_snapshot_aliases(request, OPERATING_DIRECTIVE_SNAPSHOT_KEYS)
+
+
+def remove_mode_ledger_only_snapshot_aliases(request: dict[str, Any]) -> None:
+    remove_snapshot_aliases(request, MODE_LEDGER_SNAPSHOT_KEYS)
 
 
 def remove_conveyor_only_snapshot_aliases(request: dict[str, Any]) -> None:
@@ -2021,6 +2032,12 @@ def execute_orchestrator_request(
             or "sos_desired_mode" in child_id.lower()
             or "sos_operator_mode" in child_id.lower()
         )
+        is_mode_ledger_child = (
+            child_service_id == "mode_ledger"
+            or "sos_mode_ledger" in child_id.lower()
+            or "sos_active_mode" in child_id.lower()
+            or "sos_operating_mode" in child_id.lower()
+        )
         is_conveyor_child = (
             child_service_id == "conveyor"
             or "sos_conveyor" in child_id.lower()
@@ -2129,6 +2146,8 @@ def execute_orchestrator_request(
             remove_authority_only_snapshot_aliases(child_request)
         if not is_operating_directive_child:
             remove_operating_directive_only_snapshot_aliases(child_request)
+        if not is_mode_ledger_child:
+            remove_mode_ledger_only_snapshot_aliases(child_request)
         if not is_conveyor_child:
             remove_conveyor_only_snapshot_aliases(child_request)
         if not is_config_drift_child:
@@ -2180,6 +2199,7 @@ def execute_orchestrator_request(
                 "automation",
                 "authority",
                 "operating_directive",
+                "mode_ledger",
                 "automation_plan",
                 "automation_recovery",
                 "conveyor",

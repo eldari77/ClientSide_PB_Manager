@@ -10,7 +10,6 @@ from worker.worker import WorkerScript, enriched_child_runtime_telemetry, execut
 
 DIRECTIVE_ALIASES = (
     "operating_directive_snapshot",
-    "mode_transition_snapshot",
     "desired_mode_snapshot",
     "operator_mode_request",
 )

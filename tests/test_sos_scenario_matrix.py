@@ -25,6 +25,7 @@ DASHBOARD_TOKEN_SERVICES = {
     "automation",
     "authority",
     "operating_directive",
+    "mode_ledger",
     "automation_plan",
     "automation_recovery",
     "comms",
@@ -405,6 +406,7 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
         "automation",
         "authority",
         "operating_directive",
+        "mode_ledger",
         "automation_plan",
         "automation_recovery",
         "conveyor",
@@ -495,9 +497,14 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
         "operating_authority_snapshot": {"procedure": "recovery"},
         "procedure_policy_snapshot": {"policy": "operator_approval_required"},
         "operating_directive_snapshot": {"operator_requested": True, "requested_mode": "Cruise", "request_id": "directive-1", "requested_at_sequence": 10},
-        "mode_transition_snapshot": {"operator_requested": True, "requested_mode": "Cruise", "request_id": "directive-1", "requested_at_sequence": 10},
         "desired_mode_snapshot": {"operator_requested": True, "requested_mode": "Cruise", "request_id": "directive-1", "requested_at_sequence": 10},
         "operator_mode_request": {"operator_requested": True, "requested_mode": "Cruise", "request_id": "directive-1", "requested_at_sequence": 10},
+        "mode_ledger_snapshot": {"active_mode": "Docked", "requested_mode": "Cruise", "transition_id": "ledger-1", "transition_sequence": 10},
+        "active_mode_snapshot": {"active_mode": "Docked", "requested_mode": "Cruise", "transition_id": "ledger-1", "transition_sequence": 10},
+        "operating_mode_receipt": {"active_mode": "Docked", "requested_mode": "Cruise", "transition_id": "ledger-1", "transition_sequence": 10},
+        "mode_transition_receipt": {"active_mode": "Docked", "requested_mode": "Cruise", "transition_id": "ledger-1", "transition_sequence": 10},
+        "mode_transition_ledger": {"active_mode": "Docked", "requested_mode": "Cruise", "transition_id": "ledger-1", "transition_sequence": 10},
+        "mode_transition_snapshot": {"active_mode": "Docked", "requested_mode": "Cruise", "transition_id": "ledger-1", "transition_sequence": 10},
         "automation_plan_snapshot": {"plans": [{"operation": "restart"}]},
         "operator_approval_snapshot": {"approved": False},
         "sos_automation": {"last_action_id": "sos-action-1", "last_outcome": "rejected", "last_rejection_reason": "grid_mismatch", "last_sequence": 12},
@@ -528,9 +535,14 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
         "operating_authority_snapshot",
         "procedure_policy_snapshot",
         "operating_directive_snapshot",
-        "mode_transition_snapshot",
         "desired_mode_snapshot",
         "operator_mode_request",
+        "mode_ledger_snapshot",
+        "active_mode_snapshot",
+        "operating_mode_receipt",
+        "mode_transition_receipt",
+        "mode_transition_ledger",
+        "mode_transition_snapshot",
         "automation_plan_snapshot",
         "operator_approval_snapshot",
         "sos_automation",
@@ -560,9 +572,14 @@ def test_service_specific_snapshot_aliases_stay_isolated_between_sos_children(tm
     assert "operating_authority_snapshot" in captured["authority"]
     assert "procedure_policy_snapshot" in captured["authority"]
     assert "operating_directive_snapshot" in captured["operating_directive"]
-    assert "mode_transition_snapshot" in captured["operating_directive"]
     assert "desired_mode_snapshot" in captured["operating_directive"]
     assert "operator_mode_request" in captured["operating_directive"]
+    assert "mode_ledger_snapshot" in captured["mode_ledger"]
+    assert "active_mode_snapshot" in captured["mode_ledger"]
+    assert "operating_mode_receipt" in captured["mode_ledger"]
+    assert "mode_transition_receipt" in captured["mode_ledger"]
+    assert "mode_transition_ledger" in captured["mode_ledger"]
+    assert "mode_transition_snapshot" in captured["mode_ledger"]
     assert "automation_plan_snapshot" in captured["automation_plan"]
     assert "operator_approval_snapshot" in captured["automation_recovery"]
     assert "sos_automation" in captured["automation_recovery"]

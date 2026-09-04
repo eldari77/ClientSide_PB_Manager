@@ -122,6 +122,18 @@
       "enabled": true
     },
     {
+      "script_id": "sos_mode_ledger",
+      "source": "local_worker",
+      "display_name": "SOS Mode Ledger",
+      "module": "worker.scripts.sos_mode_ledger",
+      "runtime": "python",
+      "source_path": "",
+      "input_schema": "adapter_tick.v1",
+      "output_schema": "compact_commands.v1",
+      "timeout_ms": 1000,
+      "enabled": true
+    },
+    {
       "script_id": "sos_automation_plan",
       "source": "local_worker",
       "display_name": "SOS Automation Plan",
